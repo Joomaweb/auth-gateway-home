@@ -35,6 +35,7 @@ function CheckoutPage() {
     payment_methods: { name: string; enabled: boolean }[];
     free_shipping_threshold: number | null;
     paypal: PayPalCfg;
+    square: SquareCfg;
   } | null>(null);
 
   const [form, setForm] = useState({
