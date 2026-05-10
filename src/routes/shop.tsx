@@ -55,6 +55,28 @@ function ShopPage() {
     });
   }, [search.category, search.sort]);
 
+  useRealtime("products", () => {
+    // re-trigger fetch by toggling loading; simplest is to refetch via location
+    setLoading((l) => l);
+    supabase.from("products")
+      .select("id,name,price,sale_price,images,category_id,categories(slug)")
+      .eq("active", true)
+      .then(({ data }) => {
+        let rows = (data ?? []) as unknown as Array<ProductCardData & { categories: { slug: string } | { slug: string }[] | null }>;
+        if (search.category) {
+          rows = rows.filter((r) => {
+            const c = r.categories;
+            if (!c) return false;
+            return Array.isArray(c) ? c.some((x) => x.slug === search.category) : c.slug === search.category;
+          });
+        }
+        setProducts(rows);
+      });
+  });
+  useRealtime("categories", () => {
+    supabase.from("categories").select("*").then(({ data }) => setCats((data ?? []) as Cat[]));
+  });
+
   return (
     <PublicLayout>
       <div className="max-w-7xl mx-auto px-4 py-10">

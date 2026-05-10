@@ -7,6 +7,7 @@ import { useCart } from "@/lib/cart";
 import { useT } from "@/lib/i18n";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useRealtime } from "@/hooks/use-realtime";
 
 export const Route = createFileRoute("/product/$id")({
   component: ProductPage,
@@ -33,12 +34,15 @@ function ProductPage() {
   const [color, setColor] = useState<string | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
 
-  useEffect(() => {
+  const load = () => {
     supabase.from("products").select("*").eq("id", id).maybeSingle().then(({ data }) => setProduct(data));
     supabase.from("product_variants").select("*").eq("product_id", id).then(({ data }) =>
       setVariants((data ?? []) as Variant[]),
     );
-  }, [id]);
+  };
+  useEffect(load, [id]);
+  useRealtime("products", load, `id=eq.${id}`);
+  useRealtime("product_variants", load, `product_id=eq.${id}`);
 
   if (!product) {
     return (
