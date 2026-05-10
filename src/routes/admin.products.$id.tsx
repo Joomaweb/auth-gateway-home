@@ -41,7 +41,7 @@ const QUERY_TIMEOUT_MS = 15000;
 function withTimeout<T>(promise: PromiseLike<T>, message: string) {
   return Promise.race<T>([
     Promise.resolve(promise),
-    new Promise<T>((_, reject) => window.setTimeout(() => reject(new Error(message)), QUERY_TIMEOUT_MS)),
+    new Promise<T>((_, reject) => globalThis.setTimeout(() => reject(new Error(message)), QUERY_TIMEOUT_MS)),
   ]);
 }
 
