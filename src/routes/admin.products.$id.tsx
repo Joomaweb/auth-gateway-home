@@ -419,7 +419,7 @@ function ProductEdit() {
         if (insErr) throw insErr;
       }
 
-      toast.success(isNew ? "המוצר נוצר בהצלחה" : "המוצר עודכן בהצלחה");
+      toast.success("המוצר נשמר בהצלחה");
       navigate({ to: "/admin/products" });
     } catch (err) {
       console.error("Save failed:", err);
