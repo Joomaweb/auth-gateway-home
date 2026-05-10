@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Settings, ArrowLeft, Menu } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Settings, ArrowLeft, Menu, Webhook } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     { to: "/admin/orders", label: t("admin.orders"), icon: ShoppingCart },
     { to: "/admin/customers", label: t("admin.customers"), icon: Users },
     { to: "/admin/messages", label: t("admin.messages"), icon: MessageSquare },
+    { to: "/admin/api", label: "API", icon: Webhook },
     { to: "/admin/settings", label: t("admin.settings"), icon: Settings },
   ];
 

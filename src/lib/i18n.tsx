@@ -228,11 +228,11 @@ const I18nContext = createContext<Ctx>({
 });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("en");
+  const [lang, setLangState] = useState<Lang>("he");
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const saved = (localStorage.getItem("lang") as Lang | null) ?? "en";
+    const saved = (localStorage.getItem("lang") as Lang | null) ?? "he";
     setLangState(saved);
   }, []);
 
