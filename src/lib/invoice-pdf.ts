@@ -23,6 +23,8 @@ export type InvoiceOrder = {
   payment_method: string | null;
   paypal_order_id?: string | null;
   paypal_capture_id?: string | null;
+  paid_at?: string | null;
+  notes?: string | null;
   shipping_address: Record<string, string> | null;
 };
 
