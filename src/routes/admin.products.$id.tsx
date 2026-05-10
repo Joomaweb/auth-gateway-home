@@ -460,15 +460,20 @@ function ProductEdit() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
               maxLength={200}
+              className={cn(fieldErrors.name && "border-destructive focus-visible:ring-destructive")}
+              aria-invalid={!!fieldErrors.name}
             />
+            {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
               rows={4}
+              maxLength={5000}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
+            <p className="text-xs text-muted-foreground text-end">{form.description.length}/5000</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-2">
@@ -480,7 +485,10 @@ function ProductEdit() {
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
                 required
+                className={cn(fieldErrors.price && "border-destructive focus-visible:ring-destructive")}
+                aria-invalid={!!fieldErrors.price}
               />
+              {fieldErrors.price && <p className="text-xs text-destructive">{fieldErrors.price}</p>}
             </div>
             <div className="space-y-2">
               <Label>Sale price</Label>
@@ -491,7 +499,19 @@ function ProductEdit() {
                 value={form.sale_price}
                 onChange={(e) => setForm({ ...form, sale_price: e.target.value })}
                 placeholder="optional"
+                className={cn(fieldErrors.sale_price && "border-destructive focus-visible:ring-destructive")}
+                aria-invalid={!!fieldErrors.sale_price}
               />
+              {(() => {
+                const p = Number(form.price);
+                const s = Number(form.sale_price);
+                if (form.sale_price !== "" && Number.isFinite(p) && Number.isFinite(s) && p > 0 && s < p) {
+                  const pct = Math.round(((p - s) / p) * 100);
+                  return <p className="text-xs text-gold">חיסכון של {pct}%</p>;
+                }
+                return null;
+              })()}
+              {fieldErrors.sale_price && <p className="text-xs text-destructive">{fieldErrors.sale_price}</p>}
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
