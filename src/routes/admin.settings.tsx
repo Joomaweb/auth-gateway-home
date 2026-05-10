@@ -238,6 +238,57 @@ function AdminSettings() {
           </div>
         </section>
 
+        {/* Square */}
+        <section className="border rounded-lg p-6 bg-card space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Square (Credit / Debit card)</h3>
+            <label className="flex items-center gap-2 text-sm">
+              Enabled <Switch checked={square.enabled} onCheckedChange={(v) => setSquare({ ...square, enabled: v })} />
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Adds a "Square" payment option at checkout using Square Web Payments SDK. Get your Application ID and Location ID at <a className="underline" href="https://developer.squareup.com/apps" target="_blank" rel="noreferrer">developer.squareup.com</a>. The Access Token and Webhook Signature Key are stored as server secrets.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Application ID</Label>
+              <Input
+                value={square.application_id}
+                onChange={(e) => setSquare({ ...square, application_id: e.target.value.trim() })}
+                placeholder="sq0idp-..."
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Location ID</Label>
+              <Input
+                value={square.location_id}
+                onChange={(e) => setSquare({ ...square, location_id: e.target.value.trim() })}
+                placeholder="LBS8C676K329X"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Mode</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={square.mode}
+                onChange={(e) => setSquare({ ...square, mode: e.target.value as "sandbox" | "production" })}
+              >
+                <option value="sandbox">Sandbox (test)</option>
+                <option value="production">Production (real money)</option>
+              </select>
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground border-t pt-3">
+            Webhook URL (paste into Square Developer Dashboard → Webhooks → Notification URL):
+            <code className="block mt-1 p-2 bg-muted rounded break-all">https://auth-gateway-home.lovable.app/api/public/square-webhook</code>
+            Subscribe to events: <strong>payment.created</strong>, <strong>payment.updated</strong>.
+          </div>
+        </section>
+
         {/* Company / Invoice details */}
         <section className="border rounded-lg p-6 bg-card space-y-4">
           <h3 className="font-semibold">Company details (for invoices / receipts)</h3>
