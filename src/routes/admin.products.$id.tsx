@@ -259,8 +259,28 @@ function ProductEdit() {
     setSaveError(null);
     setFieldErrors({});
 
-    if (!user) {
-      setSaveError("עליך להתחבר כדי לשמור מוצרים.");
+    // 1) Verify session
+    const { data: sessionData, error: sessionErr } = await supabase.auth.getUser();
+    if (sessionErr || !sessionData?.user) {
+      console.error("auth.getUser failed:", sessionErr);
+      const msg = "עליך להתחבר כדי לשמור מוצרים.";
+      setSaveError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    // 2) Verify admin role from public.user_roles
+    const { data: roleData, error: roleErr } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", sessionData.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleErr) console.error("user_roles check failed:", roleErr);
+    if (!roleData) {
+      const msg = "אין לך הרשאת מנהל";
+      setSaveError(msg);
+      toast.error(msg);
       return;
     }
 
