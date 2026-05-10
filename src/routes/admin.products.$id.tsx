@@ -555,6 +555,9 @@ function ProductEdit() {
         <section className="bg-card border rounded-lg p-6 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">Images</h2>
+            {fieldErrors.images && (
+              <p className="text-xs text-destructive">{fieldErrors.images}</p>
+            )}
             <span className="text-xs text-muted-foreground">
               PNG / JPG · max 5MB · first image is the cover
             </span>
@@ -641,6 +644,9 @@ function ProductEdit() {
         {/* Sizes */}
         <section className="bg-card border rounded-lg p-6 space-y-3">
           <h2 className="font-semibold">Sizes</h2>
+          {fieldErrors.sizes && (
+            <p className="text-xs text-destructive">{fieldErrors.sizes}</p>
+          )}
           <div>
             <div className="text-xs text-muted-foreground mb-2">Letter sizes</div>
             <div className="flex flex-wrap gap-2">
@@ -720,6 +726,9 @@ function ProductEdit() {
         {/* Colors */}
         <section className="bg-card border rounded-lg p-6 space-y-3">
           <h2 className="font-semibold">Colors</h2>
+          {fieldErrors.colors && (
+            <p className="text-xs text-destructive">{fieldErrors.colors}</p>
+          )}
           <div className="flex flex-wrap gap-2">
             {COLOR_PRESETS.map((c) => {
               const active = colors.includes(c.name);
@@ -782,6 +791,9 @@ function ProductEdit() {
         {(sizes.length > 0 || colors.length > 0) && (
           <section className="bg-card border rounded-lg p-6 space-y-3">
             <h2 className="font-semibold">Stock per variant</h2>
+            {fieldErrors.stock && (
+              <p className="text-xs text-destructive">{fieldErrors.stock}</p>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full text-sm border">
                 <thead className="bg-muted/40">
