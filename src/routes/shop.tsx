@@ -41,9 +41,13 @@ function ShopPage() {
     else q = q.order("created_at", { ascending: false });
 
     q.then(({ data }) => {
-      let rows = (data ?? []) as Array<ProductCardData & { categories: { slug: string } | null }>;
+      let rows = (data ?? []) as unknown as Array<ProductCardData & { categories: { slug: string } | { slug: string }[] | null }>;
       if (search.category) {
-        rows = rows.filter((r) => r.categories?.slug === search.category);
+        rows = rows.filter((r) => {
+          const c = r.categories;
+          if (!c) return false;
+          return Array.isArray(c) ? c.some((x) => x.slug === search.category) : c.slug === search.category;
+        });
       }
       setProducts(rows);
       setLoading(false);
