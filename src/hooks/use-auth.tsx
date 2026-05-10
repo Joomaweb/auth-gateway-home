@@ -2,6 +2,17 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
+const AUTH_TIMEOUT_MS = 10000;
+
+function withAuthTimeout<T>(promise: PromiseLike<T>) {
+  return Promise.race<T>([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) =>
+      globalThis.setTimeout(() => reject(new Error("בדיקת ההתחברות לוקחת יותר מדי זמן")), AUTH_TIMEOUT_MS),
+    ),
+  ]);
+}
+
 type AuthContextValue = {
   session: Session | null;
   user: User | null;
@@ -24,10 +35,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setLoading(false);
-    });
+    withAuthTimeout(supabase.auth.getSession())
+      .then(({ data }) => {
+        setSession(data.session);
+        setLoading(false);
+      })
+      .catch((error) => {
+        console.error("Auth session check failed:", error);
+        setSession(null);
+        setLoading(false);
+      });
 
     return () => {
       sub.subscription.unsubscribe();

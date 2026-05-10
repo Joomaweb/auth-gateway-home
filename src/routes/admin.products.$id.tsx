@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { AlertCircle, Plus, Upload, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useIsAdmin } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/products/$id")({
@@ -37,6 +36,27 @@ const COLOR_PRESETS: { name: string; hex: string }[] = [
 ];
 
 const NONE = "__none__";
+const QUERY_TIMEOUT_MS = 15000;
+
+function withTimeout<T>(promise: PromiseLike<T>, message: string) {
+  return Promise.race<T>([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => globalThis.setTimeout(() => reject(new Error(message)), QUERY_TIMEOUT_MS)),
+  ]);
+}
+
+function productSaveErrorMessage(err: unknown) {
+  const supabaseError = err as { message?: string; details?: string; hint?: string; code?: string };
+  const raw = [supabaseError.message, supabaseError.details, supabaseError.hint, supabaseError.code]
+    .filter(Boolean)
+    .join(" · ") || (err instanceof Error ? err.message : String(err));
+
+  if (/row-level security|permission|denied|42501|unauthorized|not authorized/i.test(raw)) {
+    return "אין הרשאה לבצע פעולה זו. ודא שהמשתמש מחובר כאדמין ושיש RLS מתאים ל-products ול-product_variants.";
+  }
+  if (/timeout|לוקח יותר מדי זמן/i.test(raw)) return raw;
+  return `שגיאה בשמירת המוצר: ${raw}`;
+}
 
 function slugify(s: string) {
   const base = s
@@ -57,7 +77,6 @@ function ProductEdit() {
   const navigate = useNavigate();
   const { t } = useT();
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, checking: roleChecking } = useIsAdmin();
 
   const [form, setForm] = useState({
     name: "",
@@ -86,10 +105,10 @@ function ProductEdit() {
     let cancelled = false;
     (async () => {
       try {
-        const { data: catsData, error: catsErr } = await supabase
-          .from("categories")
-          .select("id,name")
-          .order("name");
+        const { data: catsData, error: catsErr } = await withTimeout(
+          supabase.from("categories").select("id,name").order("name"),
+          "החיבור לקטגוריות לוקח יותר מדי זמן. בדוק את החיבור ל-Supabase ונסה שוב.",
+        );
         if (catsErr) console.error("categories load:", catsErr);
         if (!cancelled) setCats((catsData ?? []) as { id: string; name: string }[]);
 
@@ -99,8 +118,14 @@ function ProductEdit() {
         }
 
         const [pRes, vRes] = await Promise.all([
-          supabase.from("products").select("*").eq("id", id).maybeSingle(),
-          supabase.from("product_variants").select("*").eq("product_id", id),
+          withTimeout(
+            supabase.from("products").select("*").eq("id", id).maybeSingle(),
+            "החיבור למוצר לוקח יותר מדי זמן. נסה לרענן את העמוד.",
+          ),
+          withTimeout(
+            supabase.from("product_variants").select("*").eq("product_id", id),
+            "החיבור לווריאנטים לוקח יותר מדי זמן. נסה לרענן את העמוד.",
+          ),
         ]);
 
         if (cancelled) return;
@@ -216,10 +241,6 @@ function ProductEdit() {
       setSaveError("עליך להתחבר כדי לשמור מוצרים.");
       return;
     }
-    if (!isAdmin) {
-      setSaveError("רק מנהלים יכולים לשמור מוצרים.");
-      return;
-    }
     const trimmedName = form.name.trim();
     if (!trimmedName) {
       setSaveError("שם המוצר נדרש.");
@@ -252,11 +273,10 @@ function ProductEdit() {
           featured: form.featured,
           active: form.active,
         };
-        const { data, error } = await supabase
-          .from("products")
-          .insert(insertPayload)
-          .select("id")
-          .single();
+        const { data, error } = await withTimeout(
+          supabase.from("products").insert(insertPayload).select("id").single(),
+          "שמירת המוצר לוקחת יותר מדי זמן. בדוק הרשאות RLS וחיבור ל-Supabase.",
+        );
         if (error) throw error;
         if (!data?.id) throw new Error("המוצר נוצר אך לא הוחזר מזהה");
         productId = data.id;
@@ -271,15 +291,21 @@ function ProductEdit() {
           featured: form.featured,
           active: form.active,
         };
-        const { error } = await supabase.from("products").update(updatePayload).eq("id", id);
+        const { data, error } = await withTimeout(
+          supabase.from("products").update(updatePayload).eq("id", id).select("id").single(),
+          "עדכון המוצר לוקח יותר מדי זמן. בדוק הרשאות RLS וחיבור ל-Supabase.",
+        );
         if (error) throw error;
+        if (!data?.id) throw new Error("לא נמצא מוצר לעדכון או שאין הרשאה לעדכן אותו.");
       }
 
-      const { error: delErr } = await supabase
-        .from("product_variants")
-        .delete()
-        .eq("product_id", productId);
-      if (delErr) throw delErr;
+      if (!isNew) {
+        const { error: delErr } = await withTimeout(
+          supabase.from("product_variants").delete().eq("product_id", productId),
+          "עדכון הווריאנטים לוקח יותר מדי זמן. בדוק הרשאות לטבלת product_variants.",
+        );
+        if (delErr) throw delErr;
+      }
 
       const variants = buildVariants();
       if (variants.length) {
@@ -289,7 +315,10 @@ function ProductEdit() {
           color: v.color,
           stock: Number(v.stock) || 0,
         }));
-        const { error: insErr } = await supabase.from("product_variants").insert(rows);
+        const { error: insErr } = await withTimeout(
+          supabase.from("product_variants").insert(rows),
+          "שמירת הווריאנטים לוקחת יותר מדי זמן. בדוק הרשאות לטבלת product_variants.",
+        );
         if (insErr) throw insErr;
       }
 
@@ -297,10 +326,7 @@ function ProductEdit() {
       navigate({ to: "/admin/products" });
     } catch (err) {
       console.error("Save failed:", err);
-      const raw = err instanceof Error ? err.message : String(err);
-      const friendly = /row-level security|permission|denied/i.test(raw)
-        ? "אין הרשאה לבצע פעולה זו. ודא שאתה מחובר כאדמין."
-        : `שגיאה בשמירת המוצר: ${raw}`;
+      const friendly = productSaveErrorMessage(err);
       setSaveError(friendly);
       toast.error(friendly);
     } finally {
@@ -308,8 +334,8 @@ function ProductEdit() {
     }
   };
 
-  if (authLoading || roleChecking || loading) {
-    return <div className="text-muted-foreground">Loading...</div>;
+  if (authLoading || loading) {
+    return <div className="text-muted-foreground">טוען...</div>;
   }
   if (loadError) {
     return (
