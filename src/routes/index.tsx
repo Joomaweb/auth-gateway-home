@@ -27,6 +27,7 @@ function HomePage() {
   const { t } = useT();
   const [featured, setFeatured] = useState<ProductCardData[]>([]);
   const [sale, setSale] = useState<ProductCardData[]>([]);
+  const [newest, setNewest] = useState<ProductCardData[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
   const [slides, setSlides] = useState<string[]>([]);
@@ -40,6 +41,10 @@ function HomePage() {
       .select("id,name,price,sale_price,images")
       .eq("active", true).not("sale_price", "is", null).limit(8)
       .then(({ data }) => setSale((data ?? []) as ProductCardData[]));
+    supabase.from("products")
+      .select("id,name,price,sale_price,images,created_at")
+      .eq("active", true).order("created_at", { ascending: false }).limit(6)
+      .then(({ data }) => setNewest((data ?? []) as ProductCardData[]));
     supabase.from("categories").select("*")
       .then(({ data }) => setCats((data ?? []) as Category[]));
     supabase.from("store_settings").select("hero,carousel_images").eq("id", 1).maybeSingle()
@@ -95,9 +100,30 @@ function HomePage() {
 
       {/* Categories */}
       {cats.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 py-16">
-          <h2 className="font-display text-3xl font-semibold mb-8">{t("home.categories")}</h2>
-          <div className="grid gap-4 md:grid-cols-3">
+        <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
+          <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">{t("home.categories")}</h2>
+          {/* Mobile carousel */}
+          <div className="md:hidden">
+            <Carousel opts={{ align: "start" }}>
+              <CarouselContent className="-ms-3">
+                {cats.map((c) => (
+                  <CarouselItem key={c.id} className="ps-3 basis-3/4 sm:basis-1/2">
+                    <Link to="/shop" search={{ category: c.slug }}
+                      className="group relative block aspect-[4/3] overflow-hidden rounded-xl bg-muted shadow-soft">
+                      <img src={c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800"}
+                        alt={c.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent flex items-end p-4">
+                        <h3 className="text-white font-display text-xl font-semibold drop-shadow">{c.name}</h3>
+                      </div>
+                    </Link>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+            </Carousel>
+          </div>
+          {/* Desktop grid */}
+          <div className="hidden md:grid gap-4 grid-cols-3">
             {cats.map((c) => (
               <Link key={c.id} to="/shop" search={{ category: c.slug }}
                 className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
@@ -110,6 +136,24 @@ function HomePage() {
               </Link>
             ))}
           </div>
+        </section>
+      )}
+
+      {/* Newest arrivals */}
+      {newest.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
+          <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">{t("home.newArrivals")}</h2>
+          <Carousel opts={{ align: "start" }}>
+            <CarouselContent className="-ms-3 md:-ms-4">
+              {newest.map((p) => (
+                <CarouselItem key={p.id} className="ps-3 md:ps-4 basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
+                  <ProductCard p={p} />
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="hidden md:flex" />
+            <CarouselNext className="hidden md:flex" />
+          </Carousel>
         </section>
       )}
 
