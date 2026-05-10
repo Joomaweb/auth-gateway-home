@@ -39,8 +39,8 @@ function LoginPage() {
       toast.error(msg);
       return;
     }
-    toast.success("התחברת בהצלחה");
-    navigate({ to: "/dashboard" });
+    toast.success("Signed in");
+    navigate({ to: "/" });
   };
 
   return (
