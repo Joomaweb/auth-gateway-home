@@ -64,7 +64,6 @@ function ProductEdit() {
   const navigate = useNavigate();
   const { t } = useT();
   const { user, loading: authLoading } = useAuth();
-  const { isAdmin, checking: roleChecking } = useIsAdmin();
 
   const [form, setForm] = useState({
     name: "",
@@ -93,10 +92,10 @@ function ProductEdit() {
     let cancelled = false;
     (async () => {
       try {
-        const { data: catsData, error: catsErr } = await supabase
-          .from("categories")
-          .select("id,name")
-          .order("name");
+        const { data: catsData, error: catsErr } = await withTimeout(
+          supabase.from("categories").select("id,name").order("name"),
+          "החיבור לקטגוריות לוקח יותר מדי זמן. בדוק את החיבור ל-Supabase ונסה שוב.",
+        );
         if (catsErr) console.error("categories load:", catsErr);
         if (!cancelled) setCats((catsData ?? []) as { id: string; name: string }[]);
 
@@ -106,8 +105,14 @@ function ProductEdit() {
         }
 
         const [pRes, vRes] = await Promise.all([
-          supabase.from("products").select("*").eq("id", id).maybeSingle(),
-          supabase.from("product_variants").select("*").eq("product_id", id),
+          withTimeout(
+            supabase.from("products").select("*").eq("id", id).maybeSingle(),
+            "החיבור למוצר לוקח יותר מדי זמן. נסה לרענן את העמוד.",
+          ),
+          withTimeout(
+            supabase.from("product_variants").select("*").eq("product_id", id),
+            "החיבור לווריאנטים לוקח יותר מדי זמן. נסה לרענן את העמוד.",
+          ),
         ]);
 
         if (cancelled) return;
@@ -223,10 +228,6 @@ function ProductEdit() {
       setSaveError("עליך להתחבר כדי לשמור מוצרים.");
       return;
     }
-    if (!isAdmin) {
-      setSaveError("רק מנהלים יכולים לשמור מוצרים.");
-      return;
-    }
     const trimmedName = form.name.trim();
     if (!trimmedName) {
       setSaveError("שם המוצר נדרש.");
@@ -259,11 +260,10 @@ function ProductEdit() {
           featured: form.featured,
           active: form.active,
         };
-        const { data, error } = await supabase
-          .from("products")
-          .insert(insertPayload)
-          .select("id")
-          .single();
+        const { data, error } = await withTimeout(
+          supabase.from("products").insert(insertPayload).select("id").single(),
+          "שמירת המוצר לוקחת יותר מדי זמן. בדוק הרשאות RLS וחיבור ל-Supabase.",
+        );
         if (error) throw error;
         if (!data?.id) throw new Error("המוצר נוצר אך לא הוחזר מזהה");
         productId = data.id;
@@ -278,14 +278,17 @@ function ProductEdit() {
           featured: form.featured,
           active: form.active,
         };
-        const { error } = await supabase.from("products").update(updatePayload).eq("id", id);
+        const { error } = await withTimeout(
+          supabase.from("products").update(updatePayload).eq("id", id),
+          "עדכון המוצר לוקח יותר מדי זמן. בדוק הרשאות RLS וחיבור ל-Supabase.",
+        );
         if (error) throw error;
       }
 
-      const { error: delErr } = await supabase
-        .from("product_variants")
-        .delete()
-        .eq("product_id", productId);
+      const { error: delErr } = await withTimeout(
+        supabase.from("product_variants").delete().eq("product_id", productId),
+        "עדכון הווריאנטים לוקח יותר מדי זמן. בדוק הרשאות לטבלת product_variants.",
+      );
       if (delErr) throw delErr;
 
       const variants = buildVariants();
@@ -296,7 +299,10 @@ function ProductEdit() {
           color: v.color,
           stock: Number(v.stock) || 0,
         }));
-        const { error: insErr } = await supabase.from("product_variants").insert(rows);
+        const { error: insErr } = await withTimeout(
+          supabase.from("product_variants").insert(rows),
+          "שמירת הווריאנטים לוקחת יותר מדי זמן. בדוק הרשאות לטבלת product_variants.",
+        );
         if (insErr) throw insErr;
       }
 
@@ -315,8 +321,8 @@ function ProductEdit() {
     }
   };
 
-  if (authLoading || roleChecking || loading) {
-    return <div className="text-muted-foreground">Loading...</div>;
+  if (authLoading || loading) {
+    return <div className="text-muted-foreground">טוען...</div>;
   }
   if (loadError) {
     return (
