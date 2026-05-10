@@ -21,10 +21,10 @@ function verifySquareSignature(
 }
 
 function getSupabaseAdmin() {
-  const url = process.env.SUPABASE_URL ?? "https://supabase.mako-chat.com";
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = "https://supabase.mako-chat.com";
+  const serviceKey = process.env.MAKO_SUPABASE_SERVICE_ROLE_KEY;
   if (!serviceKey) {
-    throw new Error("SUPABASE_SERVICE_ROLE_KEY is not configured");
+    throw new Error("MAKO_SUPABASE_SERVICE_ROLE_KEY is not configured");
   }
   return createClient(url, serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
