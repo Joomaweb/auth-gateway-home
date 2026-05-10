@@ -82,6 +82,8 @@ function AdminSettings() {
       free_shipping_threshold: freeThreshold === "" ? null : Number(freeThreshold),
       hero,
       carousel_images: carousel,
+      paypal,
+      company,
     });
     setBusy(false);
     if (error) toast.error(error.message);
