@@ -107,8 +107,48 @@ function OrderDetailPage() {
   const tax = Number(order.tax ?? 0);
   const total = Number(order.total ?? 0);
   const isPaid = order.status === "paid" || !!order.paid_at;
+  const isFailed = order.status === "failed";
+  const isCancelled = order.status === "cancelled";
+  const isPending = !isPaid && !isFailed && !isCancelled;
+  const isSquareOrder = order.payment_method === "Square";
+  const canRetrySquare =
+    isSquareOrder && (isFailed || isCancelled) &&
+    !!squareSettings && squareSettings.enabled &&
+    !!squareSettings.application_id && !!squareSettings.location_id;
 
   const handleDownload = () => downloadInvoicePdf(order, items, company);
+
+  const handleRetryTokenized = async (sourceId: string, verificationToken?: string) => {
+    if (!squareSettings || !order) return;
+    setRetrying(true);
+    try {
+      const res = await chargeSquare({
+        data: {
+          orderId: order.id,
+          sourceId,
+          verificationToken,
+          amount: total,
+          currency: "USD",
+          mode: squareSettings.mode,
+        },
+      });
+      if (res.ok) {
+        toast.success(res.status === "paid" ? "Payment successful" : "Payment pending");
+        const { data } = await supabase.from("orders").select("*").eq("id", order.id).maybeSingle();
+        if (data) setOrder(data as Order);
+      } else {
+        const msg = res.reason === "cancelled" ? "Payment cancelled — try again."
+          : res.reason === "card_declined" ? `Card declined: ${res.message}`
+          : res.reason === "network_error" ? "Network error — try again."
+          : res.message || "Payment failed";
+        toast.error(msg);
+        const { data } = await supabase.from("orders").select("*").eq("id", order.id).maybeSingle();
+        if (data) setOrder(data as Order);
+      }
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   return (
     <PublicLayout>
