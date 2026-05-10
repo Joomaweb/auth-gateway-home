@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Check, KeyRound, Radio, ShieldCheck, Smartphone } from "lucide-react";
+import { Copy, Check, KeyRound, Radio, ShieldCheck, Smartphone, Play, Square, Trash2, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/lib/supabase";
+import { useEffect, useRef } from "react";
 
 export const Route = createFileRoute("/admin/api")({
   component: AdminApi,
@@ -60,6 +62,205 @@ const TABLES = [
   { name: "store_settings", desc: "הגדרות חנות (היירו, באנרים)" },
   { name: "user_roles", desc: "תפקידים (admin/user) — קריאה בלבד" },
 ];
+
+type LogEntry = {
+  id: number;
+  time: string;
+  level: "info" | "success" | "error";
+  text: string;
+};
+
+function RealtimeTester() {
+  const [orderStatus, setOrderStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
+  const [msgStatus, setMsgStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const channelsRef = useRef<{ orders?: any; messages?: any }>({});
+  const idRef = useRef(0);
+
+  const log = (level: LogEntry["level"], text: string) => {
+    idRef.current += 1;
+    const entry: LogEntry = {
+      id: idRef.current,
+      time: new Date().toLocaleTimeString("he-IL"),
+      level,
+      text,
+    };
+    setLogs((prev) => [entry, ...prev].slice(0, 80));
+  };
+
+  const subscribe = (
+    table: "orders" | "messages",
+    setStatus: typeof setOrderStatus,
+  ) => {
+    if (channelsRef.current[table]) {
+      log("info", `כבר מחובר ל-${table}`);
+      return;
+    }
+    setStatus("connecting");
+    log("info", `מתחבר ל-Realtime · ${table}…`);
+    const channel = supabase
+      .channel(`rt-${table}-${Date.now()}`)
+      .on(
+        "postgres_changes" as any,
+        { event: "*", schema: "public", table },
+        (payload: any) => {
+          const row = payload.new ?? payload.old ?? {};
+          log(
+            "success",
+            `${table} · ${payload.eventType} · ${row.id ? "#" + String(row.id).slice(0, 8) : ""}`,
+          );
+        },
+      )
+      .subscribe((status: string, err?: Error) => {
+        if (status === "SUBSCRIBED") {
+          setStatus("live");
+          log("success", `מחובר בהצלחה ל-${table} ✓`);
+          toast.success(`Realtime · ${table} פעיל`);
+        } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          setStatus("error");
+          log("error", `שגיאת חיבור ל-${table}: ${err?.message || status}`);
+          toast.error(`כשל בחיבור ל-${table}`);
+        } else if (status === "CLOSED") {
+          setStatus("idle");
+          log("info", `החיבור ל-${table} נסגר`);
+        }
+      });
+    channelsRef.current[table] = channel;
+  };
+
+  const unsubscribe = (table: "orders" | "messages", setStatus: typeof setOrderStatus) => {
+    const ch = channelsRef.current[table];
+    if (ch) {
+      supabase.removeChannel(ch);
+      channelsRef.current[table] = undefined;
+      setStatus("idle");
+      log("info", `נותק מ-${table}`);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      Object.values(channelsRef.current).forEach((c) => c && supabase.removeChannel(c));
+    };
+  }, []);
+
+  const StatusDot = ({ s }: { s: typeof orderStatus }) => {
+    const map = {
+      idle: "bg-muted-foreground/40",
+      connecting: "bg-amber-500 animate-pulse",
+      live: "bg-emerald-500 animate-pulse",
+      error: "bg-destructive",
+    } as const;
+    const txt = { idle: "לא פעיל", connecting: "מתחבר…", live: "פעיל", error: "שגיאה" }[s];
+    return (
+      <span className="inline-flex items-center gap-2 text-xs">
+        <span className={`h-2 w-2 rounded-full ${map[s]}`} />
+        <span className="text-muted-foreground">{txt}</span>
+      </span>
+    );
+  };
+
+  const Row = ({
+    table,
+    label,
+    status,
+    setStatus,
+  }: {
+    table: "orders" | "messages";
+    label: string;
+    status: typeof orderStatus;
+    setStatus: typeof setOrderStatus;
+  }) => (
+    <div className="flex items-center justify-between gap-3 p-3 rounded-md border bg-muted/30">
+      <div className="flex items-center gap-3">
+        <div className="h-9 w-9 rounded-md bg-gradient-gold flex items-center justify-center text-gold-foreground">
+          <Activity className="h-4 w-4" />
+        </div>
+        <div>
+          <div className="text-sm font-medium">{label}</div>
+          <code className="text-[11px] text-muted-foreground">public.{table}</code>
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        <StatusDot s={status} />
+        {status === "live" || status === "connecting" ? (
+          <Button size="sm" variant="outline" onClick={() => unsubscribe(table, setStatus)}>
+            <Square className="h-3.5 w-3.5 me-1.5" /> נתק
+          </Button>
+        ) : (
+          <Button size="sm" onClick={() => subscribe(table, setStatus)}>
+            <Play className="h-3.5 w-3.5 me-1.5" /> חבר
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <Card className="shadow-elegant border-gold/30 overflow-hidden">
+      <CardHeader className="bg-gradient-to-l from-muted/40 to-transparent">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-md bg-gradient-gold flex items-center justify-center text-gold-foreground shadow-soft">
+              <Radio className="h-5 w-5" />
+            </div>
+            <div>
+              <CardTitle className="text-lg">בדיקת Realtime חיה</CardTitle>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Subscribe להזמנות והודעות — לוגים בזמן אמת
+              </p>
+            </div>
+          </div>
+          <Button size="sm" variant="ghost" onClick={() => setLogs([])}>
+            <Trash2 className="h-3.5 w-3.5 me-1.5" /> נקה לוג
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2.5 md:grid-cols-2">
+          <Row table="orders" label="הזמנות" status={orderStatus} setStatus={setOrderStatus} />
+          <Row table="messages" label="הודעות צ'אט" status={msgStatus} setStatus={setMsgStatus} />
+        </div>
+
+        <div
+          dir="ltr"
+          className="rounded-md border bg-foreground/[0.97] text-background/95 font-mono text-[11.5px] leading-relaxed h-64 overflow-auto p-3"
+        >
+          {logs.length === 0 ? (
+            <div className="text-background/50 text-center py-10" dir="rtl">
+              לחצו "חבר" כדי להתחיל. כל אירוע ב-DB יופיע כאן בזמן אמת.
+            </div>
+          ) : (
+            logs.map((l) => (
+              <div key={l.id} className="flex gap-2">
+                <span className="text-background/40 shrink-0">{l.time}</span>
+                <span
+                  className={
+                    l.level === "success"
+                      ? "text-emerald-400"
+                      : l.level === "error"
+                      ? "text-rose-400"
+                      : "text-amber-300"
+                  }
+                >
+                  {l.level === "success" ? "✓" : l.level === "error" ? "✗" : "•"}
+                </span>
+                <span className="text-background/90" dir="auto">
+                  {l.text}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+
+        <p className="text-xs text-muted-foreground">
+          טיפ: פתחו טאב נוסף, צרו הזמנה או שלחו הודעה — האירוע יופיע כאן מיידית.
+          אם יש שגיאה, ודאו ש-Realtime מופעל לטבלה ב-Supabase ושלמשתמש שלכם תפקיד <code>admin</code>.
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
 function AdminApi() {
   const { user, session } = useAuth() as ReturnType<typeof useAuth> & { session: any };
@@ -179,6 +380,8 @@ curl '${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc' \\
           </p>
         </CardContent>
       </Card>
+
+      <RealtimeTester />
 
       <Tabs defaultValue="rn" className="w-full">
         <TabsList className="bg-muted/60">

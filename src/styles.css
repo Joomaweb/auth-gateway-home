@@ -115,8 +115,13 @@
     color: var(--color-foreground);
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     font-feature-settings: "ss01", "cv11";
+    background-image:
+      radial-gradient(1100px 520px at 92% -10%, oklch(0.82 0.08 82 / 0.18), transparent 60%),
+      radial-gradient(900px 480px at -10% 110%, oklch(0.9 0.03 80 / 0.35), transparent 60%);
+    background-attachment: fixed;
   }
   h1, h2, h3 { letter-spacing: -0.02em; }
+  ::selection { background: oklch(0.82 0.08 82 / 0.45); color: var(--foreground); }
 }
 
 @utility text-gold { color: var(--gold); }
