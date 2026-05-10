@@ -58,7 +58,7 @@ export function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
+    <header className="sticky top-0 z-40 glass-panel border-b border-transparent">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           <Sheet open={open} onOpenChange={setOpen}>
@@ -69,14 +69,14 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side={lang === "he" ? "right" : "left"} className="w-72">
               <SheetHeader>
-                <SheetTitle>ATELIER</SheetTitle>
+                <SheetTitle className="font-display tracking-[0.3em] text-gradient-gold">ATELIER</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-4 mt-6">
                 <NavLinks onClick={() => setOpen(false)} />
               </nav>
             </SheetContent>
           </Sheet>
-          <Link to="/" className="font-display text-xl font-semibold tracking-wide">
+          <Link to="/" className="font-display text-xl font-semibold tracking-[0.25em] text-gradient-gold">
             ATELIER
           </Link>
           <nav className="hidden md:flex items-center gap-6">
