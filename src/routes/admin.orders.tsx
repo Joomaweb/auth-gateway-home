@@ -39,11 +39,15 @@ function AdminOrders() {
   }, []);
 
   const del = async (id: string) => {
-    if (!confirm("Delete order?")) return;
+    if (!confirm("למחוק את ההזמנה?")) return;
     await supabase.from("order_items").delete().eq("order_id", id);
     const { error } = await supabase.from("orders").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Deleted"); load(); }
+    if (error) {
+      const msg = /row-level security|permission|denied/i.test(error.message)
+        ? "אין הרשאה למחוק. ודא שאתה מחובר כאדמין."
+        : "שגיאה במחיקה: " + error.message;
+      toast.error(msg);
+    } else { toast.success("ההזמנה נמחקה"); load(); }
   };
 
   return (

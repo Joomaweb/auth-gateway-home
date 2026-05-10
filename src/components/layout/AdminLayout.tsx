@@ -56,10 +56,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex bg-background">
-      <aside className="hidden md:flex w-60 border-e flex-col bg-sidebar text-sidebar-foreground">
+      <aside className="hidden md:flex w-60 border-e flex-col bg-sidebar text-sidebar-foreground shadow-soft">
         <div className="px-5 py-4 border-b">
-          <Link to="/admin" className="font-display text-lg font-semibold">
-            ATELIER · {t("nav.admin")}
+          <Link to="/admin" className="font-display text-lg font-semibold tracking-wide">
+            ATELIER · <span className="text-gold">{t("nav.admin")}</span>
           </Link>
         </div>
         <Nav />
