@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Settings, ArrowLeft, Menu } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Settings, ArrowLeft, Menu, Webhook } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     { to: "/admin/orders", label: t("admin.orders"), icon: ShoppingCart },
     { to: "/admin/customers", label: t("admin.customers"), icon: Users },
     { to: "/admin/messages", label: t("admin.messages"), icon: MessageSquare },
+    { to: "/admin/api", label: "API", icon: Webhook },
     { to: "/admin/settings", label: t("admin.settings"), icon: Settings },
   ];
 
@@ -55,10 +56,10 @@ export function AdminLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex bg-background">
-      <aside className="hidden md:flex w-60 border-e flex-col bg-sidebar text-sidebar-foreground">
+      <aside className="hidden md:flex w-60 border-e flex-col bg-sidebar text-sidebar-foreground shadow-soft">
         <div className="px-5 py-4 border-b">
-          <Link to="/admin" className="font-display text-lg font-semibold">
-            ATELIER · {t("nav.admin")}
+          <Link to="/admin" className="font-display text-lg font-semibold tracking-wide">
+            ATELIER · <span className="text-gold">{t("nav.admin")}</span>
           </Link>
         </div>
         <Nav />
