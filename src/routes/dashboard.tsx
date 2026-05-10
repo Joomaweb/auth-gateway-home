@@ -133,6 +133,8 @@ function DashboardPage() {
             <InfoRow label="נוצר בתאריך" value={createdAt} />
           </CardContent>
         </Card>
+
+        <ImageUploader />
       </main>
     </div>
   );
