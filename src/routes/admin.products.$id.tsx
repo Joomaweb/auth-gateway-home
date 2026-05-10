@@ -257,24 +257,79 @@ function ProductEdit() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setSaveError(null);
+    setFieldErrors({});
 
     if (!user) {
       setSaveError("עליך להתחבר כדי לשמור מוצרים.");
       return;
     }
-    const trimmedName = form.name.trim();
-    if (!trimmedName) {
-      setSaveError("שם המוצר נדרש.");
-      return;
-    }
-    const priceNum = Number(form.price);
-    if (!Number.isFinite(priceNum) || priceNum <= 0) {
-      setSaveError("המחיר חייב להיות גדול מאפס.");
-      return;
-    }
+
+    const priceNum = form.price === "" ? NaN : Number(form.price);
     const saleNum = form.sale_price === "" ? null : Number(form.sale_price);
-    if (saleNum !== null && (!Number.isFinite(saleNum) || saleNum < 0)) {
-      setSaveError("מחיר המבצע אינו תקין.");
+
+    const parsed = productSchema.safeParse({
+      name: form.name,
+      description: form.description,
+      price: priceNum,
+      sale_price: saleNum,
+      images: form.images,
+      sizes,
+      colors,
+    });
+
+    const errs: FieldErrors = {};
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const k = issue.path[0] as keyof FieldErrors;
+        if (k && !errs[k]) errs[k] = issue.message;
+      }
+    }
+
+    // size/color format validation
+    const badSize = sizes.find((s) => !SIZE_RE.test(s));
+    if (badSize) errs.sizes = `מידה לא תקינה: "${badSize}" (עד 12 תווים, אותיות/ספרות/מקף)`;
+    if (sizes.length !== new Set(sizes).size) errs.sizes = "יש מידות כפולות";
+
+    const badColor = colors.find((c) => !COLOR_RE.test(c));
+    if (badColor) errs.colors = `שם צבע לא תקין: "${badColor}" (אותיות בלבד, עד 25 תווים)`;
+    if (colors.length !== new Set(colors).size) errs.colors = "יש צבעים כפולים";
+
+    // discount sanity
+    if (Number.isFinite(priceNum) && saleNum !== null) {
+      const discount = ((priceNum - saleNum) / priceNum) * 100;
+      if (discount < 1) errs.sale_price = "ההנחה חייבת להיות לפחות 1% מהמחיר";
+      if (discount > 95) errs.sale_price = "ההנחה גדולה מ-95% — בדוק את המחירים";
+    }
+
+    // variants/stock validation
+    const variantsPreview = (() => {
+      const ss = sizes.length ? sizes : [""];
+      const cc = colors.length ? colors : [""];
+      const out: { key: string; size: string; color: string; stock: number }[] = [];
+      for (const s of ss)
+        for (const c of cc) {
+          if (!s && !c) continue;
+          const stock = stockMap[`${s}|${c}`];
+          out.push({ key: `${s}|${c}`, size: s, color: c, stock: Number.isFinite(stock) ? stock : 0 });
+        }
+      return out;
+    })();
+    if (variantsPreview.length > 0) {
+      const totalStock = variantsPreview.reduce((a, v) => a + (v.stock || 0), 0);
+      const negative = variantsPreview.find((v) => v.stock < 0);
+      const tooBig = variantsPreview.find((v) => v.stock > 100000);
+      const nonInt = variantsPreview.find((v) => !Number.isInteger(v.stock));
+      if (negative) errs.stock = "אין מלאי שלילי";
+      else if (nonInt) errs.stock = "המלאי חייב להיות מספר שלם";
+      else if (tooBig) errs.stock = "מלאי גדול מדי (עד 100,000 ליחידה)";
+      else if (totalStock === 0) errs.stock = "סה״כ המלאי 0 — הזן כמות לפחות לקומבינציה אחת";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      const first = Object.values(errs)[0];
+      setSaveError(first ?? "יש שגיאות בטופס");
+      toast.error(first ?? "יש שגיאות בטופס");
       return;
     }
 
