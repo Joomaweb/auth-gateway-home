@@ -452,20 +452,22 @@ function ProductEdit() {
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
-      <div>
-        <Link to="/admin/products" className="text-sm text-muted-foreground hover:text-foreground">
+    <div className="max-w-4xl mx-auto space-y-8 pb-24">
+      <div className="relative overflow-hidden rounded-2xl border bg-card/60 backdrop-blur p-6 sm:p-8 shadow-sm">
+        <div className="absolute inset-x-0 top-0 h-px hairline-gold" />
+        <Link to="/admin/products" className="text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition">
           ← {t("admin.products")}
         </Link>
-        <h1 className="font-display text-3xl font-semibold mt-2">
+        <h1 className="font-display text-3xl sm:text-4xl font-semibold mt-3 text-gradient-gold">
           {isNew ? t("admin.addProduct") : t("admin.editProduct")}
         </h1>
+        <p className="text-sm text-muted-foreground mt-1">ניהול פרטי מוצר, תמונות, מידות, צבעים ומלאי.</p>
       </div>
 
       {saveError && (
-        <div className="border border-destructive/40 bg-destructive/10 text-destructive rounded-lg p-3 flex gap-2 text-sm">
+        <div className="border border-destructive/40 bg-destructive/10 text-destructive rounded-xl p-4 flex gap-2 text-sm shadow-sm">
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-          <span>{saveError}</span>
+          <span className="break-words">{saveError}</span>
         </div>
       )}
 
