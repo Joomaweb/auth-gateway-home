@@ -286,6 +286,9 @@ function CheckoutPage() {
                     {m.name === "PayPal" && (
                       <span className="text-xs text-muted-foreground">PayPal · Credit / Debit card</span>
                     )}
+                    {m.name === "Square" && (
+                      <span className="text-xs text-muted-foreground">Credit / Debit card</span>
+                    )}
                   </label>
                 ))}
               </div>
@@ -307,6 +310,63 @@ function CheckoutPage() {
                     <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
                   )}
                 </div>
+              )}
+
+              {isSquare && settings?.square && (
+                <div className="mt-5 pt-5 border-t space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Pay securely with your credit or debit card via Square.
+                  </p>
+                  <SquareCheckout
+                    applicationId={settings.square.application_id}
+                    locationId={settings.square.location_id}
+                    mode={settings.square.mode}
+                    amount={total}
+                    currency="USD"
+                    disabled={!requiredFieldsValid || busy}
+                    onTokenized={handleSquareTokenized}
+                  />
+                  {!requiredFieldsValid && (
+                    <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
+                  )}
+                </div>
+              )}
+            </section>
+          </div>
+
+          <div className="border rounded-lg p-6 bg-card h-fit sticky top-20 space-y-3">
+            <h2 className="font-semibold mb-2">{t("orders.order")}</h2>
+            <div className="space-y-2 text-sm max-h-64 overflow-auto">
+              {items.map((i) => (
+                <div key={`${i.productId}-${i.variantId}`} className="flex justify-between gap-2">
+                  <span className="truncate">{i.name} × {i.qty}</span>
+                  <span className="whitespace-nowrap">${(i.qty * i.price).toFixed(2)}</span>
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-3 space-y-2 text-sm">
+              <div className="flex justify-between"><span>{t("cart.subtotal")}</span><span>${subtotal.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>{t("cart.shipping")}</span><span>${shippingFee.toFixed(2)}</span></div>
+              <div className="flex justify-between text-base font-semibold border-t pt-2">
+                <span>{t("cart.total")}</span><span>${total.toFixed(2)}</span>
+              </div>
+            </div>
+            {!isPayPal && !isSquare && (
+              <Button type="submit" className="w-full" size="lg" disabled={busy || !payment}>
+                {busy ? t("common.loading") : t("checkout.placeOrder")}
+              </Button>
+            )}
+            {isPayPal && (
+              <p className="text-xs text-muted-foreground text-center">
+                Use the PayPal buttons to complete your payment.
+              </p>
+            )}
+            {isSquare && (
+              <p className="text-xs text-muted-foreground text-center">
+                Enter your card details and press Pay above.
+              </p>
+            )}
+          </div>
               )}
             </section>
           </div>
