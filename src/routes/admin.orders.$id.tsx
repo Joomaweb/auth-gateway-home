@@ -11,10 +11,16 @@ export const Route = createFileRoute("/admin/orders/$id")({
 });
 
 const statuses = ["pending", "paid", "shipped", "delivered", "cancelled"];
+const shipmentStatuses = ["preparing", "awaiting_shipment", "in_transit", "delivered"] as const;
+type ShipmentStatus = typeof shipmentStatuses[number];
 
 type Order = {
   id: string;
   status: string;
+  shipment_status: ShipmentStatus | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  shipment_updated_at: string | null;
   subtotal: number;
   shipping: number;
   total: number;
@@ -51,6 +57,14 @@ function AdminOrderDetail() {
     else { toast.success("Status updated"); setOrder((o) => o ? { ...o, status } : o); }
   };
 
+  const updateShipment = async (patch: Partial<Pick<Order, "shipment_status" | "tracking_number" | "tracking_url">>) => {
+    const payload: Record<string, unknown> = { ...patch, shipment_updated_at: new Date().toISOString() };
+    const { error } = await supabase.from("orders").update(payload).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(t("shipment.notified"));
+    setOrder((o) => o ? { ...o, ...patch, shipment_updated_at: payload.shipment_updated_at as string } : o);
+  };
+
   const del = async () => {
     if (!confirm("Delete order?")) return;
     await supabase.from("order_items").delete().eq("order_id", id);
@@ -83,6 +97,50 @@ function AdminOrderDetail() {
           <div className="font-medium">{a?.full_name ?? "—"}</div>
           <div className="text-xs text-muted-foreground">{email ?? ""}</div>
           <div className="text-xs text-muted-foreground">{a?.phone ?? ""}</div>
+        </div>
+      </div>
+
+      <div className="border rounded-lg p-4 bg-card space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold">{t("shipment.title")}</h3>
+          {order.shipment_updated_at && (
+            <span className="text-xs text-muted-foreground">
+              {t("shipment.lastUpdate")}: {new Date(order.shipment_updated_at).toLocaleString()}
+            </span>
+          )}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Select
+            value={order.shipment_status ?? "preparing"}
+            onValueChange={(v) => updateShipment({ shipment_status: v as ShipmentStatus })}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {shipmentStatuses.map((s) => (
+                <SelectItem key={s} value={s}>{t(`shipment.${s}` as never)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <input
+            type="text"
+            placeholder={t("shipment.tracking")}
+            defaultValue={order.tracking_number ?? ""}
+            onBlur={(e) => {
+              const v = e.target.value.trim() || null;
+              if (v !== (order.tracking_number ?? null)) updateShipment({ tracking_number: v });
+            }}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+          />
+          <input
+            type="url"
+            placeholder={t("shipment.trackingUrl")}
+            defaultValue={order.tracking_url ?? ""}
+            onBlur={(e) => {
+              const v = e.target.value.trim() || null;
+              if (v !== (order.tracking_url ?? null)) updateShipment({ tracking_url: v });
+            }}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm sm:col-span-2"
+          />
         </div>
       </div>
 
