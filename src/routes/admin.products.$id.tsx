@@ -336,6 +336,7 @@ function ProductEdit() {
     setBusy(true);
     try {
       let productId = id;
+      const trimmedName = form.name.trim();
 
       if (isNew) {
         const insertPayload = {
