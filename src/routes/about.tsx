@@ -1,24 +1,60 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { PublicLayout } from "@/components/layout/PublicLayout";
-import { useT } from "@/lib/i18n";
+import { supabase } from "@/lib/supabase";
+import { useRealtime } from "@/hooks/use-realtime";
 
 export const Route = createFileRoute("/about")({
   head: () => ({ meta: [{ title: "About — ATELIER" }] }),
   component: AboutPage,
 });
 
+type Feature = { title: string; body: string };
+type About = { title: string; body: string; features: Feature[] };
+
+const DEFAULT_ABOUT: About = {
+  title: "אודות ATELIER",
+  body: "חנות בוטיק לאופנה קלאסית ועדינה — בדים יוקרתיים, גזרות נצחיות, יצירה אחראית.",
+  features: [
+    { title: "איכות", body: "בדים יוקרתיים ומלאכת יד מוקפדת." },
+    { title: "קלאסי", body: "גזרות שלא יוצאות מהאופנה." },
+    { title: "שקיפות", body: "מחירים הוגנים, בלי תוספות נסתרות." },
+  ],
+};
+
 function AboutPage() {
-  const { t } = useT();
+  const [a, setA] = useState<About>(DEFAULT_ABOUT);
+
+  const load = () => {
+    supabase
+      .from("store_settings")
+      .select("about")
+      .eq("id", 1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.about) setA({ ...DEFAULT_ABOUT, ...(data.about as About) });
+      });
+  };
+  useEffect(load, []);
+  useRealtime("store_settings", load);
+
   return (
     <PublicLayout>
       <div className="max-w-3xl mx-auto px-4 py-20">
-        <h1 className="font-display text-5xl font-semibold mb-6">{t("about.title")}</h1>
-        <p className="text-lg text-muted-foreground leading-relaxed">{t("about.body")}</p>
-        <div className="mt-12 grid gap-8 sm:grid-cols-3 text-sm">
-          <div><h3 className="font-semibold mb-2">Quality</h3><p className="text-muted-foreground">Premium fabrics, ethical sourcing, lasting craftsmanship.</p></div>
-          <div><h3 className="font-semibold mb-2">Timeless</h3><p className="text-muted-foreground">Classic silhouettes that stay relevant year after year.</p></div>
-          <div><h3 className="font-semibold mb-2">Honest</h3><p className="text-muted-foreground">Fair prices, no markups, transparent process.</p></div>
-        </div>
+        <h1 className="font-display text-5xl font-semibold mb-6">{a.title}</h1>
+        <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
+          {a.body}
+        </p>
+        {a.features.length > 0 && (
+          <div className="mt-12 grid gap-8 sm:grid-cols-3 text-sm">
+            {a.features.map((f, i) => (
+              <div key={i}>
+                <h3 className="font-semibold mb-2 text-gold">{f.title}</h3>
+                <p className="text-muted-foreground">{f.body}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </PublicLayout>
   );
