@@ -18,6 +18,8 @@ export const Route = createFileRoute("/admin/settings")({
 type ShippingMethod = { name: string; price: number };
 type PaymentMethod = { name: string; enabled: boolean };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string };
+type PayPal = { enabled: boolean; client_id: string; mode: "sandbox" | "live" };
+type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
 const DEFAULT_HERO: Hero = {
   image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600",
@@ -26,6 +28,8 @@ const DEFAULT_HERO: Hero = {
   cta_text: "Shop now",
   cta_link: "/shop",
 };
+const DEFAULT_PAYPAL: PayPal = { enabled: false, client_id: "", mode: "sandbox" };
+const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
 
 function AdminSettings() {
   const { t } = useT();
@@ -35,6 +39,8 @@ function AdminSettings() {
   const [freeThreshold, setFreeThreshold] = useState<string>("");
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
   const [carousel, setCarousel] = useState<string[]>([]);
+  const [paypal, setPaypal] = useState<PayPal>(DEFAULT_PAYPAL);
+  const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -45,6 +51,8 @@ function AdminSettings() {
       setFreeThreshold(data.free_shipping_threshold?.toString() ?? "");
       if (data.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
       if (Array.isArray(data.carousel_images)) setCarousel(data.carousel_images);
+      if (data.paypal) setPaypal({ ...DEFAULT_PAYPAL, ...(data.paypal as PayPal) });
+      if (data.company) setCompany({ ...DEFAULT_COMPANY, ...(data.company as Company) });
     });
   }, []);
 
