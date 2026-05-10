@@ -52,10 +52,17 @@ function ProductEdit() {
 
   const uploadImage = async (file: File) => {
     if (!user) return;
-    const ext = file.name.split(".").pop();
-    const path = `products/${user.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("upload").upload(path, file);
-    if (error) { toast.error(error.message); return; }
+    const { validateImageFile } = await import("@/lib/security");
+    const v = await validateImageFile(file);
+    if (!v.ok) { toast.error(v.error); return; }
+    const rand = crypto.randomUUID();
+    const path = `products/${user.id}/${Date.now()}-${rand}.${v.ext}`;
+    const { error } = await supabase.storage.from("upload").upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+      cacheControl: "3600",
+    });
+    if (error) { toast.error("העלאה נכשלה"); return; }
     const { data } = supabase.storage.from("upload").getPublicUrl(path);
     setForm((f) => ({ ...f, images: [...f.images, data.publicUrl] }));
   };

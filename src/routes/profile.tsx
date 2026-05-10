@@ -50,13 +50,19 @@ function ProfilePage() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    const { sanitizeText } = await import("@/lib/security");
     setBusy(true);
     const { error } = await supabase.from("profiles").upsert({
       id: user.id,
       email: user.email,
-      full_name: form.full_name,
-      phone: form.phone,
-      address: { address: form.address, city: form.city, zip: form.zip, country: form.country },
+      full_name: sanitizeText(form.full_name, 80),
+      phone: sanitizeText(form.phone, 30),
+      address: {
+        address: sanitizeText(form.address, 200),
+        city: sanitizeText(form.city, 80),
+        zip: sanitizeText(form.zip, 20),
+        country: sanitizeText(form.country, 80),
+      },
     });
     setBusy(false);
     if (error) toast.error(error.message);

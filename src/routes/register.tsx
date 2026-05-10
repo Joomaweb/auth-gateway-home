@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
+import { checkPassword, isValidEmail, sanitizeText, GENERIC_SIGNUP_ERROR } from "@/lib/security";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,43 +31,46 @@ function RegisterPage() {
     e.preventDefault();
     setError(null);
 
+    const cleanName = sanitizeText(fullName, 80);
+    const cleanEmail = email.trim().toLowerCase();
+
+    if (cleanName.length < 2) {
+      setError("שם חייב להכיל לפחות 2 תווים");
+      return;
+    }
+    if (!isValidEmail(cleanEmail)) {
+      setError("כתובת אימייל לא תקינה");
+      return;
+    }
     if (password !== confirm) {
       setError("הסיסמאות אינן תואמות");
       return;
     }
-    if (password.length < 6) {
-      setError("הסיסמה חייבת להכיל לפחות 6 תווים");
+    const pw = checkPassword(password);
+    if (!pw.ok) {
+      setError(pw.error!);
       return;
     }
 
     setLoading(true);
     const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
+      email: cleanEmail,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: cleanName },
         emailRedirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
       },
     });
 
     if (signUpError) {
       setLoading(false);
-      setError(signUpError.message);
-      toast.error(signUpError.message);
+      // Generic error to avoid account enumeration.
+      setError(GENERIC_SIGNUP_ERROR);
+      toast.error(GENERIC_SIGNUP_ERROR);
       return;
     }
 
-    const userId = data.user?.id;
-    if (userId) {
-      const { error: profileError } = await supabase.from("profiles").insert({
-        id: userId,
-        full_name: fullName,
-        email,
-      });
-      if (profileError && !profileError.message.includes("duplicate")) {
-        console.error("profile insert error:", profileError);
-      }
-    }
+    // Profile row is created by a DB trigger (handle_new_user). No client insert.
 
     setLoading(false);
 
@@ -76,7 +80,7 @@ function RegisterPage() {
       return;
     }
 
-    toast.success("Account created");
+    toast.success("נרשמת בהצלחה");
     navigate({ to: "/" });
   };
 
