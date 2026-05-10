@@ -854,17 +854,18 @@ function ProductEdit() {
           </section>
         )}
 
-        <div className="flex gap-3 sticky bottom-0 bg-background/95 backdrop-blur py-3 border-t z-10">
-          <Button type="submit" disabled={busy} className="flex-1">
-            {busy ? "Saving..." : t("common.save")}
-          </Button>
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sticky bottom-0 bg-background/90 backdrop-blur-xl py-4 -mx-2 px-2 border-t z-10">
           <Button
             type="button"
             variant="outline"
             onClick={() => navigate({ to: "/admin/products" })}
             disabled={busy}
+            className="sm:w-40 h-11 rounded-full"
           >
             {t("common.cancel")}
+          </Button>
+          <Button type="submit" disabled={busy} className="flex-1 h-11 rounded-full bg-gradient-gold text-gold-foreground hover:opacity-90 ring-gold-soft font-semibold tracking-wide">
+            {busy ? "שומר..." : t("common.save")}
           </Button>
         </div>
       </form>
