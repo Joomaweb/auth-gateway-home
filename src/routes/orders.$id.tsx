@@ -202,3 +202,88 @@ function OrderDetailPage() {
     </PublicLayout>
   );
 }
+
+const STEP_ICONS = {
+  preparing: Package,
+  awaiting_shipment: Clock,
+  in_transit: Truck,
+  delivered: CheckCircle2,
+} as const;
+
+function ShipmentTimeline({ order, t }: { order: Order; t: (k: string) => string }) {
+  const current = (order.shipment_status as ShipmentStatus) ?? "preparing";
+  const currentIdx = SHIPMENT_STEPS.indexOf(current);
+  return (
+    <div className="mt-4 border rounded-lg p-5 bg-card">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-semibold flex items-center gap-2">
+          <Truck className="h-4 w-4" /> {t("shipment.title")}
+        </h3>
+        {order.shipment_updated_at && (
+          <span className="text-xs text-muted-foreground">
+            {t("shipment.lastUpdate")}: {new Date(order.shipment_updated_at).toLocaleString()}
+          </span>
+        )}
+      </div>
+
+      <ol className="grid grid-cols-4 gap-2">
+        {SHIPMENT_STEPS.map((step, idx) => {
+          const Icon = STEP_ICONS[step];
+          const reached = idx <= currentIdx;
+          const active = idx === currentIdx;
+          return (
+            <li key={step} className="flex flex-col items-center text-center">
+              <div className="relative w-full flex items-center justify-center">
+                {idx > 0 && (
+                  <span
+                    className={`absolute start-0 end-1/2 top-1/2 -translate-y-1/2 h-0.5 ${
+                      idx <= currentIdx ? "bg-primary" : "bg-border"
+                    }`}
+                  />
+                )}
+                {idx < SHIPMENT_STEPS.length - 1 && (
+                  <span
+                    className={`absolute start-1/2 end-0 top-1/2 -translate-y-1/2 h-0.5 ${
+                      idx < currentIdx ? "bg-primary" : "bg-border"
+                    }`}
+                  />
+                )}
+                <span
+                  className={`relative z-10 inline-flex h-9 w-9 items-center justify-center rounded-full border-2 transition-colors ${
+                    reached ? "bg-primary text-primary-foreground border-primary" : "bg-background text-muted-foreground"
+                  } ${active ? "ring-2 ring-primary/30 ring-offset-2 ring-offset-background" : ""}`}
+                >
+                  <Icon className="h-4 w-4" />
+                </span>
+              </div>
+              <span className={`mt-2 text-[11px] sm:text-xs font-medium ${reached ? "text-foreground" : "text-muted-foreground"}`}>
+                {t(`shipment.${step}`)}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+
+      {(order.tracking_number || order.tracking_url) && (
+        <div className="mt-4 pt-4 border-t flex flex-wrap items-center gap-3 text-sm">
+          {order.tracking_number && (
+            <div>
+              <span className="text-muted-foreground">{t("shipment.tracking")}: </span>
+              <span className="font-mono">{order.tracking_number}</span>
+            </div>
+          )}
+          {order.tracking_url && (
+            <a
+              href={order.tracking_url}
+              target="_blank"
+              rel="noreferrer"
+              className="ms-auto inline-flex items-center gap-1 text-primary hover:underline"
+            >
+              {t("shipment.openTracking")} →
+            </a>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
