@@ -129,6 +129,8 @@ function OrderDetailPage() {
           </div>
         </div>
 
+        <ShipmentTimeline order={order} t={t} />
+
         <div className="mt-4 grid sm:grid-cols-2 gap-3">
           {a && (
             <div className="border rounded-lg p-4 bg-card">
