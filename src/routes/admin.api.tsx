@@ -381,6 +381,8 @@ curl '${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc' \\
         </CardContent>
       </Card>
 
+      <RealtimeTester />
+
       <Tabs defaultValue="rn" className="w-full">
         <TabsList className="bg-muted/60">
           <TabsTrigger value="rn">React Native</TabsTrigger>
