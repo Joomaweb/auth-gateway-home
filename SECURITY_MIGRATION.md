@@ -155,9 +155,38 @@ create table if not exists public.store_settings (
 );
 insert into public.store_settings (id) values (1) on conflict (id) do nothing;
 
--- Add hero/carousel columns for homepage management (idempotent)
+-- Add hero/carousel/paypal/company columns for homepage management (idempotent)
 alter table public.store_settings add column if not exists hero jsonb;
 alter table public.store_settings add column if not exists carousel_images jsonb not null default '[]';
+alter table public.store_settings add column if not exists paypal jsonb not null default '{"enabled":false,"client_id":"","mode":"sandbox"}'::jsonb;
+alter table public.store_settings add column if not exists company jsonb not null default '{"name":"","address":"","email":"","phone":"","tax_id":"","logo":"","invoice_prefix":"INV"}'::jsonb;
+
+-- Orders: invoice number, subtotal, shipping, paypal capture data
+alter table public.orders add column if not exists subtotal       numeric(10,2) not null default 0;
+alter table public.orders add column if not exists shipping       numeric(10,2) not null default 0;
+alter table public.orders add column if not exists tax            numeric(10,2) not null default 0;
+alter table public.orders add column if not exists invoice_number text unique;
+alter table public.orders add column if not exists paypal_order_id   text;
+alter table public.orders add column if not exists paypal_capture_id text;
+alter table public.orders add column if not exists paid_at        timestamptz;
+
+-- Auto-generate invoice numbers like INV-2025-000001
+create sequence if not exists public.invoice_seq;
+create or replace function public.tg_set_invoice_number()
+returns trigger language plpgsql as $$
+declare
+  prefix text;
+begin
+  if new.invoice_number is null then
+    select coalesce(company->>'invoice_prefix','INV') into prefix from public.store_settings where id = 1;
+    new.invoice_number := coalesce(prefix,'INV') || '-' || to_char(now(),'YYYY') || '-' ||
+      lpad(nextval('public.invoice_seq')::text, 6, '0');
+  end if;
+  return new;
+end $$;
+drop trigger if exists set_invoice_number on public.orders;
+create trigger set_invoice_number before insert on public.orders
+for each row execute function public.tg_set_invoice_number();
 
 -- 3. SECURITY DEFINER FUNCTION (avoids recursive RLS) ---------------------
 create or replace function public.has_role(_user_id uuid, _role public.app_role)
