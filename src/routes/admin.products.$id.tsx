@@ -45,6 +45,19 @@ function withTimeout<T>(promise: PromiseLike<T>, message: string) {
   ]);
 }
 
+function productSaveErrorMessage(err: unknown) {
+  const supabaseError = err as { message?: string; details?: string; hint?: string; code?: string };
+  const raw = [supabaseError.message, supabaseError.details, supabaseError.hint, supabaseError.code]
+    .filter(Boolean)
+    .join(" · ") || (err instanceof Error ? err.message : String(err));
+
+  if (/row-level security|permission|denied|42501|unauthorized|not authorized/i.test(raw)) {
+    return "אין הרשאה לבצע פעולה זו. ודא שהמשתמש מחובר כאדמין ושיש RLS מתאים ל-products ול-product_variants.";
+  }
+  if (/timeout|לוקח יותר מדי זמן/i.test(raw)) return raw;
+  return `שגיאה בשמירת המוצר: ${raw}`;
+}
+
 function slugify(s: string) {
   const base = s
     .toLowerCase()
