@@ -5,6 +5,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { useT } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useRealtime } from "@/hooks/use-realtime";
 
 type Search = { category?: string; sort?: string };
 
