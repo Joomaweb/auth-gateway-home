@@ -1,0 +1,101 @@
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
+import { PublicLayout } from "@/components/layout/PublicLayout";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/lib/supabase";
+import { useT } from "@/lib/i18n";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/profile")({
+  component: ProfilePage,
+});
+
+function ProfilePage() {
+  const { user, loading } = useAuth();
+  const { t } = useT();
+  const navigate = useNavigate();
+  const [form, setForm] = useState({
+    full_name: "",
+    phone: "",
+    address: "",
+    city: "",
+    zip: "",
+    country: "",
+  });
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/login" });
+  }, [loading, user, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
+      if (data) {
+        setForm({
+          full_name: data.full_name ?? "",
+          phone: data.phone ?? "",
+          address: data.address?.address ?? "",
+          city: data.address?.city ?? "",
+          zip: data.address?.zip ?? "",
+          country: data.address?.country ?? "",
+        });
+      }
+    });
+  }, [user]);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setBusy(true);
+    const { error } = await supabase.from("profiles").upsert({
+      id: user.id,
+      email: user.email,
+      full_name: form.full_name,
+      phone: form.phone,
+      address: { address: form.address, city: form.city, zip: form.zip, country: form.country },
+    });
+    setBusy(false);
+    if (error) toast.error(error.message);
+    else toast.success(t("profile.saved"));
+  };
+
+  if (!user) return null;
+
+  return (
+    <PublicLayout>
+      <div className="max-w-2xl mx-auto px-4 py-12">
+        <h1 className="font-display text-4xl font-semibold mb-8">{t("profile.title")}</h1>
+        <form onSubmit={submit} className="space-y-4 border rounded-lg p-6 bg-card">
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input value={user.email ?? ""} disabled dir="ltr" />
+          </div>
+          <Field label={t("checkout.fullName")} value={form.full_name} onChange={(v) => setForm({ ...form, full_name: v })} />
+          <Field label={t("checkout.phone")} value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} />
+          <Field label={t("checkout.address")} value={form.address} onChange={(v) => setForm({ ...form, address: v })} />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label={t("checkout.city")} value={form.city} onChange={(v) => setForm({ ...form, city: v })} />
+            <Field label={t("checkout.zip")} value={form.zip} onChange={(v) => setForm({ ...form, zip: v })} />
+          </div>
+          <Field label={t("checkout.country")} value={form.country} onChange={(v) => setForm({ ...form, country: v })} />
+          <Button type="submit" disabled={busy} className="w-full">
+            {busy ? t("common.loading") : t("profile.save")}
+          </Button>
+        </form>
+      </div>
+    </PublicLayout>
+  );
+}
+
+function Field({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div className="space-y-2">
+      <Label>{label}</Label>
+      <Input value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
