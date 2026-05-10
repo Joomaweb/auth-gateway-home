@@ -12,6 +12,26 @@ import { toast } from "sonner";
 import { AlertCircle, Plus, Upload, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
+
+const SIZE_RE = /^[A-Za-z0-9\u0590-\u05FF \-/.]{1,12}$/;
+const COLOR_RE = /^[A-Za-z\u0590-\u05FF][A-Za-z\u0590-\u05FF \-]{0,24}$/;
+
+const productSchema = z
+  .object({
+    name: z.string().trim().min(2, "שם המוצר חייב להכיל לפחות 2 תווים").max(200, "שם ארוך מדי (עד 200 תווים)"),
+    description: z.string().trim().max(5000, "תיאור ארוך מדי (עד 5000 תווים)").optional(),
+    price: z.number({ invalid_type_error: "מחיר חייב להיות מספר" }).positive("המחיר חייב להיות גדול מאפס").max(1_000_000, "מחיר לא הגיוני"),
+    sale_price: z.number().nonnegative("מחיר מבצע לא יכול להיות שלילי").max(1_000_000, "מחיר מבצע לא הגיוני").nullable(),
+    images: z.array(z.string().url("כתובת תמונה לא תקינה")).min(1, "חובה תמונה אחת לפחות"),
+    sizes: z.array(z.string()).max(50, "יותר מדי מידות"),
+    colors: z.array(z.string()).max(50, "יותר מדי צבעים"),
+  })
+  .refine((d) => d.sale_price === null || d.sale_price < d.price, {
+    message: "מחיר המבצע חייב להיות נמוך מהמחיר הרגיל",
+    path: ["sale_price"],
+  });
+type FieldErrors = Partial<Record<"name" | "price" | "sale_price" | "images" | "sizes" | "colors" | "stock" | "form", string>>;
 
 export const Route = createFileRoute("/admin/products/$id")({
   component: ProductEdit,
@@ -99,6 +119,7 @@ function ProductEdit() {
   const [loading, setLoading] = useState(!isNew);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   // Load categories + (if editing) the product itself
   useEffect(() => {
