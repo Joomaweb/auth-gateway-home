@@ -57,6 +57,14 @@ function AdminOrderDetail() {
     else { toast.success("Status updated"); setOrder((o) => o ? { ...o, status } : o); }
   };
 
+  const updateShipment = async (patch: Partial<Pick<Order, "shipment_status" | "tracking_number" | "tracking_url">>) => {
+    const payload: Record<string, unknown> = { ...patch, shipment_updated_at: new Date().toISOString() };
+    const { error } = await supabase.from("orders").update(payload).eq("id", id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(t("shipment.notified"));
+    setOrder((o) => o ? { ...o, ...patch, shipment_updated_at: payload.shipment_updated_at as string } : o);
+  };
+
   const del = async () => {
     if (!confirm("Delete order?")) return;
     await supabase.from("order_items").delete().eq("order_id", id);
