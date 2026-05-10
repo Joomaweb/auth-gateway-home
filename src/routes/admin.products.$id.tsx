@@ -12,6 +12,26 @@ import { toast } from "sonner";
 import { AlertCircle, Plus, Upload, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { z } from "zod";
+
+const SIZE_RE = /^[A-Za-z0-9\u0590-\u05FF \-/.]{1,12}$/;
+const COLOR_RE = /^[A-Za-z\u0590-\u05FF][A-Za-z\u0590-\u05FF \-]{0,24}$/;
+
+const productSchema = z
+  .object({
+    name: z.string().trim().min(2, "שם המוצר חייב להכיל לפחות 2 תווים").max(200, "שם ארוך מדי (עד 200 תווים)"),
+    description: z.string().trim().max(5000, "תיאור ארוך מדי (עד 5000 תווים)").optional(),
+    price: z.number({ invalid_type_error: "מחיר חייב להיות מספר" }).positive("המחיר חייב להיות גדול מאפס").max(1_000_000, "מחיר לא הגיוני"),
+    sale_price: z.number().nonnegative("מחיר מבצע לא יכול להיות שלילי").max(1_000_000, "מחיר מבצע לא הגיוני").nullable(),
+    images: z.array(z.string().url("כתובת תמונה לא תקינה")).min(1, "חובה תמונה אחת לפחות"),
+    sizes: z.array(z.string()).max(50, "יותר מדי מידות"),
+    colors: z.array(z.string()).max(50, "יותר מדי צבעים"),
+  })
+  .refine((d) => d.sale_price === null || d.sale_price < d.price, {
+    message: "מחיר המבצע חייב להיות נמוך מהמחיר הרגיל",
+    path: ["sale_price"],
+  });
+type FieldErrors = Partial<Record<"name" | "price" | "sale_price" | "images" | "sizes" | "colors" | "stock" | "form", string>>;
 
 export const Route = createFileRoute("/admin/products/$id")({
   component: ProductEdit,
@@ -99,6 +119,7 @@ function ProductEdit() {
   const [loading, setLoading] = useState(!isNew);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   // Load categories + (if editing) the product itself
   useEffect(() => {
@@ -236,30 +257,86 @@ function ProductEdit() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setSaveError(null);
+    setFieldErrors({});
 
     if (!user) {
       setSaveError("עליך להתחבר כדי לשמור מוצרים.");
       return;
     }
-    const trimmedName = form.name.trim();
-    if (!trimmedName) {
-      setSaveError("שם המוצר נדרש.");
-      return;
-    }
-    const priceNum = Number(form.price);
-    if (!Number.isFinite(priceNum) || priceNum <= 0) {
-      setSaveError("המחיר חייב להיות גדול מאפס.");
-      return;
-    }
+
+    const priceNum = form.price === "" ? NaN : Number(form.price);
     const saleNum = form.sale_price === "" ? null : Number(form.sale_price);
-    if (saleNum !== null && (!Number.isFinite(saleNum) || saleNum < 0)) {
-      setSaveError("מחיר המבצע אינו תקין.");
+
+    const parsed = productSchema.safeParse({
+      name: form.name,
+      description: form.description,
+      price: priceNum,
+      sale_price: saleNum,
+      images: form.images,
+      sizes,
+      colors,
+    });
+
+    const errs: FieldErrors = {};
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const k = issue.path[0] as keyof FieldErrors;
+        if (k && !errs[k]) errs[k] = issue.message;
+      }
+    }
+
+    // size/color format validation
+    const badSize = sizes.find((s) => !SIZE_RE.test(s));
+    if (badSize) errs.sizes = `מידה לא תקינה: "${badSize}" (עד 12 תווים, אותיות/ספרות/מקף)`;
+    if (sizes.length !== new Set(sizes).size) errs.sizes = "יש מידות כפולות";
+
+    const badColor = colors.find((c) => !COLOR_RE.test(c));
+    if (badColor) errs.colors = `שם צבע לא תקין: "${badColor}" (אותיות בלבד, עד 25 תווים)`;
+    if (colors.length !== new Set(colors).size) errs.colors = "יש צבעים כפולים";
+
+    // discount sanity
+    if (Number.isFinite(priceNum) && saleNum !== null) {
+      const discount = ((priceNum - saleNum) / priceNum) * 100;
+      if (discount < 1) errs.sale_price = "ההנחה חייבת להיות לפחות 1% מהמחיר";
+      if (discount > 95) errs.sale_price = "ההנחה גדולה מ-95% — בדוק את המחירים";
+    }
+
+    // variants/stock validation
+    const variantsPreview = (() => {
+      const ss = sizes.length ? sizes : [""];
+      const cc = colors.length ? colors : [""];
+      const out: { key: string; size: string; color: string; stock: number }[] = [];
+      for (const s of ss)
+        for (const c of cc) {
+          if (!s && !c) continue;
+          const stock = stockMap[`${s}|${c}`];
+          out.push({ key: `${s}|${c}`, size: s, color: c, stock: Number.isFinite(stock) ? stock : 0 });
+        }
+      return out;
+    })();
+    if (variantsPreview.length > 0) {
+      const totalStock = variantsPreview.reduce((a, v) => a + (v.stock || 0), 0);
+      const negative = variantsPreview.find((v) => v.stock < 0);
+      const tooBig = variantsPreview.find((v) => v.stock > 100000);
+      const nonInt = variantsPreview.find((v) => !Number.isInteger(v.stock));
+      if (negative) errs.stock = "אין מלאי שלילי";
+      else if (nonInt) errs.stock = "המלאי חייב להיות מספר שלם";
+      else if (tooBig) errs.stock = "מלאי גדול מדי (עד 100,000 ליחידה)";
+      else if (totalStock === 0) errs.stock = "סה״כ המלאי 0 — הזן כמות לפחות לקומבינציה אחת";
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      const first = Object.values(errs)[0];
+      setSaveError(first ?? "יש שגיאות בטופס");
+      toast.error(first ?? "יש שגיאות בטופס");
       return;
     }
 
     setBusy(true);
     try {
       let productId = id;
+      const trimmedName = form.name.trim();
 
       if (isNew) {
         const insertPayload = {
@@ -383,15 +460,20 @@ function ProductEdit() {
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               required
               maxLength={200}
+              className={cn(fieldErrors.name && "border-destructive focus-visible:ring-destructive")}
+              aria-invalid={!!fieldErrors.name}
             />
+            {fieldErrors.name && <p className="text-xs text-destructive">{fieldErrors.name}</p>}
           </div>
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
               rows={4}
+              maxLength={5000}
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
+            <p className="text-xs text-muted-foreground text-end">{form.description.length}/5000</p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="space-y-2">
@@ -403,7 +485,10 @@ function ProductEdit() {
                 value={form.price}
                 onChange={(e) => setForm({ ...form, price: e.target.value })}
                 required
+                className={cn(fieldErrors.price && "border-destructive focus-visible:ring-destructive")}
+                aria-invalid={!!fieldErrors.price}
               />
+              {fieldErrors.price && <p className="text-xs text-destructive">{fieldErrors.price}</p>}
             </div>
             <div className="space-y-2">
               <Label>Sale price</Label>
@@ -414,7 +499,19 @@ function ProductEdit() {
                 value={form.sale_price}
                 onChange={(e) => setForm({ ...form, sale_price: e.target.value })}
                 placeholder="optional"
+                className={cn(fieldErrors.sale_price && "border-destructive focus-visible:ring-destructive")}
+                aria-invalid={!!fieldErrors.sale_price}
               />
+              {(() => {
+                const p = Number(form.price);
+                const s = Number(form.sale_price);
+                if (form.sale_price !== "" && Number.isFinite(p) && Number.isFinite(s) && p > 0 && s < p) {
+                  const pct = Math.round(((p - s) / p) * 100);
+                  return <p className="text-xs text-gold">חיסכון של {pct}%</p>;
+                }
+                return null;
+              })()}
+              {fieldErrors.sale_price && <p className="text-xs text-destructive">{fieldErrors.sale_price}</p>}
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
@@ -458,6 +555,9 @@ function ProductEdit() {
         <section className="bg-card border rounded-lg p-6 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-semibold">Images</h2>
+            {fieldErrors.images && (
+              <p className="text-xs text-destructive">{fieldErrors.images}</p>
+            )}
             <span className="text-xs text-muted-foreground">
               PNG / JPG · max 5MB · first image is the cover
             </span>
@@ -544,6 +644,9 @@ function ProductEdit() {
         {/* Sizes */}
         <section className="bg-card border rounded-lg p-6 space-y-3">
           <h2 className="font-semibold">Sizes</h2>
+          {fieldErrors.sizes && (
+            <p className="text-xs text-destructive">{fieldErrors.sizes}</p>
+          )}
           <div>
             <div className="text-xs text-muted-foreground mb-2">Letter sizes</div>
             <div className="flex flex-wrap gap-2">
@@ -623,6 +726,9 @@ function ProductEdit() {
         {/* Colors */}
         <section className="bg-card border rounded-lg p-6 space-y-3">
           <h2 className="font-semibold">Colors</h2>
+          {fieldErrors.colors && (
+            <p className="text-xs text-destructive">{fieldErrors.colors}</p>
+          )}
           <div className="flex flex-wrap gap-2">
             {COLOR_PRESETS.map((c) => {
               const active = colors.includes(c.name);
@@ -685,6 +791,9 @@ function ProductEdit() {
         {(sizes.length > 0 || colors.length > 0) && (
           <section className="bg-card border rounded-lg p-6 space-y-3">
             <h2 className="font-semibold">Stock per variant</h2>
+            {fieldErrors.stock && (
+              <p className="text-xs text-destructive">{fieldErrors.stock}</p>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full text-sm border">
                 <thead className="bg-muted/40">
