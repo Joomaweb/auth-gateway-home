@@ -196,6 +196,58 @@ function AdminSettings() {
           ))}
         </section>
 
+        {/* PayPal */}
+        <section className="border rounded-lg p-6 bg-card space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">PayPal (Credit card + PayPal)</h3>
+            <label className="flex items-center gap-2 text-sm">
+              Enabled <Switch checked={paypal.enabled} onCheckedChange={(v) => setPaypal({ ...paypal, enabled: v })} />
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Adds a "PayPal" payment option at checkout with both PayPal balance and Debit/Credit Card buttons.
+            Get your Client ID at <a className="underline" href="https://developer.paypal.com/dashboard/applications" target="_blank" rel="noreferrer">developer.paypal.com</a>.
+          </p>
+          <div className="grid sm:grid-cols-[1fr_180px] gap-3">
+            <div className="space-y-2">
+              <Label>PayPal Client ID</Label>
+              <Input
+                value={paypal.client_id}
+                onChange={(e) => setPaypal({ ...paypal, client_id: e.target.value.trim() })}
+                placeholder="AYSq3RDGsmBLJE-otTkBtM-jBRd1TCQwFf9RGfwddNXWz0uFU9ztymylOhRS"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Mode</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={paypal.mode}
+                onChange={(e) => setPaypal({ ...paypal, mode: e.target.value as "sandbox" | "live" })}
+              >
+                <option value="sandbox">Sandbox (test)</option>
+                <option value="live">Live (real money)</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {/* Company / Invoice details */}
+        <section className="border rounded-lg p-6 bg-card space-y-4">
+          <h3 className="font-semibold">Company details (for invoices / receipts)</h3>
+          <p className="text-xs text-muted-foreground">These appear on every invoice PDF.</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-2"><Label>Company name</Label><Input value={company.name} onChange={(e) => setCompany({ ...company, name: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Tax ID / VAT number</Label><Input value={company.tax_id} onChange={(e) => setCompany({ ...company, tax_id: e.target.value })} /></div>
+            <div className="space-y-2 sm:col-span-2"><Label>Address</Label><Input value={company.address} onChange={(e) => setCompany({ ...company, address: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Email</Label><Input type="email" value={company.email} onChange={(e) => setCompany({ ...company, email: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Phone</Label><Input value={company.phone} onChange={(e) => setCompany({ ...company, phone: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Invoice number prefix</Label><Input value={company.invoice_prefix} onChange={(e) => setCompany({ ...company, invoice_prefix: e.target.value.toUpperCase() })} placeholder="INV" /></div>
+            <div className="space-y-2 sm:col-span-2"><Label>Logo URL (optional)</Label><Input value={company.logo} onChange={(e) => setCompany({ ...company, logo: e.target.value })} /></div>
+          </div>
+        </section>
+
         <Button type="submit" disabled={busy} className="w-full">{busy ? "Saving..." : t("common.save")}</Button>
       </form>
     </div>
