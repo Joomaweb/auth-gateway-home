@@ -291,18 +291,21 @@ function ProductEdit() {
           featured: form.featured,
           active: form.active,
         };
-        const { error } = await withTimeout(
-          supabase.from("products").update(updatePayload).eq("id", id),
+        const { data, error } = await withTimeout(
+          supabase.from("products").update(updatePayload).eq("id", id).select("id").single(),
           "עדכון המוצר לוקח יותר מדי זמן. בדוק הרשאות RLS וחיבור ל-Supabase.",
         );
         if (error) throw error;
+        if (!data?.id) throw new Error("לא נמצא מוצר לעדכון או שאין הרשאה לעדכן אותו.");
       }
 
-      const { error: delErr } = await withTimeout(
-        supabase.from("product_variants").delete().eq("product_id", productId),
-        "עדכון הווריאנטים לוקח יותר מדי זמן. בדוק הרשאות לטבלת product_variants.",
-      );
-      if (delErr) throw delErr;
+      if (!isNew) {
+        const { error: delErr } = await withTimeout(
+          supabase.from("product_variants").delete().eq("product_id", productId),
+          "עדכון הווריאנטים לוקח יותר מדי זמן. בדוק הרשאות לטבלת product_variants.",
+        );
+        if (delErr) throw delErr;
+      }
 
       const variants = buildVariants();
       if (variants.length) {
@@ -323,10 +326,7 @@ function ProductEdit() {
       navigate({ to: "/admin/products" });
     } catch (err) {
       console.error("Save failed:", err);
-      const raw = err instanceof Error ? err.message : String(err);
-      const friendly = /row-level security|permission|denied/i.test(raw)
-        ? "אין הרשאה לבצע פעולה זו. ודא שאתה מחובר כאדמין."
-        : `שגיאה בשמירת המוצר: ${raw}`;
+      const friendly = productSaveErrorMessage(err);
       setSaveError(friendly);
       toast.error(friendly);
     } finally {
