@@ -77,6 +77,13 @@ function OrderDetailPage() {
             prevShipment.current = newStatus;
             toast.success(`${t("shipment.notified")}: ${t(`shipment.${newStatus}` as never)}`);
           }
+          const newPay = next.status ?? null;
+          if (newPay && newPay !== prevPayStatus.current) {
+            prevPayStatus.current = newPay;
+            if (newPay === "paid") toast.success("Payment confirmed");
+            else if (newPay === "failed") toast.error("Payment failed");
+            else if (newPay === "cancelled") toast.error("Payment cancelled");
+          }
         },
       )
       .subscribe();
