@@ -27,6 +27,7 @@ function HomePage() {
   const { t } = useT();
   const [featured, setFeatured] = useState<ProductCardData[]>([]);
   const [sale, setSale] = useState<ProductCardData[]>([]);
+  const [newest, setNewest] = useState<ProductCardData[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
   const [slides, setSlides] = useState<string[]>([]);
@@ -40,6 +41,10 @@ function HomePage() {
       .select("id,name,price,sale_price,images")
       .eq("active", true).not("sale_price", "is", null).limit(8)
       .then(({ data }) => setSale((data ?? []) as ProductCardData[]));
+    supabase.from("products")
+      .select("id,name,price,sale_price,images,created_at")
+      .eq("active", true).order("created_at", { ascending: false }).limit(6)
+      .then(({ data }) => setNewest((data ?? []) as ProductCardData[]));
     supabase.from("categories").select("*")
       .then(({ data }) => setCats((data ?? []) as Category[]));
     supabase.from("store_settings").select("hero,carousel_images").eq("id", 1).maybeSingle()
