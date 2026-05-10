@@ -57,31 +57,33 @@ export function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-40 glass-panel border-b border-transparent">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-6">
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side={lang === "he" ? "right" : "left"} className="w-72">
-              <SheetHeader>
-                <SheetTitle className="font-display tracking-[0.3em] text-gradient-gold">ATELIER</SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col gap-4 mt-6">
-                <NavLinks onClick={() => setOpen(false)} />
-              </nav>
-            </SheetContent>
-          </Sheet>
-          <Link to="/" className="font-display text-xl font-semibold tracking-[0.25em] text-gradient-gold">
-            ATELIER
-          </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <NavLinks />
-          </nav>
-        </div>
+    <header className="sticky top-0 z-40">
+      <div className="glass-panel border-b border-gold/10 shadow-soft">
+        <div className="max-w-7xl mx-auto px-4 h-16 md:h-[72px] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-6">
+            <Sheet open={open} onOpenChange={setOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden -ms-2">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side={lang === "he" ? "right" : "left"} className="w-72 glass-panel">
+                <SheetHeader>
+                  <SheetTitle className="font-display tracking-[0.3em] text-gradient-gold">ATELIER</SheetTitle>
+                </SheetHeader>
+                <div className="hairline-gold my-4" />
+                <nav className="flex flex-col gap-1 mt-2">
+                  <NavLinks onClick={() => setOpen(false)} />
+                </nav>
+              </SheetContent>
+            </Sheet>
+            <Link to="/" className="font-display text-lg md:text-xl font-semibold tracking-[0.25em] text-gradient-gold">
+              ATELIER
+            </Link>
+            <nav className="hidden md:flex items-center gap-7">
+              <NavLinks />
+            </nav>
+          </div>
 
         <div className="flex items-center gap-1">
           <Button
