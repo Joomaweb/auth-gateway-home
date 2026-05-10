@@ -259,8 +259,28 @@ function ProductEdit() {
     setSaveError(null);
     setFieldErrors({});
 
-    if (!user) {
-      setSaveError("עליך להתחבר כדי לשמור מוצרים.");
+    // 1) Verify session
+    const { data: sessionData, error: sessionErr } = await supabase.auth.getUser();
+    if (sessionErr || !sessionData?.user) {
+      console.error("auth.getUser failed:", sessionErr);
+      const msg = "עליך להתחבר כדי לשמור מוצרים.";
+      setSaveError(msg);
+      toast.error(msg);
+      return;
+    }
+
+    // 2) Verify admin role from public.user_roles
+    const { data: roleData, error: roleErr } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", sessionData.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (roleErr) console.error("user_roles check failed:", roleErr);
+    if (!roleData) {
+      const msg = "אין לך הרשאת מנהל";
+      setSaveError(msg);
+      toast.error(msg);
       return;
     }
 
@@ -399,7 +419,7 @@ function ProductEdit() {
         if (insErr) throw insErr;
       }
 
-      toast.success(isNew ? "המוצר נוצר בהצלחה" : "המוצר עודכן בהצלחה");
+      toast.success("המוצר נשמר בהצלחה");
       navigate({ to: "/admin/products" });
     } catch (err) {
       console.error("Save failed:", err);
@@ -432,27 +452,29 @@ function ProductEdit() {
   }
 
   return (
-    <div className="max-w-4xl space-y-6">
-      <div>
-        <Link to="/admin/products" className="text-sm text-muted-foreground hover:text-foreground">
+    <div className="max-w-4xl mx-auto space-y-8 pb-24">
+      <div className="relative overflow-hidden rounded-2xl border bg-card/60 backdrop-blur p-6 sm:p-8 shadow-sm">
+        <div className="absolute inset-x-0 top-0 h-px hairline-gold" />
+        <Link to="/admin/products" className="text-xs uppercase tracking-[0.25em] text-muted-foreground hover:text-foreground transition">
           ← {t("admin.products")}
         </Link>
-        <h1 className="font-display text-3xl font-semibold mt-2">
+        <h1 className="font-display text-3xl sm:text-4xl font-semibold mt-3 text-gradient-gold">
           {isNew ? t("admin.addProduct") : t("admin.editProduct")}
         </h1>
+        <p className="text-sm text-muted-foreground mt-1">ניהול פרטי מוצר, תמונות, מידות, צבעים ומלאי.</p>
       </div>
 
       {saveError && (
-        <div className="border border-destructive/40 bg-destructive/10 text-destructive rounded-lg p-3 flex gap-2 text-sm">
+        <div className="border border-destructive/40 bg-destructive/10 text-destructive rounded-xl p-4 flex gap-2 text-sm shadow-sm">
           <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-          <span>{saveError}</span>
+          <span className="break-words">{saveError}</span>
         </div>
       )}
 
       <form onSubmit={submit} className="space-y-6">
         {/* Basics */}
-        <section className="bg-card border rounded-lg p-6 space-y-4">
-          <h2 className="font-semibold">Details</h2>
+        <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-4">
+          <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Details</h2>
           <div className="space-y-2">
             <Label>Product name *</Label>
             <Input
@@ -552,9 +574,9 @@ function ProductEdit() {
         </section>
 
         {/* Images */}
-        <section className="bg-card border rounded-lg p-6 space-y-3">
+        <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Images</h2>
+            <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Images</h2>
             {fieldErrors.images && (
               <p className="text-xs text-destructive">{fieldErrors.images}</p>
             )}
@@ -642,8 +664,8 @@ function ProductEdit() {
         </section>
 
         {/* Sizes */}
-        <section className="bg-card border rounded-lg p-6 space-y-3">
-          <h2 className="font-semibold">Sizes</h2>
+        <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
+          <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Sizes</h2>
           {fieldErrors.sizes && (
             <p className="text-xs text-destructive">{fieldErrors.sizes}</p>
           )}
@@ -724,8 +746,8 @@ function ProductEdit() {
         </section>
 
         {/* Colors */}
-        <section className="bg-card border rounded-lg p-6 space-y-3">
-          <h2 className="font-semibold">Colors</h2>
+        <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
+          <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Colors</h2>
           {fieldErrors.colors && (
             <p className="text-xs text-destructive">{fieldErrors.colors}</p>
           )}
@@ -789,8 +811,8 @@ function ProductEdit() {
 
         {/* Stock matrix */}
         {(sizes.length > 0 || colors.length > 0) && (
-          <section className="bg-card border rounded-lg p-6 space-y-3">
-            <h2 className="font-semibold">Stock per variant</h2>
+          <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
+            <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Stock per variant</h2>
             {fieldErrors.stock && (
               <p className="text-xs text-destructive">{fieldErrors.stock}</p>
             )}
@@ -832,17 +854,18 @@ function ProductEdit() {
           </section>
         )}
 
-        <div className="flex gap-3 sticky bottom-0 bg-background/95 backdrop-blur py-3 border-t z-10">
-          <Button type="submit" disabled={busy} className="flex-1">
-            {busy ? "Saving..." : t("common.save")}
-          </Button>
+        <div className="flex flex-col-reverse sm:flex-row gap-3 sticky bottom-0 bg-background/90 backdrop-blur-xl py-4 -mx-2 px-2 border-t z-10">
           <Button
             type="button"
             variant="outline"
             onClick={() => navigate({ to: "/admin/products" })}
             disabled={busy}
+            className="sm:w-40 h-11 rounded-full"
           >
             {t("common.cancel")}
+          </Button>
+          <Button type="submit" disabled={busy} className="flex-1 h-11 rounded-full bg-gradient-gold text-gold-foreground hover:opacity-90 ring-gold-soft font-semibold tracking-wide">
+            {busy ? "שומר..." : t("common.save")}
           </Button>
         </div>
       </form>
