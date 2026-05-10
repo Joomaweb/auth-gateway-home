@@ -157,7 +157,7 @@ function OrderDetailPage() {
         {order.notes && (
           <div className="border rounded-lg p-4 bg-card mt-4 text-sm">
             <div className="text-xs uppercase text-muted-foreground mb-1">Notes</div>
-            {(order as { notes?: string }).notes}
+            {order.notes}
           </div>
         )}
       </div>
