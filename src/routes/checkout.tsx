@@ -187,6 +187,41 @@ function CheckoutPage() {
     }
   };
 
+  const chargeSquare = useServerFn(chargeSquarePayment);
+
+  const handleSquareTokenized = async (sourceId: string, verificationToken?: string) => {
+    if (!user || items.length === 0) return;
+    if (!requiredFieldsValid) {
+      toast.error("Please fill in all shipping fields before paying");
+      return;
+    }
+    if (!settings?.square) return;
+    setBusy(true);
+    try {
+      // 1) Create the pending order in Supabase
+      const id = await persistOrder(false);
+      // 2) Charge via Square server function with reference_id = order.id
+      const res = await chargeSquare({
+        data: {
+          orderId: id,
+          sourceId,
+          verificationToken,
+          amount: total,
+          currency: "USD",
+          mode: settings.square.mode,
+        },
+      });
+      if (!res.ok) throw new Error(res.error);
+      clear();
+      toast.success("Payment successful");
+      navigate({ to: "/orders/$id", params: { id } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Payment failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (items.length === 0) {
     return (
       <PublicLayout>
@@ -198,6 +233,7 @@ function CheckoutPage() {
   }
 
   const isPayPal = payment === "PayPal";
+  const isSquare = payment === "Square";
 
   return (
     <PublicLayout>
