@@ -25,8 +25,12 @@ type Order = InvoiceOrder & {
   tracking_number?: string | null;
   tracking_url?: string | null;
   shipment_updated_at?: string | null;
+  square_payment_id?: string | null;
+  square_status?: string | null;
 };
 type Item = InvoiceItem & { id: string };
+
+type SquareSettings = { enabled: boolean; application_id: string; location_id: string; mode: "sandbox" | "production" };
 
 function OrderDetailPage() {
   const { id } = Route.useParams();
