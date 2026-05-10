@@ -105,7 +105,7 @@ export const chargeSquarePayment = createServerFn({ method: "POST" })
 
     if (!res.ok) {
       const firstErr = json?.errors?.[0];
-      const reason = classifyError(firstErr?.category, firstErr?.code) as ChargeOutcome["reason"];
+      const reason = classifyError(firstErr?.category, firstErr?.code);
       const message = firstErr?.detail ?? `Square error ${res.status}`;
       await persistOrderUpdate(data.orderId, {
         status: "failed",
