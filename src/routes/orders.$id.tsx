@@ -189,6 +189,38 @@ function OrderDetailPage() {
           </div>
         </div>
 
+        <PaymentStatusBanner
+          isPaid={isPaid}
+          isFailed={isFailed}
+          isCancelled={isCancelled}
+          isPending={isPending}
+          isSquareOrder={isSquareOrder}
+          squareStatus={order.square_status}
+        />
+
+        {canRetrySquare && squareSettings && (
+          <div className="mt-4 border rounded-lg p-5 bg-card space-y-3">
+            <h3 className="font-semibold flex items-center gap-2">
+              <CreditCard className="h-4 w-4" /> Retry payment
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Enter your card details to retry the payment for this order.
+            </p>
+            <SquareCheckout
+              applicationId={squareSettings.application_id}
+              locationId={squareSettings.location_id}
+              mode={squareSettings.mode}
+              amount={total}
+              currency="USD"
+              disabled={retrying}
+              onTokenized={handleRetryTokenized}
+            />
+            <div className="flex gap-2 pt-2">
+              <Link to="/shop"><Button variant="outline" size="sm">Continue shopping</Button></Link>
+            </div>
+          </div>
+        )}
+
         <ShipmentTimeline order={order} t={t as (k: string) => string} />
 
         <div className="mt-4 grid sm:grid-cols-2 gap-3">
