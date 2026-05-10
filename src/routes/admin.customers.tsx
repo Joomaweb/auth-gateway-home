@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
+import { useRealtime } from "@/hooks/use-realtime";
 
 export const Route = createFileRoute("/admin/customers")({
   component: AdminCustomers,
@@ -21,7 +22,7 @@ function AdminCustomers() {
   const [rows, setRows] = useState<Profile[]>([]);
   const [orderCounts, setOrderCounts] = useState<Record<string, { count: number; total: number }>>({});
 
-  useEffect(() => {
+  const load = () => {
     supabase.from("profiles").select("*").order("created_at", { ascending: false }).then(async ({ data }) => {
       const list = (data ?? []) as Profile[];
       setRows(list);
@@ -35,7 +36,10 @@ function AdminCustomers() {
       });
       setOrderCounts(map);
     });
-  }, []);
+  };
+  useEffect(load, []);
+  useRealtime("profiles", load);
+  useRealtime("orders", load);
 
   return (
     <div className="space-y-6">

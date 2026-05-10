@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
+import { useRealtime } from "@/hooks/use-realtime";
 
 export const Route = createFileRoute("/orders")({
   component: OrdersPage,
@@ -27,7 +28,7 @@ function OrdersPage() {
     if (!loading && !user) navigate({ to: "/login" });
   }, [loading, user, navigate]);
 
-  useEffect(() => {
+  const load = () => {
     if (!user) return;
     supabase
       .from("orders")
@@ -35,7 +36,9 @@ function OrdersPage() {
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .then(({ data }) => setOrders((data ?? []) as Order[]));
-  }, [user]);
+  };
+  useEffect(load, [user]);
+  useRealtime("orders", load, user ? `user_id=eq.${user.id}` : undefined);
 
   if (!user) return null;
 
