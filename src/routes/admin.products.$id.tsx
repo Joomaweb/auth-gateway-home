@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { AlertCircle, Plus, Upload, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
-import { useIsAdmin } from "@/hooks/use-role";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/products/$id")({
@@ -37,6 +36,14 @@ const COLOR_PRESETS: { name: string; hex: string }[] = [
 ];
 
 const NONE = "__none__";
+const QUERY_TIMEOUT_MS = 15000;
+
+function withTimeout<T>(promise: PromiseLike<T>, message: string) {
+  return Promise.race<T>([
+    Promise.resolve(promise),
+    new Promise<T>((_, reject) => window.setTimeout(() => reject(new Error(message)), QUERY_TIMEOUT_MS)),
+  ]);
+}
 
 function slugify(s: string) {
   const base = s
