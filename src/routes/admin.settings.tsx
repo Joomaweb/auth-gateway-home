@@ -55,6 +55,7 @@ function AdminSettings() {
       if (data.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
       if (Array.isArray(data.carousel_images)) setCarousel(data.carousel_images);
       if (data.paypal) setPaypal({ ...DEFAULT_PAYPAL, ...(data.paypal as PayPal) });
+      if (data.square) setSquare({ ...DEFAULT_SQUARE, ...(data.square as Square) });
       if (data.company) setCompany({ ...DEFAULT_COMPANY, ...(data.company as Company) });
     });
   }, []);
