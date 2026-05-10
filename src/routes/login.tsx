@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
+import { GENERIC_AUTH_ERROR, isValidEmail } from "@/lib/security";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,16 +28,20 @@ function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!isValidEmail(email) || password.length < 1 || password.length > 128) {
+      setError(GENERIC_AUTH_ERROR);
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
     setLoading(false);
     if (error) {
-      const msg =
-        error.message.includes("Invalid login")
-          ? "אימייל או סיסמה שגויים"
-          : error.message;
-      setError(msg);
-      toast.error(msg);
+      // Generic message — never reveal whether email exists.
+      setError(GENERIC_AUTH_ERROR);
+      toast.error(GENERIC_AUTH_ERROR);
       return;
     }
     toast.success("Signed in");
