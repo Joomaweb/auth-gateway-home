@@ -42,6 +42,7 @@ function AdminSettings() {
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
   const [carousel, setCarousel] = useState<string[]>([]);
   const [paypal, setPaypal] = useState<PayPal>(DEFAULT_PAYPAL);
+  const [square, setSquare] = useState<Square>(DEFAULT_SQUARE);
   const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
   const [busy, setBusy] = useState(false);
 
