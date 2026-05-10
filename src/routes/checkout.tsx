@@ -11,12 +11,16 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { PayPalCheckout } from "@/components/checkout/PayPalCheckout";
+import { SquareCheckout } from "@/components/checkout/SquareCheckout";
+import { useServerFn } from "@tanstack/react-start";
+import { chargeSquarePayment } from "@/lib/square.functions";
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
 
 type PayPalCfg = { enabled: boolean; client_id: string; mode: "sandbox" | "live" };
+type SquareCfg = { enabled: boolean; application_id: string; location_id: string; mode: "sandbox" | "production" };
 
 function CheckoutPage() {
   const { t } = useT();
