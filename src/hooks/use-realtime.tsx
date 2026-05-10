@@ -17,9 +17,8 @@ export function useRealtime(
     const ch = supabase
       .channel(channelName)
       .on(
-        "postgres_changes",
-        // @ts-expect-error supabase-js types are loose for filter
-        { event: "*", schema: "public", table, ...(filter ? { filter } : {}) },
+        "postgres_changes" as never,
+        { event: "*", schema: "public", table, ...(filter ? { filter } : {}) } as never,
         () => onChange(),
       )
       .subscribe();
