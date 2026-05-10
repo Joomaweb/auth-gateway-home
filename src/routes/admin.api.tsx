@@ -4,9 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Check, KeyRound, Radio, ShieldCheck, Smartphone } from "lucide-react";
+import { Copy, Check, KeyRound, Radio, ShieldCheck, Smartphone, Play, Square, Trash2, Activity } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useRef } from "react";
 
 export const Route = createFileRoute("/admin/api")({
   component: AdminApi,
