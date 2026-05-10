@@ -155,6 +155,10 @@ create table if not exists public.store_settings (
 );
 insert into public.store_settings (id) values (1) on conflict (id) do nothing;
 
+-- Add hero/carousel columns for homepage management (idempotent)
+alter table public.store_settings add column if not exists hero jsonb;
+alter table public.store_settings add column if not exists carousel_images jsonb not null default '[]';
+
 -- 3. SECURITY DEFINER FUNCTION (avoids recursive RLS) ---------------------
 create or replace function public.has_role(_user_id uuid, _role public.app_role)
 returns boolean
