@@ -11,10 +11,16 @@ export const Route = createFileRoute("/admin/orders/$id")({
 });
 
 const statuses = ["pending", "paid", "shipped", "delivered", "cancelled"];
+const shipmentStatuses = ["preparing", "awaiting_shipment", "in_transit", "delivered"] as const;
+type ShipmentStatus = typeof shipmentStatuses[number];
 
 type Order = {
   id: string;
   status: string;
+  shipment_status: ShipmentStatus | null;
+  tracking_number: string | null;
+  tracking_url: string | null;
+  shipment_updated_at: string | null;
   subtotal: number;
   shipping: number;
   total: number;
