@@ -473,8 +473,8 @@ function ProductEdit() {
 
       <form onSubmit={submit} className="space-y-6">
         {/* Basics */}
-        <section className="bg-card border rounded-lg p-6 space-y-4">
-          <h2 className="font-semibold">Details</h2>
+        <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-4">
+          <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Details</h2>
           <div className="space-y-2">
             <Label>Product name *</Label>
             <Input
@@ -574,9 +574,9 @@ function ProductEdit() {
         </section>
 
         {/* Images */}
-        <section className="bg-card border rounded-lg p-6 space-y-3">
+        <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold">Images</h2>
+            <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Images</h2>
             {fieldErrors.images && (
               <p className="text-xs text-destructive">{fieldErrors.images}</p>
             )}
@@ -664,8 +664,8 @@ function ProductEdit() {
         </section>
 
         {/* Sizes */}
-        <section className="bg-card border rounded-lg p-6 space-y-3">
-          <h2 className="font-semibold">Sizes</h2>
+        <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
+          <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Sizes</h2>
           {fieldErrors.sizes && (
             <p className="text-xs text-destructive">{fieldErrors.sizes}</p>
           )}
@@ -746,8 +746,8 @@ function ProductEdit() {
         </section>
 
         {/* Colors */}
-        <section className="bg-card border rounded-lg p-6 space-y-3">
-          <h2 className="font-semibold">Colors</h2>
+        <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
+          <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Colors</h2>
           {fieldErrors.colors && (
             <p className="text-xs text-destructive">{fieldErrors.colors}</p>
           )}
@@ -811,8 +811,8 @@ function ProductEdit() {
 
         {/* Stock matrix */}
         {(sizes.length > 0 || colors.length > 0) && (
-          <section className="bg-card border rounded-lg p-6 space-y-3">
-            <h2 className="font-semibold">Stock per variant</h2>
+          <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
+            <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Stock per variant</h2>
             {fieldErrors.stock && (
               <p className="text-xs text-destructive">{fieldErrors.stock}</p>
             )}
