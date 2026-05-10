@@ -367,38 +367,6 @@ function CheckoutPage() {
               </p>
             )}
           </div>
-              )}
-            </section>
-          </div>
-
-          <div className="border rounded-lg p-6 bg-card h-fit sticky top-20 space-y-3">
-            <h2 className="font-semibold mb-2">{t("orders.order")}</h2>
-            <div className="space-y-2 text-sm max-h-64 overflow-auto">
-              {items.map((i) => (
-                <div key={`${i.productId}-${i.variantId}`} className="flex justify-between gap-2">
-                  <span className="truncate">{i.name} × {i.qty}</span>
-                  <span className="whitespace-nowrap">${(i.qty * i.price).toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-            <div className="border-t pt-3 space-y-2 text-sm">
-              <div className="flex justify-between"><span>{t("cart.subtotal")}</span><span>${subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>{t("cart.shipping")}</span><span>${shippingFee.toFixed(2)}</span></div>
-              <div className="flex justify-between text-base font-semibold border-t pt-2">
-                <span>{t("cart.total")}</span><span>${total.toFixed(2)}</span>
-              </div>
-            </div>
-            {!isPayPal && (
-              <Button type="submit" className="w-full" size="lg" disabled={busy || !payment}>
-                {busy ? t("common.loading") : t("checkout.placeOrder")}
-              </Button>
-            )}
-            {isPayPal && (
-              <p className="text-xs text-muted-foreground text-center">
-                Use the PayPal buttons to complete your payment.
-              </p>
-            )}
-          </div>
         </form>
       </div>
     </PublicLayout>
