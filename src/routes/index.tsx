@@ -6,6 +6,7 @@ import { ProductCard, type ProductCardData } from "@/components/product/ProductC
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { useRealtime } from "@/hooks/use-realtime";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -30,7 +31,7 @@ function HomePage() {
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
   const [slides, setSlides] = useState<string[]>([]);
 
-  useEffect(() => {
+  const load = () => {
     supabase.from("products")
       .select("id,name,price,sale_price,images,featured")
       .eq("active", true).eq("featured", true).limit(12)
@@ -46,7 +47,11 @@ function HomePage() {
         if (data?.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
         if (Array.isArray(data?.carousel_images)) setSlides(data.carousel_images as string[]);
       });
-  }, []);
+  };
+  useEffect(load, []);
+  useRealtime("products", load);
+  useRealtime("categories", load);
+  useRealtime("store_settings", load);
 
   return (
     <PublicLayout>

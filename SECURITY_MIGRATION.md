@@ -233,6 +233,35 @@ alter table public.conversations    enable row level security;
 alter table public.messages         enable row level security;
 alter table public.store_settings   enable row level security;
 
+-- 6b. ENABLE REALTIME -----------------------------------------------------
+-- Add tables to the supabase_realtime publication so the browser receives
+-- INSERT / UPDATE / DELETE events. Idempotent: skip if already a member.
+do $$
+declare t text;
+begin
+  for t in select unnest(array[
+    'products','product_variants','categories','store_settings',
+    'orders','order_items','conversations','messages','profiles'
+  ]) loop
+    if not exists (
+      select 1 from pg_publication_tables
+      where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = t
+    ) then
+      execute format('alter publication supabase_realtime add table public.%I', t);
+    end if;
+  end loop;
+end $$;
+
+-- Ensure full row payload on UPDATE/DELETE so filters work correctly
+alter table public.products         replica identity full;
+alter table public.product_variants replica identity full;
+alter table public.categories       replica identity full;
+alter table public.store_settings   replica identity full;
+alter table public.orders           replica identity full;
+alter table public.messages         replica identity full;
+alter table public.conversations    replica identity full;
+alter table public.profiles         replica identity full;
+
 -- 7. RLS POLICIES ---------------------------------------------------------
 -- profiles
 drop policy if exists "profiles self select" on public.profiles;

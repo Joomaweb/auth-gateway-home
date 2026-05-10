@@ -5,6 +5,7 @@ import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useRealtime } from "@/hooks/use-realtime";
 
 export const Route = createFileRoute("/admin/products")({
   component: AdminProducts,
@@ -30,6 +31,7 @@ function AdminProducts() {
     );
   };
   useEffect(load, []);
+  useRealtime("products", load);
 
   const del = async (id: string) => {
     if (!confirm("Delete this product?")) return;
