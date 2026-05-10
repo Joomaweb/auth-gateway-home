@@ -100,6 +100,50 @@ function AdminOrderDetail() {
         </div>
       </div>
 
+      <div className="border rounded-lg p-4 bg-card space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold">{t("shipment.title")}</h3>
+          {order.shipment_updated_at && (
+            <span className="text-xs text-muted-foreground">
+              {t("shipment.lastUpdate")}: {new Date(order.shipment_updated_at).toLocaleString()}
+            </span>
+          )}
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Select
+            value={order.shipment_status ?? "preparing"}
+            onValueChange={(v) => updateShipment({ shipment_status: v as ShipmentStatus })}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {shipmentStatuses.map((s) => (
+                <SelectItem key={s} value={s}>{t(`shipment.${s}` as never)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <input
+            type="text"
+            placeholder={t("shipment.tracking")}
+            defaultValue={order.tracking_number ?? ""}
+            onBlur={(e) => {
+              const v = e.target.value.trim() || null;
+              if (v !== (order.tracking_number ?? null)) updateShipment({ tracking_number: v });
+            }}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+          />
+          <input
+            type="url"
+            placeholder={t("shipment.trackingUrl")}
+            defaultValue={order.tracking_url ?? ""}
+            onBlur={(e) => {
+              const v = e.target.value.trim() || null;
+              if (v !== (order.tracking_url ?? null)) updateShipment({ tracking_url: v });
+            }}
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm sm:col-span-2"
+          />
+        </div>
+      </div>
+
       <div className="border rounded-lg p-4 bg-card">
         <h3 className="font-semibold mb-3">Items</h3>
         <div className="space-y-2 text-sm">
