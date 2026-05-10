@@ -11,12 +11,16 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import { PayPalCheckout } from "@/components/checkout/PayPalCheckout";
+import { SquareCheckout } from "@/components/checkout/SquareCheckout";
+import { useServerFn } from "@tanstack/react-start";
+import { chargeSquarePayment } from "@/lib/square.functions";
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
 
 type PayPalCfg = { enabled: boolean; client_id: string; mode: "sandbox" | "live" };
+type SquareCfg = { enabled: boolean; application_id: string; location_id: string; mode: "sandbox" | "production" };
 
 function CheckoutPage() {
   const { t } = useT();
@@ -31,6 +35,7 @@ function CheckoutPage() {
     payment_methods: { name: string; enabled: boolean }[];
     free_shipping_threshold: number | null;
     paypal: PayPalCfg;
+    square: SquareCfg;
   } | null>(null);
 
   const [form, setForm] = useState({
@@ -54,16 +59,21 @@ function CheckoutPage() {
     supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
       if (data) {
         const paypal: PayPalCfg = data.paypal ?? { enabled: false, client_id: "", mode: "sandbox" };
+        const square: SquareCfg = data.square ?? { enabled: false, application_id: "", location_id: "", mode: "sandbox" };
         const baseMethods = (data.payment_methods ?? [{ name: "Cash on Delivery", enabled: true }]) as { name: string; enabled: boolean }[];
-        // Inject "PayPal" as the first option if enabled and client_id present
-        const methods = paypal.enabled && paypal.client_id
-          ? [{ name: "PayPal", enabled: true }, ...baseMethods.filter(m => m.name !== "PayPal")]
-          : baseMethods;
+        let methods = baseMethods;
+        if (square.enabled && square.application_id && square.location_id) {
+          methods = [{ name: "Square", enabled: true }, ...methods.filter((m) => m.name !== "Square")];
+        }
+        if (paypal.enabled && paypal.client_id) {
+          methods = [{ name: "PayPal", enabled: true }, ...methods.filter((m) => m.name !== "PayPal")];
+        }
         setSettings({
           shipping_methods: data.shipping_methods ?? [{ name: "Standard", price: 5.99 }],
           payment_methods: methods,
           free_shipping_threshold: data.free_shipping_threshold,
           paypal,
+          square,
         });
         const enabled = methods.find((m) => m.enabled);
         if (enabled) setPayment(enabled.name);
@@ -177,6 +187,41 @@ function CheckoutPage() {
     }
   };
 
+  const chargeSquare = useServerFn(chargeSquarePayment);
+
+  const handleSquareTokenized = async (sourceId: string, verificationToken?: string) => {
+    if (!user || items.length === 0) return;
+    if (!requiredFieldsValid) {
+      toast.error("Please fill in all shipping fields before paying");
+      return;
+    }
+    if (!settings?.square) return;
+    setBusy(true);
+    try {
+      // 1) Create the pending order in Supabase
+      const id = await persistOrder(false);
+      // 2) Charge via Square server function with reference_id = order.id
+      const res = await chargeSquare({
+        data: {
+          orderId: id,
+          sourceId,
+          verificationToken,
+          amount: total,
+          currency: "USD",
+          mode: settings.square.mode,
+        },
+      });
+      if (!res.ok) throw new Error(res.error);
+      clear();
+      toast.success("Payment successful");
+      navigate({ to: "/orders/$id", params: { id } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Payment failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   if (items.length === 0) {
     return (
       <PublicLayout>
@@ -188,6 +233,7 @@ function CheckoutPage() {
   }
 
   const isPayPal = payment === "PayPal";
+  const isSquare = payment === "Square";
 
   return (
     <PublicLayout>
@@ -240,6 +286,9 @@ function CheckoutPage() {
                     {m.name === "PayPal" && (
                       <span className="text-xs text-muted-foreground">PayPal · Credit / Debit card</span>
                     )}
+                    {m.name === "Square" && (
+                      <span className="text-xs text-muted-foreground">Credit / Debit card</span>
+                    )}
                   </label>
                 ))}
               </div>
@@ -256,6 +305,26 @@ function CheckoutPage() {
                     currency="USD"
                     disabled={!requiredFieldsValid || busy}
                     onApproved={handlePayPalApproved}
+                  />
+                  {!requiredFieldsValid && (
+                    <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
+                  )}
+                </div>
+              )}
+
+              {isSquare && settings?.square && (
+                <div className="mt-5 pt-5 border-t space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Pay securely with your credit or debit card via Square.
+                  </p>
+                  <SquareCheckout
+                    applicationId={settings.square.application_id}
+                    locationId={settings.square.location_id}
+                    mode={settings.square.mode}
+                    amount={total}
+                    currency="USD"
+                    disabled={!requiredFieldsValid || busy}
+                    onTokenized={handleSquareTokenized}
                   />
                   {!requiredFieldsValid && (
                     <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
@@ -282,7 +351,7 @@ function CheckoutPage() {
                 <span>{t("cart.total")}</span><span>${total.toFixed(2)}</span>
               </div>
             </div>
-            {!isPayPal && (
+            {!isPayPal && !isSquare && (
               <Button type="submit" className="w-full" size="lg" disabled={busy || !payment}>
                 {busy ? t("common.loading") : t("checkout.placeOrder")}
               </Button>
@@ -290,6 +359,11 @@ function CheckoutPage() {
             {isPayPal && (
               <p className="text-xs text-muted-foreground text-center">
                 Use the PayPal buttons to complete your payment.
+              </p>
+            )}
+            {isSquare && (
+              <p className="text-xs text-muted-foreground text-center">
+                Enter your card details and press Pay above.
               </p>
             )}
           </div>

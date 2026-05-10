@@ -19,6 +19,7 @@ type ShippingMethod = { name: string; price: number };
 type PaymentMethod = { name: string; enabled: boolean };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string };
 type PayPal = { enabled: boolean; client_id: string; mode: "sandbox" | "live" };
+type Square = { enabled: boolean; application_id: string; location_id: string; mode: "sandbox" | "production" };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
 const DEFAULT_HERO: Hero = {
@@ -29,6 +30,7 @@ const DEFAULT_HERO: Hero = {
   cta_link: "/shop",
 };
 const DEFAULT_PAYPAL: PayPal = { enabled: false, client_id: "", mode: "sandbox" };
+const DEFAULT_SQUARE: Square = { enabled: false, application_id: "", location_id: "", mode: "sandbox" };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
 
 function AdminSettings() {
@@ -40,6 +42,7 @@ function AdminSettings() {
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
   const [carousel, setCarousel] = useState<string[]>([]);
   const [paypal, setPaypal] = useState<PayPal>(DEFAULT_PAYPAL);
+  const [square, setSquare] = useState<Square>(DEFAULT_SQUARE);
   const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
   const [busy, setBusy] = useState(false);
 
@@ -52,6 +55,7 @@ function AdminSettings() {
       if (data.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
       if (Array.isArray(data.carousel_images)) setCarousel(data.carousel_images);
       if (data.paypal) setPaypal({ ...DEFAULT_PAYPAL, ...(data.paypal as PayPal) });
+      if (data.square) setSquare({ ...DEFAULT_SQUARE, ...(data.square as Square) });
       if (data.company) setCompany({ ...DEFAULT_COMPANY, ...(data.company as Company) });
     });
   }, []);
@@ -83,6 +87,7 @@ function AdminSettings() {
       hero,
       carousel_images: carousel,
       paypal,
+      square,
       company,
     });
     setBusy(false);
@@ -230,6 +235,57 @@ function AdminSettings() {
                 <option value="live">Live (real money)</option>
               </select>
             </div>
+          </div>
+        </section>
+
+        {/* Square */}
+        <section className="border rounded-lg p-6 bg-card space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">Square (Credit / Debit card)</h3>
+            <label className="flex items-center gap-2 text-sm">
+              Enabled <Switch checked={square.enabled} onCheckedChange={(v) => setSquare({ ...square, enabled: v })} />
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Adds a "Square" payment option at checkout using Square Web Payments SDK. Get your Application ID and Location ID at <a className="underline" href="https://developer.squareup.com/apps" target="_blank" rel="noreferrer">developer.squareup.com</a>. The Access Token and Webhook Signature Key are stored as server secrets.
+          </p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>Application ID</Label>
+              <Input
+                value={square.application_id}
+                onChange={(e) => setSquare({ ...square, application_id: e.target.value.trim() })}
+                placeholder="sq0idp-..."
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Location ID</Label>
+              <Input
+                value={square.location_id}
+                onChange={(e) => setSquare({ ...square, location_id: e.target.value.trim() })}
+                placeholder="LBS8C676K329X"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Mode</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={square.mode}
+                onChange={(e) => setSquare({ ...square, mode: e.target.value as "sandbox" | "production" })}
+              >
+                <option value="sandbox">Sandbox (test)</option>
+                <option value="production">Production (real money)</option>
+              </select>
+            </div>
+          </div>
+          <div className="text-xs text-muted-foreground border-t pt-3">
+            Webhook URL (paste into Square Developer Dashboard → Webhooks → Notification URL):
+            <code className="block mt-1 p-2 bg-muted rounded break-all">https://auth-gateway-home.lovable.app/api/public/square-webhook</code>
+            Subscribe to events: <strong>payment.created</strong>, <strong>payment.updated</strong>.
           </div>
         </section>
 
