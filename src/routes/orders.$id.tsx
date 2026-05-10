@@ -5,9 +5,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { Download, Package, Clock, Truck, CheckCircle2 } from "lucide-react";
+import { Download, Package, Clock, Truck, CheckCircle2, AlertTriangle, XCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { downloadInvoicePdf, type Company, type InvoiceOrder, type InvoiceItem } from "@/lib/invoice-pdf";
+import { SquareCheckout } from "@/components/checkout/SquareCheckout";
+import { useServerFn } from "@tanstack/react-start";
+import { chargeSquarePayment } from "@/lib/square.functions";
 
 export const Route = createFileRoute("/orders/$id")({
   component: OrderDetailPage,
