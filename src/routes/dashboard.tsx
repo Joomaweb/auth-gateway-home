@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { LogOut, User, Mail, Calendar, CheckCircle2 } from "lucide-react";
+import { ImageUploader } from "@/components/image-uploader";
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({ meta: [{ title: "לוח הבקרה" }] }),
