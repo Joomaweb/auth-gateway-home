@@ -87,6 +87,7 @@ function AdminSettings() {
       hero,
       carousel_images: carousel,
       paypal,
+      square,
       company,
     });
     setBusy(false);
