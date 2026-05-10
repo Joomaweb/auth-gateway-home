@@ -14,22 +14,23 @@ export function ProductCard({ p }: { p: ProductCardData }) {
   const onSale = p.sale_price && p.sale_price < p.price;
   return (
     <Link to="/product/$id" params={{ id: p.id }} className="group block">
-      <div className="aspect-[3/4] overflow-hidden rounded-md bg-muted relative shadow-soft">
+      <div className="aspect-[3/4] overflow-hidden rounded-lg bg-muted relative shadow-soft transition-all duration-500 group-hover:shadow-elegant group-hover:ring-1 group-hover:ring-gold/50">
         <img
           src={img}
           alt={p.name}
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 group-hover:opacity-0"
+          className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:opacity-0 group-hover:scale-105"
         />
         <img
           src={img2}
           alt=""
           aria-hidden
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-0 transition-opacity duration-700 group-hover:opacity-100"
+          className="absolute inset-0 w-full h-full object-cover scale-110 opacity-0 transition-all duration-700 group-hover:opacity-100 group-hover:scale-100"
         />
+        <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
         {onSale && (
-          <span className="absolute top-3 start-3 bg-gradient-gold text-gold-foreground text-[10px] tracking-widest uppercase font-semibold px-2.5 py-1 rounded-sm shadow-soft">
+          <span className="absolute top-3 start-3 bg-gradient-gold text-gold-foreground text-[10px] tracking-[0.2em] uppercase font-semibold px-2.5 py-1 rounded-sm shadow-soft">
             Sale
           </span>
         )}
