@@ -5,9 +5,12 @@ import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { Download, Package, Clock, Truck, CheckCircle2 } from "lucide-react";
+import { Download, Package, Clock, Truck, CheckCircle2, AlertTriangle, XCircle, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { downloadInvoicePdf, type Company, type InvoiceOrder, type InvoiceItem } from "@/lib/invoice-pdf";
+import { SquareCheckout } from "@/components/checkout/SquareCheckout";
+import { useServerFn } from "@tanstack/react-start";
+import { chargeSquarePayment } from "@/lib/square.functions";
 
 export const Route = createFileRoute("/orders/$id")({
   component: OrderDetailPage,
@@ -22,8 +25,12 @@ type Order = InvoiceOrder & {
   tracking_number?: string | null;
   tracking_url?: string | null;
   shipment_updated_at?: string | null;
+  square_payment_id?: string | null;
+  square_status?: string | null;
 };
 type Item = InvoiceItem & { id: string };
+
+type SquareSettings = { enabled: boolean; application_id: string; location_id: string; mode: "sandbox" | "production" };
 
 function OrderDetailPage() {
   const { id } = Route.useParams();
@@ -33,7 +40,11 @@ function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [company, setCompany] = useState<Company>({});
+  const [squareSettings, setSquareSettings] = useState<SquareSettings | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const prevShipment = useRef<ShipmentStatus | null>(null);
+  const prevPayStatus = useRef<string | null>(null);
+  const chargeSquare = useServerFn(chargeSquarePayment);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -45,10 +56,12 @@ function OrderDetailPage() {
       const o = data as Order | null;
       setOrder(o);
       prevShipment.current = (o?.shipment_status as ShipmentStatus) ?? null;
+      prevPayStatus.current = o?.status ?? null;
     });
     supabase.from("order_items").select("*").eq("order_id", id).then(({ data }) => setItems((data ?? []) as Item[]));
-    supabase.from("store_settings").select("company").eq("id", 1).maybeSingle().then(({ data }) => {
+    supabase.from("store_settings").select("company,square").eq("id", 1).maybeSingle().then(({ data }) => {
       if (data?.company) setCompany(data.company as Company);
+      if (data?.square) setSquareSettings(data.square as SquareSettings);
     });
 
     const channel = supabase
@@ -63,6 +76,13 @@ function OrderDetailPage() {
           if (newStatus && newStatus !== prevShipment.current) {
             prevShipment.current = newStatus;
             toast.success(`${t("shipment.notified")}: ${t(`shipment.${newStatus}` as never)}`);
+          }
+          const newPay = next.status ?? null;
+          if (newPay && newPay !== prevPayStatus.current) {
+            prevPayStatus.current = newPay;
+            if (newPay === "paid") toast.success("Payment confirmed");
+            else if (newPay === "failed") toast.error("Payment failed");
+            else if (newPay === "cancelled") toast.error("Payment cancelled");
           }
         },
       )
@@ -87,8 +107,48 @@ function OrderDetailPage() {
   const tax = Number(order.tax ?? 0);
   const total = Number(order.total ?? 0);
   const isPaid = order.status === "paid" || !!order.paid_at;
+  const isFailed = order.status === "failed";
+  const isCancelled = order.status === "cancelled";
+  const isPending = !isPaid && !isFailed && !isCancelled;
+  const isSquareOrder = order.payment_method === "Square";
+  const canRetrySquare =
+    isSquareOrder && (isFailed || isCancelled) &&
+    !!squareSettings && squareSettings.enabled &&
+    !!squareSettings.application_id && !!squareSettings.location_id;
 
   const handleDownload = () => downloadInvoicePdf(order, items, company);
+
+  const handleRetryTokenized = async (sourceId: string, verificationToken?: string) => {
+    if (!squareSettings || !order) return;
+    setRetrying(true);
+    try {
+      const res = await chargeSquare({
+        data: {
+          orderId: order.id,
+          sourceId,
+          verificationToken,
+          amount: total,
+          currency: "USD",
+          mode: squareSettings.mode,
+        },
+      });
+      if (res.ok) {
+        toast.success(res.status === "paid" ? "Payment successful" : "Payment pending");
+        const { data } = await supabase.from("orders").select("*").eq("id", order.id).maybeSingle();
+        if (data) setOrder(data as Order);
+      } else {
+        const msg = res.reason === "cancelled" ? "Payment cancelled — try again."
+          : res.reason === "card_declined" ? `Card declined: ${res.message}`
+          : res.reason === "network_error" ? "Network error — try again."
+          : res.message || "Payment failed";
+        toast.error(msg);
+        const { data } = await supabase.from("orders").select("*").eq("id", order.id).maybeSingle();
+        if (data) setOrder(data as Order);
+      }
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   return (
     <PublicLayout>
@@ -128,6 +188,38 @@ function OrderDetailPage() {
             <div className={`font-semibold capitalize ${isPaid ? "text-green-600" : ""}`}>{order.status}</div>
           </div>
         </div>
+
+        <PaymentStatusBanner
+          isPaid={isPaid}
+          isFailed={isFailed}
+          isCancelled={isCancelled}
+          isPending={isPending}
+          isSquareOrder={isSquareOrder}
+          squareStatus={order.square_status}
+        />
+
+        {canRetrySquare && squareSettings && (
+          <div className="mt-4 border rounded-lg p-5 bg-card space-y-3">
+            <h3 className="font-semibold flex items-center gap-2">
+              <CreditCard className="h-4 w-4" /> Retry payment
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Enter your card details to retry the payment for this order.
+            </p>
+            <SquareCheckout
+              applicationId={squareSettings.application_id}
+              locationId={squareSettings.location_id}
+              mode={squareSettings.mode}
+              amount={total}
+              currency="USD"
+              disabled={retrying}
+              onTokenized={handleRetryTokenized}
+            />
+            <div className="flex gap-2 pt-2">
+              <Link to="/shop"><Button variant="outline" size="sm">Continue shopping</Button></Link>
+            </div>
+          </div>
+        )}
 
         <ShipmentTimeline order={order} t={t as (k: string) => string} />
 
@@ -286,4 +378,60 @@ function ShipmentTimeline({ order, t }: { order: Order; t: (k: string) => string
       )}
     </div>
   );
+}
+
+function PaymentStatusBanner({
+  isPaid, isFailed, isCancelled, isPending, isSquareOrder, squareStatus,
+}: {
+  isPaid: boolean; isFailed: boolean; isCancelled: boolean; isPending: boolean;
+  isSquareOrder: boolean; squareStatus?: string | null;
+}) {
+  if (isPaid) {
+    return (
+      <div className="mt-4 flex items-start gap-3 rounded-lg border border-green-300 bg-green-50 dark:bg-green-950/30 p-4">
+        <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+        <div>
+          <div className="font-semibold text-green-700 dark:text-green-400">Payment received</div>
+          <div className="text-sm text-muted-foreground">Thank you! Your order is confirmed and being prepared.</div>
+        </div>
+      </div>
+    );
+  }
+  if (isFailed) {
+    return (
+      <div className="mt-4 flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <XCircle className="h-5 w-5 text-destructive mt-0.5" />
+        <div>
+          <div className="font-semibold text-destructive">Payment failed</div>
+          <div className="text-sm text-muted-foreground">
+            {isSquareOrder ? `Square reported: ${squareStatus ?? "FAILED"}. ` : ""}
+            You can retry below or use a different card.
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (isCancelled) {
+    return (
+      <div className="mt-4 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4">
+        <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+        <div>
+          <div className="font-semibold text-amber-700 dark:text-amber-400">Payment cancelled</div>
+          <div className="text-sm text-muted-foreground">The transaction was cancelled. You can retry below.</div>
+        </div>
+      </div>
+    );
+  }
+  if (isPending) {
+    return (
+      <div className="mt-4 flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
+        <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
+        <div>
+          <div className="font-semibold">Awaiting payment confirmation</div>
+          <div className="text-sm text-muted-foreground">We'll update this page automatically when the payment clears.</div>
+        </div>
+      </div>
+    );
+  }
+  return null;
 }
