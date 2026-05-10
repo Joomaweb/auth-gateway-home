@@ -59,16 +59,21 @@ function CheckoutPage() {
     supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
       if (data) {
         const paypal: PayPalCfg = data.paypal ?? { enabled: false, client_id: "", mode: "sandbox" };
+        const square: SquareCfg = data.square ?? { enabled: false, application_id: "", location_id: "", mode: "sandbox" };
         const baseMethods = (data.payment_methods ?? [{ name: "Cash on Delivery", enabled: true }]) as { name: string; enabled: boolean }[];
-        // Inject "PayPal" as the first option if enabled and client_id present
-        const methods = paypal.enabled && paypal.client_id
-          ? [{ name: "PayPal", enabled: true }, ...baseMethods.filter(m => m.name !== "PayPal")]
-          : baseMethods;
+        let methods = baseMethods;
+        if (square.enabled && square.application_id && square.location_id) {
+          methods = [{ name: "Square", enabled: true }, ...methods.filter((m) => m.name !== "Square")];
+        }
+        if (paypal.enabled && paypal.client_id) {
+          methods = [{ name: "PayPal", enabled: true }, ...methods.filter((m) => m.name !== "PayPal")];
+        }
         setSettings({
           shipping_methods: data.shipping_methods ?? [{ name: "Standard", price: 5.99 }],
           payment_methods: methods,
           free_shipping_threshold: data.free_shipping_threshold,
           paypal,
+          square,
         });
         const enabled = methods.find((m) => m.enabled);
         if (enabled) setPayment(enabled.name);
