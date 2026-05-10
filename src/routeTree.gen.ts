@@ -32,6 +32,7 @@ import { Route as AdminApiRouteImport } from './routes/admin.api'
 import { Route as AdminAboutRouteImport } from './routes/admin.about'
 import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.index'
 import { Route as AdminOrdersIndexRouteImport } from './routes/admin.orders.index'
+import { Route as ApiPublicSquareWebhookRouteImport } from './routes/api/public/square-webhook'
 import { Route as AdminProductsIdRouteImport } from './routes/admin.products.$id'
 import { Route as AdminOrdersNewRouteImport } from './routes/admin.orders.new'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
@@ -151,6 +152,11 @@ const AdminOrdersIndexRoute = AdminOrdersIndexRouteImport.update({
   path: '/orders/',
   getParentRoute: () => AdminRoute,
 } as any)
+const ApiPublicSquareWebhookRoute = ApiPublicSquareWebhookRouteImport.update({
+  id: '/api/public/square-webhook',
+  path: '/api/public/square-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminProductsIdRoute = AdminProductsIdRouteImport.update({
   id: '/products/$id',
   path: '/products/$id',
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/admin/orders/$id': typeof AdminOrdersIdRoute
   '/admin/orders/new': typeof AdminOrdersNewRoute
   '/admin/products/$id': typeof AdminProductsIdRoute
+  '/api/public/square-webhook': typeof ApiPublicSquareWebhookRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
 }
@@ -219,6 +226,7 @@ export interface FileRoutesByTo {
   '/admin/orders/$id': typeof AdminOrdersIdRoute
   '/admin/orders/new': typeof AdminOrdersNewRoute
   '/admin/products/$id': typeof AdminProductsIdRoute
+  '/api/public/square-webhook': typeof ApiPublicSquareWebhookRoute
   '/admin/orders': typeof AdminOrdersIndexRoute
   '/admin/products': typeof AdminProductsIndexRoute
 }
@@ -248,6 +256,7 @@ export interface FileRoutesById {
   '/admin/orders/$id': typeof AdminOrdersIdRoute
   '/admin/orders/new': typeof AdminOrdersNewRoute
   '/admin/products/$id': typeof AdminProductsIdRoute
+  '/api/public/square-webhook': typeof ApiPublicSquareWebhookRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
 }
@@ -278,6 +287,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/orders/new'
     | '/admin/products/$id'
+    | '/api/public/square-webhook'
     | '/admin/orders/'
     | '/admin/products/'
   fileRoutesByTo: FileRoutesByTo
@@ -305,6 +315,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/orders/new'
     | '/admin/products/$id'
+    | '/api/public/square-webhook'
     | '/admin/orders'
     | '/admin/products'
   id:
@@ -333,6 +344,7 @@ export interface FileRouteTypes {
     | '/admin/orders/$id'
     | '/admin/orders/new'
     | '/admin/products/$id'
+    | '/api/public/square-webhook'
     | '/admin/orders/'
     | '/admin/products/'
   fileRoutesById: FileRoutesById
@@ -351,6 +363,7 @@ export interface RootRouteChildren {
   RegisterRoute: typeof RegisterRoute
   ShopRoute: typeof ShopRoute
   ProductIdRoute: typeof ProductIdRoute
+  ApiPublicSquareWebhookRoute: typeof ApiPublicSquareWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -516,6 +529,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/public/square-webhook': {
+      id: '/api/public/square-webhook'
+      path: '/api/public/square-webhook'
+      fullPath: '/api/public/square-webhook'
+      preLoaderRoute: typeof ApiPublicSquareWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/products/$id': {
       id: '/admin/products/$id'
       path: '/products/$id'
@@ -597,6 +617,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegisterRoute: RegisterRoute,
   ShopRoute: ShopRoute,
   ProductIdRoute: ProductIdRoute,
+  ApiPublicSquareWebhookRoute: ApiPublicSquareWebhookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
