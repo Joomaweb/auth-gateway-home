@@ -15,7 +15,6 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InboxRouteImport } from './routes/inbox'
-import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CheckoutRouteImport } from './routes/checkout'
 import { Route as CartRouteImport } from './routes/cart'
@@ -52,11 +51,6 @@ const LoginRoute = LoginRouteImport.update({
 const InboxRoute = InboxRouteImport.update({
   id: '/inbox',
   path: '/inbox',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -101,7 +95,6 @@ export interface FileRoutesByFullPath {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
-  '/dashboard': typeof DashboardRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/orders': typeof OrdersRouteWithChildren
@@ -117,7 +110,6 @@ export interface FileRoutesByTo {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
-  '/dashboard': typeof DashboardRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/orders': typeof OrdersRouteWithChildren
@@ -134,7 +126,6 @@ export interface FileRoutesById {
   '/cart': typeof CartRoute
   '/checkout': typeof CheckoutRoute
   '/contact': typeof ContactRoute
-  '/dashboard': typeof DashboardRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/orders': typeof OrdersRouteWithChildren
@@ -152,7 +143,6 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
-    | '/dashboard'
     | '/inbox'
     | '/login'
     | '/orders'
@@ -168,7 +158,6 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
-    | '/dashboard'
     | '/inbox'
     | '/login'
     | '/orders'
@@ -184,7 +173,6 @@ export interface FileRouteTypes {
     | '/cart'
     | '/checkout'
     | '/contact'
-    | '/dashboard'
     | '/inbox'
     | '/login'
     | '/orders'
@@ -201,7 +189,6 @@ export interface RootRouteChildren {
   CartRoute: typeof CartRoute
   CheckoutRoute: typeof CheckoutRoute
   ContactRoute: typeof ContactRoute
-  DashboardRoute: typeof DashboardRoute
   InboxRoute: typeof InboxRoute
   LoginRoute: typeof LoginRoute
   OrdersRoute: typeof OrdersRouteWithChildren
@@ -253,13 +240,6 @@ declare module '@tanstack/react-router' {
       path: '/inbox'
       fullPath: '/inbox'
       preLoaderRoute: typeof InboxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -331,7 +311,6 @@ const rootRouteChildren: RootRouteChildren = {
   CartRoute: CartRoute,
   CheckoutRoute: CheckoutRoute,
   ContactRoute: ContactRoute,
-  DashboardRoute: DashboardRoute,
   InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
   OrdersRoute: OrdersRouteWithChildren,

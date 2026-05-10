@@ -76,8 +76,8 @@ function RegisterPage() {
       return;
     }
 
-    toast.success("נרשמת בהצלחה!");
-    navigate({ to: "/dashboard" });
+    toast.success("Account created");
+    navigate({ to: "/" });
   };
 
   return (
