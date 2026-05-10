@@ -129,7 +129,7 @@ function OrderDetailPage() {
           </div>
         </div>
 
-        <ShipmentTimeline order={order} t={t} />
+        <ShipmentTimeline order={order} t={t as (k: string) => string} />
 
         <div className="mt-4 grid sm:grid-cols-2 gap-3">
           {a && (
