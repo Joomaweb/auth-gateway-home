@@ -197,13 +197,14 @@ function CheckoutPage() {
     }
     if (!settings?.square) return;
     setBusy(true);
+    let orderId: string | null = null;
     try {
-      // 1) Create the pending order in Supabase
-      const id = await persistOrder(false);
+      // 1) Create the pending order in Supabase first (so failures are still tracked).
+      orderId = await persistOrder(false);
       // 2) Charge via Square server function with reference_id = order.id
       const res = await chargeSquare({
         data: {
-          orderId: id,
+          orderId,
           sourceId,
           verificationToken,
           amount: total,
@@ -211,12 +212,26 @@ function CheckoutPage() {
           mode: settings.square.mode,
         },
       });
-      if (!res.ok) throw new Error(res.error);
-      clear();
-      toast.success("Payment successful");
-      navigate({ to: "/orders/$id", params: { id } });
+      if (res.ok) {
+        clear();
+        if (res.status === "paid") toast.success("Payment successful");
+        else toast.info("Payment is pending confirmation");
+        navigate({ to: "/orders/$id", params: { id: orderId } });
+        return;
+      }
+      // Failed/cancelled: keep the order, navigate to order page so user sees status + retry.
+      const msg =
+        res.reason === "cancelled" ? "Payment cancelled — you can try again."
+        : res.reason === "card_declined" ? `Card declined: ${res.message}`
+        : res.reason === "network_error" ? "Network error — please try again."
+        : res.reason === "config_error" ? "Payment is not configured. Contact support."
+        : res.message || "Payment failed";
+      toast.error(msg);
+      navigate({ to: "/orders/$id", params: { id: orderId } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Payment failed");
+      const msg = err instanceof Error ? err.message : "Payment failed";
+      toast.error(msg);
+      if (orderId) navigate({ to: "/orders/$id", params: { id: orderId } });
     } finally {
       setBusy(false);
     }
