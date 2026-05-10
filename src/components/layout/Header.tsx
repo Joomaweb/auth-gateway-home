@@ -38,22 +38,21 @@ export function Header() {
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
     <>
-      <Link to="/" onClick={onClick} className="text-sm hover:text-primary transition-colors">
-        {t("nav.home")}
-      </Link>
-      <Link to="/shop" onClick={onClick} className="text-sm hover:text-primary transition-colors">
-        {t("nav.shop")}
-      </Link>
-      <Link to="/about" onClick={onClick} className="text-sm hover:text-primary transition-colors">
-        {t("nav.about")}
-      </Link>
-      <Link
-        to="/contact"
-        onClick={onClick}
-        className="text-sm hover:text-primary transition-colors"
-      >
-        {t("nav.contact")}
-      </Link>
+      {[
+        { to: "/", label: t("nav.home") },
+        { to: "/shop", label: t("nav.shop") },
+        { to: "/about", label: t("nav.about") },
+        { to: "/contact", label: t("nav.contact") },
+      ].map((l) => (
+        <Link
+          key={l.to}
+          to={l.to}
+          onClick={onClick}
+          className="relative text-sm tracking-wide text-foreground/80 hover:text-foreground transition-colors after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-1 after:mx-auto after:w-0 after:h-px after:bg-gradient-gold after:transition-all hover:after:w-full"
+        >
+          {l.label}
+        </Link>
+      ))}
     </>
   );
 
