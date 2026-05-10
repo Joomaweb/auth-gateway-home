@@ -46,26 +46,37 @@ function NewOrder() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!userId || lines.length === 0) return toast.error("Select customer and items");
+    if (!userId || lines.length === 0) return toast.error("בחר לקוח והוסף לפחות מוצר אחד");
+    if (lines.some((line) => !line.product_id || !line.name || line.qty < 1 || line.price < 0 || !Number.isFinite(line.qty) || !Number.isFinite(line.price))) {
+      return toast.error("בדוק שכל פריטי ההזמנה תקינים: מוצר, כמות ומחיר");
+    }
     setBusy(true);
     const { data: order, error } = await supabase
       .from("orders")
       .insert({
         user_id: userId,
         status: "pending",
-        subtotal, shipping: shippingFee, total,
+        subtotal: Number(subtotal),
+        shipping: Number(shippingFee),
+        total: Number(total),
         shipping_address: shipping,
-        payment_method: paymentMethod,
-        notes,
+        payment_method: paymentMethod || null,
+        notes: notes || null,
       })
-      .select()
+      .select("id")
       .single();
-    if (error || !order) { setBusy(false); toast.error(error?.message ?? "Error"); return; }
-    await supabase.from("order_items").insert(lines.map((l) => ({
-      order_id: order.id, product_id: l.product_id, name: l.name, size: l.size || null, color: l.color || null, qty: l.qty, price: l.price,
+    if (error || !order) { setBusy(false); toast.error(error?.message ?? "שגיאה ביצירת ההזמנה"); return; }
+    const { error: itemsError } = await supabase.from("order_items").insert(lines.map((l) => ({
+      order_id: order.id, product_id: l.product_id, name: l.name, size: l.size || null, color: l.color || null, qty: Number(l.qty), price: Number(l.price),
     })));
+    if (itemsError) {
+      await supabase.from("orders").delete().eq("id", order.id);
+      setBusy(false);
+      toast.error("ההזמנה לא נשמרה: " + itemsError.message);
+      return;
+    }
     setBusy(false);
-    toast.success("Order created");
+    toast.success("ההזמנה נוצרה");
     navigate({ to: "/admin/orders/$id", params: { id: order.id } });
   };
 
