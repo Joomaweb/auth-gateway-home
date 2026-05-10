@@ -19,7 +19,7 @@ function productActionErrorMessage(err: unknown, action: string) {
   return `שגיאה ${action}: ${raw}`;
 }
 
-export const Route = createFileRoute("/admin/products")({
+export const Route = createFileRoute("/admin/products/")({
   component: AdminProducts,
 });
 
