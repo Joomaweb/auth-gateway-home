@@ -10,10 +10,13 @@ import { useT } from "@/lib/i18n";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { PayPalCheckout } from "@/components/checkout/PayPalCheckout";
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
+
+type PayPalCfg = { enabled: boolean; client_id: string; mode: "sandbox" | "live" };
 
 function CheckoutPage() {
   const { t } = useT();
@@ -27,6 +30,7 @@ function CheckoutPage() {
     shipping_methods: { name: string; price: number }[];
     payment_methods: { name: string; enabled: boolean }[];
     free_shipping_threshold: number | null;
+    paypal: PayPalCfg;
   } | null>(null);
 
   const [form, setForm] = useState({
@@ -39,7 +43,7 @@ function CheckoutPage() {
     notes: "",
   });
   const [shippingIdx, setShippingIdx] = useState(0);
-  const [payment, setPayment] = useState("");
+  const [payment, setPayment] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -49,12 +53,19 @@ function CheckoutPage() {
   useEffect(() => {
     supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
       if (data) {
+        const paypal: PayPalCfg = data.paypal ?? { enabled: false, client_id: "", mode: "sandbox" };
+        const baseMethods = (data.payment_methods ?? [{ name: "Cash on Delivery", enabled: true }]) as { name: string; enabled: boolean }[];
+        // Inject "PayPal" as the first option if enabled and client_id present
+        const methods = paypal.enabled && paypal.client_id
+          ? [{ name: "PayPal", enabled: true }, ...baseMethods.filter(m => m.name !== "PayPal")]
+          : baseMethods;
         setSettings({
           shipping_methods: data.shipping_methods ?? [{ name: "Standard", price: 5.99 }],
-          payment_methods: data.payment_methods ?? [{ name: "Cash on Delivery", enabled: true }],
+          payment_methods: methods,
           free_shipping_threshold: data.free_shipping_threshold,
+          paypal,
         });
-        const enabled = (data.payment_methods ?? []).find((m: { enabled: boolean }) => m.enabled);
+        const enabled = methods.find((m) => m.enabled);
         if (enabled) setPayment(enabled.name);
       }
     });
@@ -82,17 +93,21 @@ function CheckoutPage() {
       : shippingMethod?.price ?? 0;
   const total = subtotal + shippingFee;
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!user || items.length === 0) return;
-    setBusy(true);
+  const requiredFieldsValid = !!(form.full_name && form.phone && form.address && form.city && form.zip && form.country);
+
+  const persistOrder = async (
+    paid: boolean,
+    paypalIds?: { order_id: string; capture_id: string },
+  ) => {
+    if (!user) throw new Error("Not signed in");
     const { data: order, error } = await supabase
       .from("orders")
       .insert({
         user_id: user.id,
-        status: "pending",
+        status: paid ? "paid" : "pending",
         subtotal,
         shipping: shippingFee,
+        tax: 0,
         total,
         shipping_address: {
           full_name: form.full_name,
@@ -105,14 +120,13 @@ function CheckoutPage() {
         },
         payment_method: payment,
         notes: form.notes,
+        paypal_order_id: paypalIds?.order_id ?? null,
+        paypal_capture_id: paypalIds?.capture_id ?? null,
+        paid_at: paid ? new Date().toISOString() : null,
       })
       .select()
       .single();
-    if (error || !order) {
-      setBusy(false);
-      toast.error(error?.message ?? "Failed to place order");
-      return;
-    }
+    if (error || !order) throw new Error(error?.message ?? "Failed to place order");
     const itemsRows = items.map((i) => ({
       order_id: order.id,
       product_id: i.productId,
@@ -124,10 +138,43 @@ function CheckoutPage() {
       price: i.price,
     }));
     await supabase.from("order_items").insert(itemsRows);
-    clear();
-    setBusy(false);
-    toast.success(t("checkout.success"));
-    navigate({ to: "/orders/$id", params: { id: order.id } });
+    return order.id as string;
+  };
+
+  const handleManualSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!user || items.length === 0) return;
+    if (!requiredFieldsValid) {
+      toast.error("Please fill in all shipping fields");
+      return;
+    }
+    setBusy(true);
+    try {
+      const id = await persistOrder(false);
+      clear();
+      toast.success(t("checkout.success"));
+      navigate({ to: "/orders/$id", params: { id } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePayPalApproved = async (orderId: string, captureId: string) => {
+    if (!user || items.length === 0) return;
+    if (!requiredFieldsValid) {
+      toast.error("Please fill in all shipping fields before paying");
+      return;
+    }
+    try {
+      const id = await persistOrder(true, { order_id: orderId, capture_id: captureId });
+      clear();
+      toast.success("Payment successful");
+      navigate({ to: "/orders/$id", params: { id } });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save order");
+    }
   };
 
   if (items.length === 0) {
@@ -140,11 +187,13 @@ function CheckoutPage() {
     );
   }
 
+  const isPayPal = payment === "PayPal";
+
   return (
     <PublicLayout>
       <div className="max-w-5xl mx-auto px-4 py-10">
         <h1 className="font-display text-4xl font-semibold mb-8">{t("checkout.title")}</h1>
-        <form onSubmit={handleSubmit} className="grid gap-8 lg:grid-cols-3">
+        <form onSubmit={handleManualSubmit} className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
             <section className="border rounded-lg p-6 bg-card">
               <h2 className="font-semibold mb-4">{t("checkout.shipping")}</h2>
@@ -187,10 +236,32 @@ function CheckoutPage() {
                 {settings?.payment_methods?.filter((m) => m.enabled).map((m) => (
                   <label key={m.name} className="flex items-center gap-3 border rounded p-3 cursor-pointer hover:bg-muted/50">
                     <input type="radio" name="payment" checked={payment === m.name} onChange={() => setPayment(m.name)} />
-                    {m.name}
+                    <span className="flex-1">{m.name}</span>
+                    {m.name === "PayPal" && (
+                      <span className="text-xs text-muted-foreground">PayPal · Credit / Debit card</span>
+                    )}
                   </label>
                 ))}
               </div>
+
+              {isPayPal && settings?.paypal && (
+                <div className="mt-5 pt-5 border-t space-y-3">
+                  <p className="text-xs text-muted-foreground">
+                    Pay securely with PayPal balance, or click <strong>Debit or Credit Card</strong> to enter card details directly — no PayPal account required.
+                  </p>
+                  <PayPalCheckout
+                    clientId={settings.paypal.client_id}
+                    mode={settings.paypal.mode}
+                    amount={total}
+                    currency="USD"
+                    disabled={!requiredFieldsValid || busy}
+                    onApproved={handlePayPalApproved}
+                  />
+                  {!requiredFieldsValid && (
+                    <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
+                  )}
+                </div>
+              )}
             </section>
           </div>
 
@@ -211,9 +282,16 @@ function CheckoutPage() {
                 <span>{t("cart.total")}</span><span>${total.toFixed(2)}</span>
               </div>
             </div>
-            <Button type="submit" className="w-full" size="lg" disabled={busy || !payment}>
-              {busy ? t("common.loading") : t("checkout.placeOrder")}
-            </Button>
+            {!isPayPal && (
+              <Button type="submit" className="w-full" size="lg" disabled={busy || !payment}>
+                {busy ? t("common.loading") : t("checkout.placeOrder")}
+              </Button>
+            )}
+            {isPayPal && (
+              <p className="text-xs text-muted-foreground text-center">
+                Use the PayPal buttons to complete your payment.
+              </p>
+            )}
           </div>
         </form>
       </div>
@@ -229,3 +307,4 @@ function Field({ label, value, onChange, required }: { label: string; value: str
     </div>
   );
 }
+
