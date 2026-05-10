@@ -18,6 +18,8 @@ export const Route = createFileRoute("/admin/settings")({
 type ShippingMethod = { name: string; price: number };
 type PaymentMethod = { name: string; enabled: boolean };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string };
+type PayPal = { enabled: boolean; client_id: string; mode: "sandbox" | "live" };
+type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
 const DEFAULT_HERO: Hero = {
   image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600",
@@ -26,6 +28,8 @@ const DEFAULT_HERO: Hero = {
   cta_text: "Shop now",
   cta_link: "/shop",
 };
+const DEFAULT_PAYPAL: PayPal = { enabled: false, client_id: "", mode: "sandbox" };
+const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
 
 function AdminSettings() {
   const { t } = useT();
@@ -35,6 +39,8 @@ function AdminSettings() {
   const [freeThreshold, setFreeThreshold] = useState<string>("");
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
   const [carousel, setCarousel] = useState<string[]>([]);
+  const [paypal, setPaypal] = useState<PayPal>(DEFAULT_PAYPAL);
+  const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -45,6 +51,8 @@ function AdminSettings() {
       setFreeThreshold(data.free_shipping_threshold?.toString() ?? "");
       if (data.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
       if (Array.isArray(data.carousel_images)) setCarousel(data.carousel_images);
+      if (data.paypal) setPaypal({ ...DEFAULT_PAYPAL, ...(data.paypal as PayPal) });
+      if (data.company) setCompany({ ...DEFAULT_COMPANY, ...(data.company as Company) });
     });
   }, []);
 
@@ -74,6 +82,8 @@ function AdminSettings() {
       free_shipping_threshold: freeThreshold === "" ? null : Number(freeThreshold),
       hero,
       carousel_images: carousel,
+      paypal,
+      company,
     });
     setBusy(false);
     if (error) toast.error(error.message);
@@ -184,6 +194,58 @@ function AdminSettings() {
               <Button type="button" size="icon" variant="ghost" onClick={() => setPayment(payment.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4 text-destructive" /></Button>
             </div>
           ))}
+        </section>
+
+        {/* PayPal */}
+        <section className="border rounded-lg p-6 bg-card space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold">PayPal (Credit card + PayPal)</h3>
+            <label className="flex items-center gap-2 text-sm">
+              Enabled <Switch checked={paypal.enabled} onCheckedChange={(v) => setPaypal({ ...paypal, enabled: v })} />
+            </label>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Adds a "PayPal" payment option at checkout with both PayPal balance and Debit/Credit Card buttons.
+            Get your Client ID at <a className="underline" href="https://developer.paypal.com/dashboard/applications" target="_blank" rel="noreferrer">developer.paypal.com</a>.
+          </p>
+          <div className="grid sm:grid-cols-[1fr_180px] gap-3">
+            <div className="space-y-2">
+              <Label>PayPal Client ID</Label>
+              <Input
+                value={paypal.client_id}
+                onChange={(e) => setPaypal({ ...paypal, client_id: e.target.value.trim() })}
+                placeholder="AYSq3RDGsmBLJE-otTkBtM-jBRd1TCQwFf9RGfwddNXWz0uFU9ztymylOhRS"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Mode</Label>
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                value={paypal.mode}
+                onChange={(e) => setPaypal({ ...paypal, mode: e.target.value as "sandbox" | "live" })}
+              >
+                <option value="sandbox">Sandbox (test)</option>
+                <option value="live">Live (real money)</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        {/* Company / Invoice details */}
+        <section className="border rounded-lg p-6 bg-card space-y-4">
+          <h3 className="font-semibold">Company details (for invoices / receipts)</h3>
+          <p className="text-xs text-muted-foreground">These appear on every invoice PDF.</p>
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div className="space-y-2"><Label>Company name</Label><Input value={company.name} onChange={(e) => setCompany({ ...company, name: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Tax ID / VAT number</Label><Input value={company.tax_id} onChange={(e) => setCompany({ ...company, tax_id: e.target.value })} /></div>
+            <div className="space-y-2 sm:col-span-2"><Label>Address</Label><Input value={company.address} onChange={(e) => setCompany({ ...company, address: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Email</Label><Input type="email" value={company.email} onChange={(e) => setCompany({ ...company, email: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Phone</Label><Input value={company.phone} onChange={(e) => setCompany({ ...company, phone: e.target.value })} /></div>
+            <div className="space-y-2"><Label>Invoice number prefix</Label><Input value={company.invoice_prefix} onChange={(e) => setCompany({ ...company, invoice_prefix: e.target.value.toUpperCase() })} placeholder="INV" /></div>
+            <div className="space-y-2 sm:col-span-2"><Label>Logo URL (optional)</Label><Input value={company.logo} onChange={(e) => setCompany({ ...company, logo: e.target.value })} /></div>
+          </div>
         </section>
 
         <Button type="submit" disabled={busy} className="w-full">{busy ? "Saving..." : t("common.save")}</Button>
