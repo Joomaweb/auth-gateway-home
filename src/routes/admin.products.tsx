@@ -34,11 +34,16 @@ function AdminProducts() {
   useRealtime("products", load);
 
   const del = async (id: string) => {
-    if (!confirm("Delete this product?")) return;
-    await supabase.from("product_variants").delete().eq("product_id", id);
+    if (!confirm("למחוק את המוצר הזה?")) return;
+    const { error: vErr } = await supabase.from("product_variants").delete().eq("product_id", id);
+    if (vErr) { toast.error("שגיאה במחיקת וריאנטים: " + vErr.message); return; }
     const { error } = await supabase.from("products").delete().eq("id", id);
-    if (error) toast.error(error.message);
-    else { toast.success("Deleted"); load(); }
+    if (error) {
+      const friendly = /row-level security|permission|denied/i.test(error.message)
+        ? "אין הרשאה למחוק. ודא שאתה מחובר כאדמין."
+        : "שגיאה במחיקה: " + error.message;
+      toast.error(friendly);
+    } else { toast.success("המוצר נמחק"); load(); }
   };
 
   return (

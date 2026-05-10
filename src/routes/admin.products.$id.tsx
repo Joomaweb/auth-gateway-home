@@ -213,26 +213,26 @@ function ProductEdit() {
     setSaveError(null);
 
     if (!user) {
-      setSaveError("You must be signed in.");
+      setSaveError("עליך להתחבר כדי לשמור מוצרים.");
       return;
     }
     if (!isAdmin) {
-      setSaveError("Only admins can save products.");
+      setSaveError("רק מנהלים יכולים לשמור מוצרים.");
       return;
     }
     const trimmedName = form.name.trim();
     if (!trimmedName) {
-      setSaveError("Product name is required.");
+      setSaveError("שם המוצר נדרש.");
       return;
     }
     const priceNum = Number(form.price);
     if (!Number.isFinite(priceNum) || priceNum <= 0) {
-      setSaveError("Price must be greater than 0.");
+      setSaveError("המחיר חייב להיות גדול מאפס.");
       return;
     }
     const saleNum = form.sale_price === "" ? null : Number(form.sale_price);
     if (saleNum !== null && (!Number.isFinite(saleNum) || saleNum < 0)) {
-      setSaveError("Sale price is invalid.");
+      setSaveError("מחיר המבצע אינו תקין.");
       return;
     }
 
@@ -258,7 +258,7 @@ function ProductEdit() {
           .select("id")
           .single();
         if (error) throw error;
-        if (!data?.id) throw new Error("Product created but no id returned");
+        if (!data?.id) throw new Error("המוצר נוצר אך לא הוחזר מזהה");
         productId = data.id;
       } else {
         const updatePayload = {
@@ -275,7 +275,6 @@ function ProductEdit() {
         if (error) throw error;
       }
 
-      // Replace variants
       const { error: delErr } = await supabase
         .from("product_variants")
         .delete()
@@ -294,13 +293,16 @@ function ProductEdit() {
         if (insErr) throw insErr;
       }
 
-      toast.success(isNew ? "Product created" : "Product updated");
+      toast.success(isNew ? "המוצר נוצר בהצלחה" : "המוצר עודכן בהצלחה");
       navigate({ to: "/admin/products" });
     } catch (err) {
       console.error("Save failed:", err);
-      const msg = err instanceof Error ? err.message : "Save failed";
-      setSaveError(msg);
-      toast.error(msg);
+      const raw = err instanceof Error ? err.message : String(err);
+      const friendly = /row-level security|permission|denied/i.test(raw)
+        ? "אין הרשאה לבצע פעולה זו. ודא שאתה מחובר כאדמין."
+        : `שגיאה בשמירת המוצר: ${raw}`;
+      setSaveError(friendly);
+      toast.error(friendly);
     } finally {
       setBusy(false);
     }
