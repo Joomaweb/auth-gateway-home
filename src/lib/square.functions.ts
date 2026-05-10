@@ -2,6 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
 
 type Mode = "sandbox" | "production";
+export type ChargeOutcome =
+  | { ok: true; orderId: string; paymentId: string; status: "paid" | "pending" }
+  | { ok: false; orderId: string; reason: "card_declined" | "verification_failed" | "cancelled" | "config_error" | "network_error" | "unknown"; message: string };
 
 function squareApiBase(mode: Mode) {
   return mode === "production"
@@ -17,22 +20,49 @@ function getAdminSupabase() {
   });
 }
 
+async function persistOrderUpdate(orderId: string, update: Record<string, unknown>) {
+  try {
+    const supabase = getAdminSupabase();
+    await supabase.from("orders").update(update).eq("id", orderId);
+  } catch (err) {
+    console.error("Square: order update failed:", err);
+  }
+}
+
+function classifyError(category: string | undefined, code: string | undefined): ChargeOutcome["reason"] extends infer R ? R : never {
+  if (!category && !code) return "unknown" as never;
+  if (category === "PAYMENT_METHOD_ERROR") return "card_declined" as never;
+  if (category === "REFUND_ERROR") return "unknown" as never;
+  if (code === "VERIFY_CVV_FAILURE" || code === "VERIFY_AVS_FAILURE") return "card_declined" as never;
+  if (code === "INSUFFICIENT_FUNDS" || code === "CARD_DECLINED" || code === "GENERIC_DECLINE") return "card_declined" as never;
+  if (code === "CARD_TOKEN_EXPIRED" || code === "CARD_TOKEN_USED") return "verification_failed" as never;
+  return "unknown" as never;
+}
+
 export const chargeSquarePayment = createServerFn({ method: "POST" })
   .inputValidator(
     (input: {
       orderId: string;
       sourceId: string;
       verificationToken?: string;
-      amount: number; // in major units (e.g. 19.99)
+      amount: number;
       currency?: string;
       mode?: Mode;
     }) => input,
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<ChargeOutcome> => {
     const accessToken = process.env.SQUARE_ACCESS_TOKEN;
     const locationId = process.env.SQUARE_LOCATION_ID;
-    if (!accessToken) throw new Error("SQUARE_ACCESS_TOKEN not set");
-    if (!locationId) throw new Error("SQUARE_LOCATION_ID not set");
+
+    if (!accessToken || !locationId) {
+      await persistOrderUpdate(data.orderId, { status: "failed", square_status: "CONFIG_ERROR" });
+      return {
+        ok: false,
+        orderId: data.orderId,
+        reason: "config_error",
+        message: "Square is not configured on the server",
+      };
+    }
 
     const mode: Mode = data.mode ?? "production";
     const currency = (data.currency ?? "USD").toUpperCase();
@@ -44,46 +74,93 @@ export const chargeSquarePayment = createServerFn({ method: "POST" })
       source_id: data.sourceId,
       verification_token: data.verificationToken,
       location_id: locationId,
-      reference_id: data.orderId, // critical for webhook reconciliation
+      reference_id: data.orderId,
       amount_money: { amount: amountMinor, currency },
       autocomplete: true,
     };
 
-    const res = await fetch(`${squareApiBase(mode)}/payments`, {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-        "Square-Version": "2024-10-17",
-      },
-      body: JSON.stringify(body),
-    });
-
-    const json = (await res.json()) as any;
-    if (!res.ok) {
-      const msg = json?.errors?.[0]?.detail ?? `Square error ${res.status}`;
-      return { ok: false as const, error: msg };
+    let res: Response;
+    try {
+      res = await fetch(`${squareApiBase(mode)}/payments`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+          "Square-Version": "2024-10-17",
+        },
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      await persistOrderUpdate(data.orderId, { status: "failed", square_status: "NETWORK_ERROR" });
+      return {
+        ok: false,
+        orderId: data.orderId,
+        reason: "network_error",
+        message: err instanceof Error ? err.message : "Network error contacting Square",
+      };
     }
 
-    const payment = json.payment;
-    const status: string = payment?.status ?? "";
-    const paymentId: string = payment?.id ?? "";
+    let json: any = {};
+    try { json = await res.json(); } catch { /* ignore */ }
 
-    // Update order immediately (webhook will also confirm asynchronously).
-    try {
-      const supabase = getAdminSupabase();
-      const update: Record<string, unknown> = {
+    if (!res.ok) {
+      const firstErr = json?.errors?.[0];
+      const reason = classifyError(firstErr?.category, firstErr?.code) as ChargeOutcome["reason"];
+      const message = firstErr?.detail ?? `Square error ${res.status}`;
+      await persistOrderUpdate(data.orderId, {
+        status: "failed",
+        square_status: firstErr?.code ?? `HTTP_${res.status}`,
+      });
+      return { ok: false, orderId: data.orderId, reason, message };
+    }
+
+    const payment = json.payment ?? {};
+    const status: string = payment.status ?? "";
+    const paymentId: string = payment.id ?? "";
+
+    if (status === "COMPLETED" || status === "APPROVED") {
+      await persistOrderUpdate(data.orderId, {
+        status: "paid",
+        paid_at: new Date().toISOString(),
         square_payment_id: paymentId,
         square_status: status,
-      };
-      if (status === "COMPLETED" || status === "APPROVED") {
-        update.status = "paid";
-        update.paid_at = new Date().toISOString();
-      }
-      await supabase.from("orders").update(update).eq("id", data.orderId);
-    } catch (err) {
-      console.error("Square: failed to update order:", err);
+      });
+      return { ok: true, orderId: data.orderId, paymentId, status: "paid" };
     }
 
-    return { ok: true as const, paymentId, status };
+    if (status === "PENDING") {
+      await persistOrderUpdate(data.orderId, {
+        status: "pending",
+        square_payment_id: paymentId,
+        square_status: status,
+      });
+      return { ok: true, orderId: data.orderId, paymentId, status: "pending" };
+    }
+
+    if (status === "CANCELED") {
+      await persistOrderUpdate(data.orderId, {
+        status: "cancelled",
+        square_payment_id: paymentId,
+        square_status: status,
+      });
+      return {
+        ok: false,
+        orderId: data.orderId,
+        reason: "cancelled",
+        message: "Payment was cancelled",
+      };
+    }
+
+    // FAILED or unknown
+    await persistOrderUpdate(data.orderId, {
+      status: "failed",
+      square_payment_id: paymentId,
+      square_status: status || "FAILED",
+    });
+    return {
+      ok: false,
+      orderId: data.orderId,
+      reason: "card_declined",
+      message: "Card declined or payment failed",
+    };
   });
