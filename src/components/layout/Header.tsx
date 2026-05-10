@@ -57,107 +57,110 @@ export function Header() {
   );
 
   return (
-    <header className="sticky top-0 z-40 glass-panel border-b border-transparent">
-      <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-6">
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden">
-                <Menu className="h-5 w-5" />
+    <header className="sticky top-0 z-40">
+      <div className="glass-panel border-b border-gold/10 shadow-soft">
+        <div className="max-w-7xl mx-auto px-4 h-16 md:h-[72px] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-6">
+            <Sheet open={open} onOpenChange={setOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="md:hidden -ms-2">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side={lang === "he" ? "right" : "left"} className="w-72 glass-panel">
+                <SheetHeader>
+                  <SheetTitle className="font-display tracking-[0.3em] text-gradient-gold">ATELIER</SheetTitle>
+                </SheetHeader>
+                <div className="hairline-gold my-4" />
+                <nav className="flex flex-col gap-1 mt-2">
+                  <NavLinks onClick={() => setOpen(false)} />
+                </nav>
+              </SheetContent>
+            </Sheet>
+            <Link to="/" className="font-display text-lg md:text-xl font-semibold tracking-[0.25em] text-gradient-gold">
+              ATELIER
+            </Link>
+            <nav className="hidden md:flex items-center gap-7">
+              <NavLinks />
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-0.5 md:gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setLang(lang === "en" ? "he" : "en")}
+              className="gap-1.5 px-2 md:px-3"
+            >
+              <Globe className="h-4 w-4" />
+              <span className="text-xs font-medium">{lang === "en" ? "עב" : "EN"}</span>
+            </Button>
+
+            {user && (
+              <Button asChild variant="ghost" size="icon" className="relative hidden sm:inline-flex">
+                <Link to="/inbox">
+                  <Mail className="h-5 w-5" />
+                  {unread > 0 && (
+                    <span className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                      {unread}
+                    </span>
+                  )}
+                </Link>
               </Button>
-            </SheetTrigger>
-            <SheetContent side={lang === "he" ? "right" : "left"} className="w-72">
-              <SheetHeader>
-                <SheetTitle className="font-display tracking-[0.3em] text-gradient-gold">ATELIER</SheetTitle>
-              </SheetHeader>
-              <nav className="flex flex-col gap-4 mt-6">
-                <NavLinks onClick={() => setOpen(false)} />
-              </nav>
-            </SheetContent>
-          </Sheet>
-          <Link to="/" className="font-display text-xl font-semibold tracking-[0.25em] text-gradient-gold">
-            ATELIER
-          </Link>
-          <nav className="hidden md:flex items-center gap-6">
-            <NavLinks />
-          </nav>
-        </div>
+            )}
 
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setLang(lang === "en" ? "he" : "en")}
-            className="gap-1.5"
-          >
-            <Globe className="h-4 w-4" />
-            <span className="text-xs font-medium">{lang === "en" ? "עב" : "EN"}</span>
-          </Button>
-
-          {user && (
             <Button asChild variant="ghost" size="icon" className="relative">
-              <Link to="/inbox">
-                <Mail className="h-5 w-5" />
-                {unread > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
-                    {unread}
+              <Link to="/cart">
+                <ShoppingBag className="h-5 w-5" />
+                {cartCount > 0 && (
+                  <span className="absolute top-1 right-1 h-4 min-w-4 px-1 rounded-full bg-gradient-gold text-gold-foreground text-[10px] font-bold flex items-center justify-center shadow-soft">
+                    {cartCount}
                   </span>
                 )}
               </Link>
             </Button>
-          )}
 
-          <Button asChild variant="ghost" size="icon" className="relative">
-            <Link to="/cart">
-              <ShoppingBag className="h-5 w-5" />
-              {cartCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 h-4 min-w-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </Link>
-          </Button>
-
-          {user ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <User className="h-5 w-5" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuItem asChild>
-                  <Link to="/profile">{t("nav.profile")}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/orders">{t("nav.orders")}</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/inbox">{t("nav.inbox")}</Link>
-                </DropdownMenuItem>
-                {isAdmin && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin">
-                        <Shield className="h-4 w-4 mr-2" />
-                        {t("nav.admin")}
-                      </Link>
-                    </DropdownMenuItem>
-                  </>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  {t("nav.logout")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <Button asChild size="sm" variant="outline">
-              <Link to="/login">{t("nav.login")}</Link>
-            </Button>
-          )}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48 glass-panel">
+                  <DropdownMenuItem asChild>
+                    <Link to="/profile">{t("nav.profile")}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/orders">{t("nav.orders")}</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/inbox">{t("nav.inbox")}</Link>
+                  </DropdownMenuItem>
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <Link to="/admin">
+                          <Shield className="h-4 w-4 mr-2" />
+                          {t("nav.admin")}
+                        </Link>
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    {t("nav.logout")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild size="sm" className="bg-gradient-gold text-gold-foreground hover:opacity-90 shadow-soft">
+                <Link to="/login">{t("nav.login")}</Link>
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </header>
