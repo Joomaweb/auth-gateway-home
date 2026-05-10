@@ -8,7 +8,10 @@ function withRoleTimeout<T>(promise: PromiseLike<T>) {
   return Promise.race<T>([
     Promise.resolve(promise),
     new Promise<T>((_, reject) =>
-      window.setTimeout(() => reject(new Error("בדיקת הרשאת האדמין נכשלה בגלל timeout")), ROLE_CHECK_TIMEOUT_MS),
+      globalThis.setTimeout(
+        () => reject(new Error("בדיקת הרשאת האדמין נכשלה בגלל timeout")),
+        ROLE_CHECK_TIMEOUT_MS,
+      ),
     ),
   ]);
 }
