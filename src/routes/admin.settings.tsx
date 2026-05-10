@@ -19,6 +19,7 @@ type ShippingMethod = { name: string; price: number };
 type PaymentMethod = { name: string; enabled: boolean };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string };
 type PayPal = { enabled: boolean; client_id: string; mode: "sandbox" | "live" };
+type Square = { enabled: boolean; application_id: string; location_id: string; mode: "sandbox" | "production" };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
 const DEFAULT_HERO: Hero = {
@@ -29,6 +30,7 @@ const DEFAULT_HERO: Hero = {
   cta_link: "/shop",
 };
 const DEFAULT_PAYPAL: PayPal = { enabled: false, client_id: "", mode: "sandbox" };
+const DEFAULT_SQUARE: Square = { enabled: false, application_id: "", location_id: "", mode: "sandbox" };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
 
 function AdminSettings() {
