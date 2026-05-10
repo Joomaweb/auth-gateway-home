@@ -38,27 +38,26 @@ export function Header() {
 
   const NavLinks = ({ onClick }: { onClick?: () => void }) => (
     <>
-      <Link to="/" onClick={onClick} className="text-sm hover:text-primary transition-colors">
-        {t("nav.home")}
-      </Link>
-      <Link to="/shop" onClick={onClick} className="text-sm hover:text-primary transition-colors">
-        {t("nav.shop")}
-      </Link>
-      <Link to="/about" onClick={onClick} className="text-sm hover:text-primary transition-colors">
-        {t("nav.about")}
-      </Link>
-      <Link
-        to="/contact"
-        onClick={onClick}
-        className="text-sm hover:text-primary transition-colors"
-      >
-        {t("nav.contact")}
-      </Link>
+      {[
+        { to: "/", label: t("nav.home") },
+        { to: "/shop", label: t("nav.shop") },
+        { to: "/about", label: t("nav.about") },
+        { to: "/contact", label: t("nav.contact") },
+      ].map((l) => (
+        <Link
+          key={l.to}
+          to={l.to}
+          onClick={onClick}
+          className="relative text-sm tracking-wide text-foreground/80 hover:text-foreground transition-colors after:content-[''] after:absolute after:left-0 after:right-0 after:-bottom-1 after:mx-auto after:w-0 after:h-px after:bg-gradient-gold after:transition-all hover:after:w-full"
+        >
+          {l.label}
+        </Link>
+      ))}
     </>
   );
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/80 backdrop-blur">
+    <header className="sticky top-0 z-40 glass-panel border-b border-transparent">
       <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
         <div className="flex items-center gap-6">
           <Sheet open={open} onOpenChange={setOpen}>
@@ -69,14 +68,14 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side={lang === "he" ? "right" : "left"} className="w-72">
               <SheetHeader>
-                <SheetTitle>ATELIER</SheetTitle>
+                <SheetTitle className="font-display tracking-[0.3em] text-gradient-gold">ATELIER</SheetTitle>
               </SheetHeader>
               <nav className="flex flex-col gap-4 mt-6">
                 <NavLinks onClick={() => setOpen(false)} />
               </nav>
             </SheetContent>
           </Sheet>
-          <Link to="/" className="font-display text-xl font-semibold tracking-wide">
+          <Link to="/" className="font-display text-xl font-semibold tracking-[0.25em] text-gradient-gold">
             ATELIER
           </Link>
           <nav className="hidden md:flex items-center gap-6">
