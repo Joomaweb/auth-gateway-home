@@ -379,3 +379,59 @@ function ShipmentTimeline({ order, t }: { order: Order; t: (k: string) => string
     </div>
   );
 }
+
+function PaymentStatusBanner({
+  isPaid, isFailed, isCancelled, isPending, isSquareOrder, squareStatus,
+}: {
+  isPaid: boolean; isFailed: boolean; isCancelled: boolean; isPending: boolean;
+  isSquareOrder: boolean; squareStatus?: string | null;
+}) {
+  if (isPaid) {
+    return (
+      <div className="mt-4 flex items-start gap-3 rounded-lg border border-green-300 bg-green-50 dark:bg-green-950/30 p-4">
+        <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5" />
+        <div>
+          <div className="font-semibold text-green-700 dark:text-green-400">Payment received</div>
+          <div className="text-sm text-muted-foreground">Thank you! Your order is confirmed and being prepared.</div>
+        </div>
+      </div>
+    );
+  }
+  if (isFailed) {
+    return (
+      <div className="mt-4 flex items-start gap-3 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
+        <XCircle className="h-5 w-5 text-destructive mt-0.5" />
+        <div>
+          <div className="font-semibold text-destructive">Payment failed</div>
+          <div className="text-sm text-muted-foreground">
+            {isSquareOrder ? `Square reported: ${squareStatus ?? "FAILED"}. ` : ""}
+            You can retry below or use a different card.
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (isCancelled) {
+    return (
+      <div className="mt-4 flex items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-4">
+        <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+        <div>
+          <div className="font-semibold text-amber-700 dark:text-amber-400">Payment cancelled</div>
+          <div className="text-sm text-muted-foreground">The transaction was cancelled. You can retry below.</div>
+        </div>
+      </div>
+    );
+  }
+  if (isPending) {
+    return (
+      <div className="mt-4 flex items-start gap-3 rounded-lg border bg-muted/40 p-4">
+        <Clock className="h-5 w-5 text-muted-foreground mt-0.5" />
+        <div>
+          <div className="font-semibold">Awaiting payment confirmation</div>
+          <div className="text-sm text-muted-foreground">We'll update this page automatically when the payment clears.</div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
