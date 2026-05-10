@@ -29,14 +29,14 @@ async function persistOrderUpdate(orderId: string, update: Record<string, unknow
   }
 }
 
-function classifyError(category: string | undefined, code: string | undefined): ChargeOutcome["reason"] extends infer R ? R : never {
-  if (!category && !code) return "unknown" as never;
-  if (category === "PAYMENT_METHOD_ERROR") return "card_declined" as never;
-  if (category === "REFUND_ERROR") return "unknown" as never;
-  if (code === "VERIFY_CVV_FAILURE" || code === "VERIFY_AVS_FAILURE") return "card_declined" as never;
-  if (code === "INSUFFICIENT_FUNDS" || code === "CARD_DECLINED" || code === "GENERIC_DECLINE") return "card_declined" as never;
-  if (code === "CARD_TOKEN_EXPIRED" || code === "CARD_TOKEN_USED") return "verification_failed" as never;
-  return "unknown" as never;
+type FailureReason = "card_declined" | "verification_failed" | "cancelled" | "config_error" | "network_error" | "unknown";
+
+function classifyError(category: string | undefined, code: string | undefined): FailureReason {
+  if (category === "PAYMENT_METHOD_ERROR") return "card_declined";
+  if (code === "VERIFY_CVV_FAILURE" || code === "VERIFY_AVS_FAILURE") return "card_declined";
+  if (code === "INSUFFICIENT_FUNDS" || code === "CARD_DECLINED" || code === "GENERIC_DECLINE") return "card_declined";
+  if (code === "CARD_TOKEN_EXPIRED" || code === "CARD_TOKEN_USED") return "verification_failed";
+  return "unknown";
 }
 
 export const chargeSquarePayment = createServerFn({ method: "POST" })
