@@ -7,6 +7,18 @@ import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRealtime } from "@/hooks/use-realtime";
 
+function productActionErrorMessage(err: unknown, action: string) {
+  const supabaseError = err as { message?: string; details?: string; hint?: string; code?: string };
+  const raw = [supabaseError.message, supabaseError.details, supabaseError.hint, supabaseError.code]
+    .filter(Boolean)
+    .join(" · ") || (err instanceof Error ? err.message : String(err));
+
+  if (/row-level security|permission|denied|42501|unauthorized|not authorized/i.test(raw)) {
+    return `אין הרשאה ${action}. ודא שהמשתמש מחובר כאדמין ושיש RLS מתאים ב-Supabase.`;
+  }
+  return `שגיאה ${action}: ${raw}`;
+}
+
 export const Route = createFileRoute("/admin/products")({
   component: AdminProducts,
 });
@@ -36,13 +48,12 @@ function AdminProducts() {
   const del = async (id: string) => {
     if (!confirm("למחוק את המוצר הזה?")) return;
     const { error: vErr } = await supabase.from("product_variants").delete().eq("product_id", id);
-    if (vErr) { toast.error("שגיאה במחיקת וריאנטים: " + vErr.message); return; }
-    const { error } = await supabase.from("products").delete().eq("id", id);
+    if (vErr) { toast.error(productActionErrorMessage(vErr, "במחיקת וריאנטים")); return; }
+    const { data, error } = await supabase.from("products").delete().eq("id", id).select("id").single();
     if (error) {
-      const friendly = /row-level security|permission|denied/i.test(error.message)
-        ? "אין הרשאה למחוק. ודא שאתה מחובר כאדמין."
-        : "שגיאה במחיקה: " + error.message;
-      toast.error(friendly);
+      toast.error(productActionErrorMessage(error, "במחיקה"));
+    } else if (!data?.id) {
+      toast.error("המוצר לא נמחק: לא נמצא מוצר כזה או שאין הרשאה למחוק אותו.");
     } else { toast.success("המוצר נמחק"); load(); }
   };
 
