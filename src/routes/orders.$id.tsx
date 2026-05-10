@@ -40,7 +40,11 @@ function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [company, setCompany] = useState<Company>({});
+  const [squareSettings, setSquareSettings] = useState<SquareSettings | null>(null);
+  const [retrying, setRetrying] = useState(false);
   const prevShipment = useRef<ShipmentStatus | null>(null);
+  const prevPayStatus = useRef<string | null>(null);
+  const chargeSquare = useServerFn(chargeSquarePayment);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -52,10 +56,12 @@ function OrderDetailPage() {
       const o = data as Order | null;
       setOrder(o);
       prevShipment.current = (o?.shipment_status as ShipmentStatus) ?? null;
+      prevPayStatus.current = o?.status ?? null;
     });
     supabase.from("order_items").select("*").eq("order_id", id).then(({ data }) => setItems((data ?? []) as Item[]));
-    supabase.from("store_settings").select("company").eq("id", 1).maybeSingle().then(({ data }) => {
+    supabase.from("store_settings").select("company,square").eq("id", 1).maybeSingle().then(({ data }) => {
       if (data?.company) setCompany(data.company as Company);
+      if (data?.square) setSquareSettings(data.square as SquareSettings);
     });
 
     const channel = supabase
