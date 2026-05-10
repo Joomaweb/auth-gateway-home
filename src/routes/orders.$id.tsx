@@ -1,18 +1,28 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Package, Clock, Truck, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import { downloadInvoicePdf, type Company, type InvoiceOrder, type InvoiceItem } from "@/lib/invoice-pdf";
 
 export const Route = createFileRoute("/orders/$id")({
   component: OrderDetailPage,
 });
 
-type Order = InvoiceOrder & { user_id: string };
+const SHIPMENT_STEPS = ["preparing", "awaiting_shipment", "in_transit", "delivered"] as const;
+type ShipmentStatus = typeof SHIPMENT_STEPS[number];
+
+type Order = InvoiceOrder & {
+  user_id: string;
+  shipment_status?: ShipmentStatus | null;
+  tracking_number?: string | null;
+  tracking_url?: string | null;
+  shipment_updated_at?: string | null;
+};
 type Item = InvoiceItem & { id: string };
 
 function OrderDetailPage() {
@@ -23,6 +33,7 @@ function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [items, setItems] = useState<Item[]>([]);
   const [company, setCompany] = useState<Company>({});
+  const prevShipment = useRef<ShipmentStatus | null>(null);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/login" });
@@ -30,12 +41,37 @@ function OrderDetailPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("orders").select("*").eq("id", id).maybeSingle().then(({ data }) => setOrder(data as Order | null));
+    supabase.from("orders").select("*").eq("id", id).maybeSingle().then(({ data }) => {
+      const o = data as Order | null;
+      setOrder(o);
+      prevShipment.current = (o?.shipment_status as ShipmentStatus) ?? null;
+    });
     supabase.from("order_items").select("*").eq("order_id", id).then(({ data }) => setItems((data ?? []) as Item[]));
     supabase.from("store_settings").select("company").eq("id", 1).maybeSingle().then(({ data }) => {
       if (data?.company) setCompany(data.company as Company);
     });
-  }, [id, user]);
+
+    const channel = supabase
+      .channel(`order-${id}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${id}` },
+        (payload) => {
+          const next = payload.new as Order;
+          setOrder((cur) => (cur ? { ...cur, ...next } : (next as Order)));
+          const newStatus = (next.shipment_status as ShipmentStatus) ?? null;
+          if (newStatus && newStatus !== prevShipment.current) {
+            prevShipment.current = newStatus;
+            toast.success(`${t("shipment.notified")}: ${t(`shipment.${newStatus}` as never)}`);
+          }
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [id, user, t]);
 
   if (!order) {
     return (
