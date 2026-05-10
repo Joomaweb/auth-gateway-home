@@ -28,22 +28,29 @@ function ContactPage() {
       toast.error(t("contact.loginRequired"));
       return;
     }
+    const { sanitizeText } = await import("@/lib/security");
+    const cleanSubject = sanitizeText(subject, 120);
+    const cleanBody = sanitizeText(body, 4000);
+    if (cleanSubject.length < 2 || cleanBody.length < 2) {
+      toast.error("נא למלא נושא והודעה");
+      return;
+    }
     setBusy(true);
     const { data: conv, error } = await supabase
       .from("conversations")
-      .insert({ user_id: user.id, subject, last_message_at: new Date().toISOString() })
+      .insert({ user_id: user.id, subject: cleanSubject, last_message_at: new Date().toISOString() })
       .select()
       .single();
     if (error || !conv) {
       setBusy(false);
-      toast.error(error?.message ?? "Error");
+      toast.error("שליחה נכשלה");
       return;
     }
     await supabase.from("messages").insert({
       conversation_id: conv.id,
       sender_id: user.id,
       is_admin: false,
-      body,
+      body: cleanBody,
       read_by_user: true,
     });
     setBusy(false);
