@@ -29,6 +29,7 @@ import { Route as OrdersIdRouteImport } from './routes/orders.$id'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminMessagesRouteImport } from './routes/admin.messages'
+import { Route as AdminLegalRouteImport } from './routes/admin.legal'
 import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
 import { Route as AdminCategoriesRouteImport } from './routes/admin.categories'
 import { Route as AdminApiRouteImport } from './routes/admin.api'
@@ -140,6 +141,11 @@ const AdminMessagesRoute = AdminMessagesRouteImport.update({
   path: '/messages',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLegalRoute = AdminLegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCustomersRoute = AdminCustomersRouteImport.update({
   id: '/customers',
   path: '/customers',
@@ -210,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/admin/api': typeof AdminApiRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/legal': typeof AdminLegalRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -241,6 +248,7 @@ export interface FileRoutesByTo {
   '/admin/api': typeof AdminApiRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/legal': typeof AdminLegalRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/admin/api': typeof AdminApiRoute
   '/admin/categories': typeof AdminCategoriesRoute
   '/admin/customers': typeof AdminCustomersRoute
+  '/admin/legal': typeof AdminLegalRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -308,6 +317,7 @@ export interface FileRouteTypes {
     | '/admin/api'
     | '/admin/categories'
     | '/admin/customers'
+    | '/admin/legal'
     | '/admin/messages'
     | '/admin/payments'
     | '/admin/settings'
@@ -339,6 +349,7 @@ export interface FileRouteTypes {
     | '/admin/api'
     | '/admin/categories'
     | '/admin/customers'
+    | '/admin/legal'
     | '/admin/messages'
     | '/admin/payments'
     | '/admin/settings'
@@ -371,6 +382,7 @@ export interface FileRouteTypes {
     | '/admin/api'
     | '/admin/categories'
     | '/admin/customers'
+    | '/admin/legal'
     | '/admin/messages'
     | '/admin/payments'
     | '/admin/settings'
@@ -546,6 +558,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMessagesRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/legal': {
+      id: '/admin/legal'
+      path: '/legal'
+      fullPath: '/admin/legal'
+      preLoaderRoute: typeof AdminLegalRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/customers': {
       id: '/admin/customers'
       path: '/customers'
@@ -624,6 +643,7 @@ interface AdminRouteChildren {
   AdminApiRoute: typeof AdminApiRoute
   AdminCategoriesRoute: typeof AdminCategoriesRoute
   AdminCustomersRoute: typeof AdminCustomersRoute
+  AdminLegalRoute: typeof AdminLegalRoute
   AdminMessagesRoute: typeof AdminMessagesRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -640,6 +660,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminApiRoute: AdminApiRoute,
   AdminCategoriesRoute: AdminCategoriesRoute,
   AdminCustomersRoute: AdminCustomersRoute,
+  AdminLegalRoute: AdminLegalRoute,
   AdminMessagesRoute: AdminMessagesRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
