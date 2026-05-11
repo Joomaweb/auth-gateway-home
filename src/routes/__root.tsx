@@ -11,6 +11,7 @@ import {
 import appCss from "../styles.css?url";
 import { AuthProvider } from "@/hooks/use-auth";
 import { I18nProvider } from "@/lib/i18n";
+import { SiteBrandingProvider } from "@/hooks/use-site-branding";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -95,10 +96,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
-        <AuthProvider>
-          <Outlet />
-          <Toaster richColors position="top-center" />
-        </AuthProvider>
+        <SiteBrandingProvider>
+          <AuthProvider>
+            <Outlet />
+            <Toaster richColors position="top-center" />
+          </AuthProvider>
+        </SiteBrandingProvider>
       </I18nProvider>
     </QueryClientProvider>
   );

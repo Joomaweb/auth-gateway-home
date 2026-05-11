@@ -5,6 +5,7 @@ import { useIsAdmin } from "@/hooks/use-role";
 import { useUnreadMessages } from "@/hooks/use-unread";
 import { useCart } from "@/lib/cart";
 import { useT } from "@/lib/i18n";
+import { useSiteBranding } from "@/hooks/use-site-branding";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,11 +26,13 @@ import {
 
 export function Header() {
   const { t, lang, setLang } = useT();
+  const { branding } = useSiteBranding();
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
   const cartCount = useCart((s) => s.items.reduce((n, i) => n + i.qty, 0));
   const unread = useUnreadMessages();
   const [open, setOpen] = useState(false);
+  const siteName = branding.site_name || "ATELIER";
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -69,7 +72,7 @@ export function Header() {
               </SheetTrigger>
               <SheetContent side={lang === "he" ? "right" : "left"} className="w-72 glass-panel">
                 <SheetHeader>
-                  <SheetTitle className="font-display tracking-[0.3em] text-gradient-gold">ATELIER</SheetTitle>
+                <SheetTitle className="font-display tracking-[0.3em] text-gradient-gold">{siteName}</SheetTitle>
                 </SheetHeader>
                 <div className="hairline-gold my-4" />
                 <nav className="flex flex-col gap-1 mt-2">
@@ -77,8 +80,14 @@ export function Header() {
                 </nav>
               </SheetContent>
             </Sheet>
-            <Link to="/" className="font-display text-lg md:text-xl font-semibold tracking-[0.25em] text-gradient-gold">
-              ATELIER
+            <Link to="/" className="flex items-center gap-2">
+              {branding.logo_url ? (
+                <img src={branding.logo_url} alt={siteName} className="h-8 md:h-10 w-auto object-contain" />
+              ) : (
+                <span className="font-display text-lg md:text-xl font-semibold tracking-[0.25em] text-gradient-gold">
+                  {siteName}
+                </span>
+              )}
             </Link>
             <nav className="hidden md:flex items-center gap-7">
               <NavLinks />
