@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
@@ -16,10 +15,8 @@ export const Route = createFileRoute("/admin/settings")({
 });
 
 type ShippingMethod = { name: string; price: number };
-type PaymentMethod = { name: string; enabled: boolean };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string };
-type PayPal = { enabled: boolean; client_id: string; mode: "sandbox" | "live" };
-type Square = { enabled: boolean; application_id: string; location_id: string; mode: "sandbox" | "production" };
+type Branding = { logo_url: string; favicon_url: string; site_name: string };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
 const DEFAULT_HERO: Hero = {
@@ -29,20 +26,17 @@ const DEFAULT_HERO: Hero = {
   cta_text: "Shop now",
   cta_link: "/shop",
 };
-const DEFAULT_PAYPAL: PayPal = { enabled: false, client_id: "", mode: "sandbox" };
-const DEFAULT_SQUARE: Square = { enabled: false, application_id: "", location_id: "", mode: "sandbox" };
+const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER" };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
 
 function AdminSettings() {
   const { t } = useT();
   const { user } = useAuth();
   const [shipping, setShipping] = useState<ShippingMethod[]>([{ name: "Standard", price: 5.99 }]);
-  const [payment, setPayment] = useState<PaymentMethod[]>([{ name: "Cash on Delivery", enabled: true }]);
   const [freeThreshold, setFreeThreshold] = useState<string>("");
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
   const [carousel, setCarousel] = useState<string[]>([]);
-  const [paypal, setPaypal] = useState<PayPal>(DEFAULT_PAYPAL);
-  const [square, setSquare] = useState<Square>(DEFAULT_SQUARE);
+  const [branding, setBranding] = useState<Branding>(DEFAULT_BRANDING);
   const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
   const [busy, setBusy] = useState(false);
 
@@ -50,12 +44,10 @@ function AdminSettings() {
     supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
       if (!data) return;
       setShipping(data.shipping_methods ?? [{ name: "Standard", price: 5.99 }]);
-      setPayment(data.payment_methods ?? [{ name: "Cash on Delivery", enabled: true }]);
       setFreeThreshold(data.free_shipping_threshold?.toString() ?? "");
       if (data.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
       if (Array.isArray(data.carousel_images)) setCarousel(data.carousel_images);
-      if (data.paypal) setPaypal({ ...DEFAULT_PAYPAL, ...(data.paypal as PayPal) });
-      if (data.square) setSquare({ ...DEFAULT_SQUARE, ...(data.square as Square) });
+      if (data.branding) setBranding({ ...DEFAULT_BRANDING, ...(data.branding as Branding) });
       if (data.company) setCompany({ ...DEFAULT_COMPANY, ...(data.company as Company) });
     });
   }, []);
@@ -82,12 +74,10 @@ function AdminSettings() {
     const { error } = await supabase.from("store_settings").upsert({
       id: 1,
       shipping_methods: shipping,
-      payment_methods: payment,
       free_shipping_threshold: freeThreshold === "" ? null : Number(freeThreshold),
       hero,
       carousel_images: carousel,
-      paypal,
-      square,
+      branding,
       company,
     });
     setBusy(false);
@@ -99,6 +89,51 @@ function AdminSettings() {
     <div className="max-w-3xl space-y-6">
       <h1 className="font-display text-3xl font-semibold">{t("admin.settings")}</h1>
       <form onSubmit={save} className="space-y-6">
+        {/* Branding: logo + favicon + site name */}
+        <section className="border rounded-lg p-6 bg-card space-y-4">
+          <h3 className="font-semibold">מיתוג / Branding</h3>
+          <p className="text-xs text-muted-foreground">לוגו ואייקון האתר מתעדכנים בזמן אמת בכל הדפים.</p>
+
+          <div className="space-y-2">
+            <Label>שם האתר (Site name)</Label>
+            <Input value={branding.site_name} onChange={(e) => setBranding({ ...branding, site_name: e.target.value })} placeholder="ATELIER" />
+          </div>
+
+          <div className="space-y-2">
+            <Label>לוגו (Logo)</Label>
+            <div className="flex items-start gap-3">
+              <div className="w-40 h-16 rounded overflow-hidden bg-muted border flex-shrink-0 flex items-center justify-center">
+                {branding.logo_url ? <img src={branding.logo_url} alt="" className="max-h-full max-w-full object-contain" /> : <span className="text-xs text-muted-foreground">ללא לוגו</span>}
+              </div>
+              <div className="flex-1 space-y-2">
+                <Input value={branding.logo_url} onChange={(e) => setBranding({ ...branding, logo_url: e.target.value })} placeholder="https://..." />
+                <label className="inline-flex items-center gap-2 text-sm cursor-pointer text-primary hover:underline">
+                  <Upload className="h-4 w-4" /> העלה לוגו
+                  <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo(f, (u) => setBranding({ ...branding, logo_url: u })); e.target.value = ""; }} />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>אייקון האתר (Favicon)</Label>
+            <div className="flex items-start gap-3">
+              <div className="w-16 h-16 rounded overflow-hidden bg-muted border flex-shrink-0 flex items-center justify-center">
+                {branding.favicon_url ? <img src={branding.favicon_url} alt="" className="max-h-full max-w-full object-contain" /> : <span className="text-xs text-muted-foreground">—</span>}
+              </div>
+              <div className="flex-1 space-y-2">
+                <Input value={branding.favicon_url} onChange={(e) => setBranding({ ...branding, favicon_url: e.target.value })} placeholder="https://..." />
+                <label className="inline-flex items-center gap-2 text-sm cursor-pointer text-primary hover:underline">
+                  <Upload className="h-4 w-4" /> העלה אייקון
+                  <input type="file" accept="image/png,image/x-icon,image/svg+xml" hidden
+                    onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo(f, (u) => setBranding({ ...branding, favicon_url: u })); e.target.value = ""; }} />
+                </label>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Hero banner */}
         <section className="border rounded-lg p-6 bg-card space-y-4">
           <h3 className="font-semibold">Hero banner (homepage)</h3>
@@ -184,110 +219,10 @@ function AdminSettings() {
           </div>
         </section>
 
-        {/* Payment */}
-        <section className="border rounded-lg p-6 bg-card space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Payment methods</h3>
-            <Button type="button" size="sm" variant="outline" onClick={() => setPayment([...payment, { name: "", enabled: true }])}>
-              <Plus className="h-3 w-3 me-1" /> Add
-            </Button>
-          </div>
-          {payment.map((p, i) => (
-            <div key={i} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center">
-              <Input placeholder="Name" value={p.name} onChange={(e) => setPayment(payment.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
-              <Switch checked={p.enabled} onCheckedChange={(v) => setPayment(payment.map((x, j) => j === i ? { ...x, enabled: v } : x))} />
-              <Button type="button" size="icon" variant="ghost" onClick={() => setPayment(payment.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-            </div>
-          ))}
-        </section>
-
-        {/* PayPal */}
-        <section className="border rounded-lg p-6 bg-card space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">PayPal (Credit card + PayPal)</h3>
-            <label className="flex items-center gap-2 text-sm">
-              Enabled <Switch checked={paypal.enabled} onCheckedChange={(v) => setPaypal({ ...paypal, enabled: v })} />
-            </label>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Adds a "PayPal" payment option at checkout with both PayPal balance and Debit/Credit Card buttons.
-            Get your Client ID at <a className="underline" href="https://developer.paypal.com/dashboard/applications" target="_blank" rel="noreferrer">developer.paypal.com</a>.
-          </p>
-          <div className="grid sm:grid-cols-[1fr_180px] gap-3">
-            <div className="space-y-2">
-              <Label>PayPal Client ID</Label>
-              <Input
-                value={paypal.client_id}
-                onChange={(e) => setPaypal({ ...paypal, client_id: e.target.value.trim() })}
-                placeholder="AYSq3RDGsmBLJE-otTkBtM-jBRd1TCQwFf9RGfwddNXWz0uFU9ztymylOhRS"
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Mode</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={paypal.mode}
-                onChange={(e) => setPaypal({ ...paypal, mode: e.target.value as "sandbox" | "live" })}
-              >
-                <option value="sandbox">Sandbox (test)</option>
-                <option value="live">Live (real money)</option>
-              </select>
-            </div>
-          </div>
-        </section>
-
-        {/* Square */}
-        <section className="border rounded-lg p-6 bg-card space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Square (Credit / Debit card)</h3>
-            <label className="flex items-center gap-2 text-sm">
-              Enabled <Switch checked={square.enabled} onCheckedChange={(v) => setSquare({ ...square, enabled: v })} />
-            </label>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Adds a "Square" payment option at checkout using Square Web Payments SDK. Get your Application ID and Location ID at <a className="underline" href="https://developer.squareup.com/apps" target="_blank" rel="noreferrer">developer.squareup.com</a>. The Access Token and Webhook Signature Key are stored as server secrets.
-          </p>
-          <div className="grid sm:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>Application ID</Label>
-              <Input
-                value={square.application_id}
-                onChange={(e) => setSquare({ ...square, application_id: e.target.value.trim() })}
-                placeholder="sq0idp-..."
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Location ID</Label>
-              <Input
-                value={square.location_id}
-                onChange={(e) => setSquare({ ...square, location_id: e.target.value.trim() })}
-                placeholder="LBS8C676K329X"
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label>Mode</Label>
-              <select
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={square.mode}
-                onChange={(e) => setSquare({ ...square, mode: e.target.value as "sandbox" | "production" })}
-              >
-                <option value="sandbox">Sandbox (test)</option>
-                <option value="production">Production (real money)</option>
-              </select>
-            </div>
-          </div>
-          <div className="text-xs text-muted-foreground border-t pt-3">
-            Webhook URL (paste into Square Developer Dashboard → Webhooks → Notification URL):
-            <code className="block mt-1 p-2 bg-muted rounded break-all">https://auth-gateway-home.lovable.app/api/public/square-webhook</code>
-            Subscribe to events: <strong>payment.created</strong>, <strong>payment.updated</strong>.
-          </div>
-        </section>
+        <div className="border-l-4 border-primary bg-primary/5 p-4 rounded text-sm">
+          הגדרות תשלום (PayPal, Square, אמצעי תשלום ידניים) עברו לעמוד נפרד —
+          <a href="/admin/payments" className="underline font-medium me-1">תשלומים</a>.
+        </div>
 
         {/* Company / Invoice details */}
         <section className="border rounded-lg p-6 bg-card space-y-4">
