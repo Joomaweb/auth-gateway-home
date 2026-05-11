@@ -22,12 +22,14 @@ export function Footer() {
           <h4 className="font-medium text-sm mb-3">{t("footer.about")}</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li><Link to="/about" className="hover:text-foreground">{t("nav.about")}</Link></li>
+            <li><Link to="/contact" className="hover:text-foreground">{t("nav.contact")}</Link></li>
           </ul>
         </div>
         <div>
-          <h4 className="font-medium text-sm mb-3">{t("footer.contact")}</h4>
+          <h4 className="font-medium text-sm mb-3">{t("footer.legal")}</h4>
           <ul className="space-y-2 text-sm text-muted-foreground">
-            <li><Link to="/contact" className="hover:text-foreground">{t("nav.contact")}</Link></li>
+            <li><Link to="/terms" className="hover:text-foreground">{t("footer.terms")}</Link></li>
+            <li><Link to="/policy" className="hover:text-foreground">{t("footer.policy")}</Link></li>
           </ul>
         </div>
       </div>

@@ -9,9 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PolicyRouteImport } from './routes/policy'
 import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InboxRouteImport } from './routes/inbox'
@@ -37,6 +39,11 @@ import { Route as AdminProductsIdRouteImport } from './routes/admin.products.$id
 import { Route as AdminOrdersNewRouteImport } from './routes/admin.orders.new'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
 
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
@@ -50,6 +57,11 @@ const RegisterRoute = RegisterRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PolicyRoute = PolicyRouteImport.update({
+  id: '/policy',
+  path: '/policy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersRoute = OrdersRouteImport.update({
@@ -183,9 +195,11 @@ export interface FileRoutesByFullPath {
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/orders': typeof OrdersRouteWithChildren
+  '/policy': typeof PolicyRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/shop': typeof ShopRoute
+  '/terms': typeof TermsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/api': typeof AdminApiRoute
   '/admin/categories': typeof AdminCategoriesRoute
@@ -211,9 +225,11 @@ export interface FileRoutesByTo {
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/orders': typeof OrdersRouteWithChildren
+  '/policy': typeof PolicyRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/shop': typeof ShopRoute
+  '/terms': typeof TermsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/api': typeof AdminApiRoute
   '/admin/categories': typeof AdminCategoriesRoute
@@ -241,9 +257,11 @@ export interface FileRoutesById {
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
   '/orders': typeof OrdersRouteWithChildren
+  '/policy': typeof PolicyRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
   '/shop': typeof ShopRoute
+  '/terms': typeof TermsRoute
   '/admin/about': typeof AdminAboutRoute
   '/admin/api': typeof AdminApiRoute
   '/admin/categories': typeof AdminCategoriesRoute
@@ -272,9 +290,11 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/login'
     | '/orders'
+    | '/policy'
     | '/profile'
     | '/register'
     | '/shop'
+    | '/terms'
     | '/admin/about'
     | '/admin/api'
     | '/admin/categories'
@@ -300,9 +320,11 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/login'
     | '/orders'
+    | '/policy'
     | '/profile'
     | '/register'
     | '/shop'
+    | '/terms'
     | '/admin/about'
     | '/admin/api'
     | '/admin/categories'
@@ -329,9 +351,11 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/login'
     | '/orders'
+    | '/policy'
     | '/profile'
     | '/register'
     | '/shop'
+    | '/terms'
     | '/admin/about'
     | '/admin/api'
     | '/admin/categories'
@@ -359,15 +383,24 @@ export interface RootRouteChildren {
   InboxRoute: typeof InboxRoute
   LoginRoute: typeof LoginRoute
   OrdersRoute: typeof OrdersRouteWithChildren
+  PolicyRoute: typeof PolicyRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   ShopRoute: typeof ShopRoute
+  TermsRoute: typeof TermsRoute
   ProductIdRoute: typeof ProductIdRoute
   ApiPublicSquareWebhookRoute: typeof ApiPublicSquareWebhookRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shop': {
       id: '/shop'
       path: '/shop'
@@ -387,6 +420,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/policy': {
+      id: '/policy'
+      path: '/policy'
+      fullPath: '/policy'
+      preLoaderRoute: typeof PolicyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/orders': {
@@ -613,9 +653,11 @@ const rootRouteChildren: RootRouteChildren = {
   InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
   OrdersRoute: OrdersRouteWithChildren,
+  PolicyRoute: PolicyRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   ShopRoute: ShopRoute,
+  TermsRoute: TermsRoute,
   ProductIdRoute: ProductIdRoute,
   ApiPublicSquareWebhookRoute: ApiPublicSquareWebhookRoute,
 }
