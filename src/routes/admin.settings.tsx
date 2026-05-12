@@ -250,25 +250,50 @@ function AdminSettings() {
           </div>
         </section>
 
-        {/* Shipping */}
+        {/* Shipping zones */}
         <section className="border rounded-lg p-6 bg-card space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold">Shipping methods</h3>
-            <Button type="button" size="sm" variant="outline" onClick={() => setShipping([...shipping, { name: "", price: 0 }])}>
-              <Plus className="h-3 w-3 me-1" /> Add
+            <h3 className="font-semibold">אזורי משלוח</h3>
+            <Button type="button" size="sm" variant="outline" onClick={() => setZones([...zones, { name: "", price: 0, eta: "" }])}>
+              <Plus className="h-3 w-3 me-1" /> הוסף אזור
             </Button>
           </div>
-          {shipping.map((s, i) => (
-            <div key={i} className="grid grid-cols-[1fr_120px_auto] gap-2">
-              <Input placeholder="Name" value={s.name} onChange={(e) => setShipping(shipping.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
-              <Input type="number" step="0.01" placeholder="Price" value={s.price} onChange={(e) => setShipping(shipping.map((x, j) => j === i ? { ...x, price: Number(e.target.value) } : x))} />
-              <Button type="button" size="icon" variant="ghost" onClick={() => setShipping(shipping.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+          <p className="text-xs text-muted-foreground">הלקוח יבחר אזור בצ׳קאאוט ויראה את המחיר וזמן האספקה.</p>
+          {zones.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4 border-2 border-dashed rounded">
+              אין אזורים. לחץ "הוסף אזור" כדי להגדיר אזור משלוח.
+            </p>
+          )}
+          {zones.map((z, i) => (
+            <div key={i} className="grid grid-cols-1 sm:grid-cols-[1.2fr_120px_1.4fr_auto] gap-2 items-start">
+              <Input placeholder="שם אזור (לדוגמה: מרכז)" value={z.name} onChange={(e) => setZones(zones.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+              <Input type="number" step="0.01" min="0" placeholder="מחיר ₪" value={z.price} onChange={(e) => setZones(zones.map((x, j) => j === i ? { ...x, price: Number(e.target.value) } : x))} />
+              <Input placeholder="זמן אספקה (לדוגמה: 1-3 ימי עסקים)" value={z.eta} onChange={(e) => setZones(zones.map((x, j) => j === i ? { ...x, eta: e.target.value } : x))} />
+              <Button type="button" size="icon" variant="ghost" onClick={() => setZones(zones.filter((_, j) => j !== i))}>
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
             </div>
           ))}
           <div className="space-y-2 pt-3 border-t">
-            <Label>Free shipping over (leave empty to disable)</Label>
+            <Label>משלוח חינם מעל סכום (השאר ריק לביטול)</Label>
             <Input type="number" step="0.01" value={freeThreshold} onChange={(e) => setFreeThreshold(e.target.value)} />
           </div>
+
+          <details className="pt-3 border-t">
+            <summary className="text-xs text-muted-foreground cursor-pointer">שיטות משלוח ישנות (לתאימות לאחור)</summary>
+            <div className="space-y-2 pt-2">
+              {shipping.map((s, i) => (
+                <div key={i} className="grid grid-cols-[1fr_120px_auto] gap-2">
+                  <Input placeholder="Name" value={s.name} onChange={(e) => setShipping(shipping.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} />
+                  <Input type="number" step="0.01" placeholder="Price" value={s.price} onChange={(e) => setShipping(shipping.map((x, j) => j === i ? { ...x, price: Number(e.target.value) } : x))} />
+                  <Button type="button" size="icon" variant="ghost" onClick={() => setShipping(shipping.filter((_, j) => j !== i))}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                </div>
+              ))}
+              <Button type="button" size="sm" variant="outline" onClick={() => setShipping([...shipping, { name: "", price: 0 }])}>
+                <Plus className="h-3 w-3 me-1" /> Add
+              </Button>
+            </div>
+          </details>
         </section>
 
         <div className="border-l-4 border-primary bg-primary/5 p-4 rounded text-sm">
