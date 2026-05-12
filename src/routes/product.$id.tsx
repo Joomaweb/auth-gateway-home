@@ -20,6 +20,8 @@ type Product = {
   price: number;
   sale_price: number | null;
   images: string[] | null;
+  video_url?: string | null;
+  requires_stock_approval?: boolean | null;
 };
 type Variant = { id: string; size: string | null; color: string | null; stock: number };
 
