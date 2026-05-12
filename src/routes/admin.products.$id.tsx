@@ -104,10 +104,13 @@ function ProductEdit() {
     price: "" as string,
     sale_price: "" as string,
     images: [] as string[],
+    video_url: "",
     category_id: "",
     featured: false,
     active: true,
+    requires_stock_approval: false,
   });
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [sizes, setSizes] = useState<string[]>([]);
   const [colors, setColors] = useState<string[]>([]);
   const [stockMap, setStockMap] = useState<Record<string, number>>({});
@@ -164,9 +167,11 @@ function ProductEdit() {
           price: p.price != null ? String(p.price) : "",
           sale_price: p.sale_price != null ? String(p.sale_price) : "",
           images: Array.isArray(p.images) ? p.images : [],
+          video_url: p.video_url ?? "",
           category_id: p.category_id ?? "",
           featured: !!p.featured,
           active: p.active ?? true,
+          requires_stock_approval: !!p.requires_stock_approval,
         });
 
         if (vRes.error) console.error("variants load:", vRes.error);
@@ -202,15 +207,17 @@ function ProductEdit() {
       return;
     }
     try {
-      const { validateImageFile } = await import("@/lib/security");
+      const { validateImageFile, downscaleImage } = await import("@/lib/security");
       const v = await validateImageFile(file);
       if (!v.ok) {
         toast.error(v.error);
         return;
       }
-      const path = `products/${user.id}/${Date.now()}-${crypto.randomUUID()}.${v.ext}`;
-      const { error } = await supabase.storage.from("upload").upload(path, file, {
-        contentType: file.type,
+      const small = await downscaleImage(file);
+      const ext = small.type === "image/png" ? "png" : small.type === "image/webp" ? "webp" : "jpg";
+      const path = `products/${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("upload").upload(path, small, {
+        contentType: small.type,
         upsert: false,
         cacheControl: "3600",
       });
@@ -224,6 +231,28 @@ function ProductEdit() {
     } catch (err) {
       console.error("Upload failed:", err);
       toast.error(err instanceof Error ? err.message : "Upload failed");
+    }
+  };
+
+  const uploadVideo = async (file: File) => {
+    if (!user) { toast.error("Not signed in"); return; }
+    try {
+      setUploadingVideo(true);
+      const { validateVideoFile } = await import("@/lib/security");
+      const v = await validateVideoFile(file);
+      if (!v.ok) { toast.error(v.error); return; }
+      const path = `products/${user.id}/video-${Date.now()}-${crypto.randomUUID()}.${v.ext}`;
+      const { error } = await supabase.storage.from("upload").upload(path, file, {
+        contentType: file.type, upsert: false, cacheControl: "3600",
+      });
+      if (error) { toast.error("Video upload failed: " + error.message); return; }
+      const { data } = supabase.storage.from("upload").getPublicUrl(path);
+      setForm((f) => ({ ...f, video_url: data.publicUrl }));
+      toast.success("הסרטון הועלה");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingVideo(false);
     }
   };
 
@@ -366,9 +395,11 @@ function ProductEdit() {
           price: priceNum,
           sale_price: saleNum,
           images: form.images,
+          video_url: form.video_url || null,
           category_id: form.category_id || null,
           featured: form.featured,
           active: form.active,
+          requires_stock_approval: form.requires_stock_approval,
         };
         const { data, error } = await withTimeout(
           supabase.from("products").insert(insertPayload).select("id").single(),
@@ -384,9 +415,11 @@ function ProductEdit() {
           price: priceNum,
           sale_price: saleNum,
           images: form.images,
+          video_url: form.video_url || null,
           category_id: form.category_id || null,
           featured: form.featured,
           active: form.active,
+          requires_stock_approval: form.requires_stock_approval,
         };
         const { data, error } = await withTimeout(
           supabase.from("products").update(updatePayload).eq("id", id).select("id").single(),
@@ -570,7 +603,19 @@ function ProductEdit() {
               />
               Active (visible in shop)
             </label>
+            <label className="flex items-center gap-2 text-sm">
+              <Switch
+                checked={form.requires_stock_approval}
+                onCheckedChange={(v) => setForm({ ...form, requires_stock_approval: v })}
+              />
+              דורש אישור מלאי לפני רכישה
+            </label>
           </div>
+          {form.requires_stock_approval && (
+            <p className="text-xs text-muted-foreground bg-muted/40 rounded p-2">
+              ההזמנות של מוצר זה יקבלו סטטוס "ממתין לאישור מלאי" — תוכל לאשר/לדחות אותן מתוך עמוד ההזמנה.
+            </p>
+          )}
         </section>
 
         {/* Images */}
@@ -581,7 +626,7 @@ function ProductEdit() {
               <p className="text-xs text-destructive">{fieldErrors.images}</p>
             )}
             <span className="text-xs text-muted-foreground">
-              PNG / JPG · max 5MB · first image is the cover
+              PNG / JPG / WEBP · max 10MB · first image is the cover
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -627,7 +672,7 @@ function ProductEdit() {
               <Upload className="h-4 w-4 mb-1" /> Upload
               <input
                 type="file"
-                accept="image/png,image/jpeg"
+                accept="image/png,image/jpeg,image/webp"
                 hidden
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -660,6 +705,54 @@ function ProductEdit() {
                 Add
               </Button>
             </div>
+          </div>
+        </section>
+
+        {/* Video (optional) */}
+        <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">סרטון מוצר (אופציונלי)</h2>
+            <span className="text-xs text-muted-foreground">MP4 / WEBM / MOV · עד 50MB · או קישור YouTube/Vimeo</span>
+          </div>
+          {form.video_url && (
+            <div className="relative w-full max-w-md rounded overflow-hidden border bg-black">
+              {/youtube\.com|youtu\.be|vimeo\.com/i.test(form.video_url) ? (
+                <div className="aspect-video bg-muted flex items-center justify-center text-sm text-muted-foreground p-4 text-center break-all">
+                  קישור חיצוני: {form.video_url}
+                </div>
+              ) : (
+                <video src={form.video_url} controls className="w-full aspect-video" />
+              )}
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, video_url: "" })}
+                className="absolute top-2 end-2 bg-destructive text-destructive-foreground rounded p-1"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              value={form.video_url}
+              onChange={(e) => setForm({ ...form, video_url: e.target.value })}
+              onKeyDown={blockEnterSubmit}
+              placeholder="https://... (YouTube / Vimeo / קובץ וידאו)"
+            />
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm cursor-pointer hover:bg-muted whitespace-nowrap">
+              <Upload className="h-4 w-4" /> {uploadingVideo ? "מעלה…" : "העלה סרטון"}
+              <input
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime"
+                hidden
+                disabled={uploadingVideo}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadVideo(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
           </div>
         </section>
 

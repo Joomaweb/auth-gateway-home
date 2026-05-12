@@ -30,6 +30,7 @@ function HomePage() {
   const [newest, setNewest] = useState<ProductCardData[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
+  const [heroVideo, setHeroVideo] = useState<string>("");
   const [slides, setSlides] = useState<string[]>([]);
 
   const load = () => {
@@ -47,9 +48,10 @@ function HomePage() {
       .then(({ data }) => setNewest((data ?? []) as ProductCardData[]));
     supabase.from("categories").select("*")
       .then(({ data }) => setCats((data ?? []) as Category[]));
-    supabase.from("store_settings").select("hero,carousel_images").eq("id", 1).maybeSingle()
+    supabase.from("store_settings").select("hero,hero_video,carousel_images").eq("id", 1).maybeSingle()
       .then(({ data }) => {
         if (data?.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
+        setHeroVideo((data as { hero_video?: string } | null)?.hero_video ?? "");
         if (Array.isArray(data?.carousel_images)) setSlides(data.carousel_images as string[]);
       });
   };
@@ -62,7 +64,11 @@ function HomePage() {
     <PublicLayout>
       {/* Hero */}
       <section className="relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden bg-muted">
-        <img src={hero.image} alt="Hero" className="absolute inset-0 w-full h-full object-cover scale-105" />
+        {heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? (
+          <video src={heroVideo} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover scale-105" />
+        ) : (
+          <img src={hero.image} alt="Hero" className="absolute inset-0 w-full h-full object-cover scale-105" />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/10" />
         <div className="absolute inset-0 opacity-[0.07] mix-blend-overlay" style={{ backgroundImage: "linear-gradient(oklch(0.18 0.005 60) 1px, transparent 1px), linear-gradient(90deg, oklch(0.18 0.005 60) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
         <div className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-gradient-gold opacity-30 blur-3xl animate-float-slow" />

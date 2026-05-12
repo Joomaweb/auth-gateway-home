@@ -31,12 +31,13 @@ function CheckoutPage() {
   const subtotal = items.reduce((n, i) => n + i.qty * i.price, 0);
 
   const [settings, setSettings] = useState<{
-    shipping_methods: { name: string; price: number }[];
+    shipping_methods: { name: string; price: number; eta?: string }[];
     payment_methods: { name: string; enabled: boolean }[];
     free_shipping_threshold: number | null;
     paypal: PayPalCfg;
     square: SquareCfg;
   } | null>(null);
+  const [needsApproval, setNeedsApproval] = useState(false);
 
   const [form, setForm] = useState({
     full_name: "",
@@ -68,8 +69,12 @@ function CheckoutPage() {
         if (paypal.enabled && paypal.client_id) {
           methods = [{ name: "PayPal", enabled: true }, ...methods.filter((m) => m.name !== "PayPal")];
         }
+        const zones = Array.isArray(data.shipping_zones) ? data.shipping_zones : [];
+        const shippingMethods = zones.length > 0
+          ? zones.map((z: { name: string; price: number; eta?: string }) => ({ name: z.name, price: Number(z.price), eta: z.eta }))
+          : (data.shipping_methods ?? [{ name: "Standard", price: 5.99 }]);
         setSettings({
-          shipping_methods: data.shipping_methods ?? [{ name: "Standard", price: 5.99 }],
+          shipping_methods: shippingMethods,
           payment_methods: methods,
           free_shipping_threshold: data.free_shipping_threshold,
           paypal,
@@ -96,6 +101,16 @@ function CheckoutPage() {
     }
   }, [user]);
 
+  // Check if any product in cart requires stock approval
+  useEffect(() => {
+    if (items.length === 0) { setNeedsApproval(false); return; }
+    const ids = [...new Set(items.map((i) => i.productId))];
+    supabase.from("products").select("id,requires_stock_approval").in("id", ids).then(({ data }) => {
+      setNeedsApproval(!!data?.some((p: { requires_stock_approval?: boolean }) => p.requires_stock_approval));
+    });
+  }, [items]);
+
+
   const shippingMethod = settings?.shipping_methods?.[shippingIdx];
   const shippingFee =
     settings?.free_shipping_threshold != null && subtotal >= settings.free_shipping_threshold
@@ -114,7 +129,7 @@ function CheckoutPage() {
       .from("orders")
       .insert({
         user_id: user.id,
-        status: paid ? "paid" : "pending",
+        status: paid ? "paid" : (needsApproval ? "awaiting_stock" : "pending"),
         subtotal,
         shipping: shippingFee,
         tax: 0,
@@ -280,13 +295,21 @@ function CheckoutPage() {
                   <Label>{t("cart.shipping")}</Label>
                   {settings.shipping_methods.map((m, i) => (
                     <label key={i} className="flex items-center justify-between border rounded p-3 cursor-pointer hover:bg-muted/50">
-                      <span className="flex items-center gap-3">
-                        <input type="radio" name="shipping" checked={shippingIdx === i} onChange={() => setShippingIdx(i)} />
-                        {m.name}
+                      <span className="flex flex-col">
+                        <span className="flex items-center gap-3">
+                          <input type="radio" name="shipping" checked={shippingIdx === i} onChange={() => setShippingIdx(i)} />
+                          <span className="font-medium">{m.name}</span>
+                        </span>
+                        {m.eta && <span className="text-xs text-muted-foreground ms-6">זמן אספקה: {m.eta}</span>}
                       </span>
                       <span className="text-sm font-medium">${m.price.toFixed(2)}</span>
                     </label>
                   ))}
+                </div>
+              )}
+              {needsApproval && (
+                <div className="mt-5 border border-amber-500/40 bg-amber-500/10 rounded-lg p-3 text-sm">
+                  <strong>שים לב:</strong> אחד או יותר מהפריטים בעגלה דורש <strong>אישור מלאי מהחנות</strong> לפני סיום הרכישה. ההזמנה תישמר בסטטוס "ממתין לאישור מלאי" ותתבצע רק לאחר אישור.
                 </div>
               )}
             </section>
