@@ -141,6 +141,23 @@ function ProductPage() {
             <p className="mt-6 text-muted-foreground leading-relaxed">{product.description}</p>
           )}
 
+          {product.video_url && !/youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url) && (
+            <div className="mt-6 rounded-lg overflow-hidden border bg-black">
+              <video src={product.video_url} controls className="w-full aspect-video" />
+            </div>
+          )}
+          {product.video_url && /youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url) && (
+            <a href={product.video_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm underline text-primary">
+              צפה בסרטון המוצר ↗
+            </a>
+          )}
+
+          {product.requires_stock_approval && (
+            <div className="mt-4 border border-amber-500/40 bg-amber-500/10 rounded-lg p-3 text-sm">
+              <strong>שים לב:</strong> רכישת מוצר זה כפופה לאישור מלאי מהחנות — ההזמנה תתבצע רק לאחר אישור.
+            </div>
+          )}
+
           {sizes.length > 0 && (
             <div className="mt-6">
               <div className="text-sm font-medium mb-2">{t("product.size")}</div>
