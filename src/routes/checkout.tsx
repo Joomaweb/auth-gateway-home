@@ -31,12 +31,13 @@ function CheckoutPage() {
   const subtotal = items.reduce((n, i) => n + i.qty * i.price, 0);
 
   const [settings, setSettings] = useState<{
-    shipping_methods: { name: string; price: number }[];
+    shipping_methods: { name: string; price: number; eta?: string }[];
     payment_methods: { name: string; enabled: boolean }[];
     free_shipping_threshold: number | null;
     paypal: PayPalCfg;
     square: SquareCfg;
   } | null>(null);
+  const [needsApproval, setNeedsApproval] = useState(false);
 
   const [form, setForm] = useState({
     full_name: "",
