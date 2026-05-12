@@ -69,14 +69,18 @@ function CheckoutPage() {
         if (paypal.enabled && paypal.client_id) {
           methods = [{ name: "PayPal", enabled: true }, ...methods.filter((m) => m.name !== "PayPal")];
         }
+        const zones = Array.isArray(data.shipping_zones) ? data.shipping_zones : [];
+        const methods = zones.length > 0
+          ? zones.map((z: { name: string; price: number; eta?: string }) => ({ name: z.name, price: Number(z.price), eta: z.eta }))
+          : (data.shipping_methods ?? [{ name: "Standard", price: 5.99 }]);
         setSettings({
-          shipping_methods: data.shipping_methods ?? [{ name: "Standard", price: 5.99 }],
-          payment_methods: methods,
+          shipping_methods: methods,
+          payment_methods: methods2,
           free_shipping_threshold: data.free_shipping_threshold,
           paypal,
           square,
         });
-        const enabled = methods.find((m) => m.enabled);
+        const enabled = methods2.find((m) => m.enabled);
         if (enabled) setPayment(enabled.name);
       }
     });
