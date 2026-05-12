@@ -60,18 +60,40 @@ function AdminSettings() {
 
   const uploadTo = async (file: File, onDone: (url: string) => void) => {
     if (!user) { toast.error("Not signed in"); return; }
-    const { validateImageFile } = await import("@/lib/security");
+    const { validateImageFile, downscaleImage } = await import("@/lib/security");
     const v = await validateImageFile(file);
     if (!v.ok) { toast.error(v.error); return; }
+    const small = await downscaleImage(file);
+    const ext = small.type === "image/png" ? "png" : small.type === "image/webp" ? "webp" : "jpg";
     const rand = crypto.randomUUID();
-    const path = `site/${user.id}/${Date.now()}-${rand}.${v.ext}`;
-    const { error } = await supabase.storage.from("upload").upload(path, file, {
-      contentType: file.type, upsert: false, cacheControl: "3600",
+    const path = `site/${user.id}/${Date.now()}-${rand}.${ext}`;
+    const { error } = await supabase.storage.from("upload").upload(path, small, {
+      contentType: small.type, upsert: false, cacheControl: "3600",
     });
     if (error) { toast.error("Upload failed: " + error.message); return; }
     const { data } = supabase.storage.from("upload").getPublicUrl(path);
     onDone(data.publicUrl);
     toast.success("Image uploaded");
+  };
+
+  const uploadVideoTo = async (file: File, onDone: (url: string) => void) => {
+    if (!user) { toast.error("Not signed in"); return; }
+    const { validateVideoFile } = await import("@/lib/security");
+    const v = await validateVideoFile(file);
+    if (!v.ok) { toast.error(v.error); return; }
+    setUploadingVid(true);
+    try {
+      const path = `site/${user.id}/video-${Date.now()}-${crypto.randomUUID()}.${v.ext}`;
+      const { error } = await supabase.storage.from("upload").upload(path, file, {
+        contentType: file.type, upsert: false, cacheControl: "3600",
+      });
+      if (error) { toast.error("Video upload failed: " + error.message); return; }
+      const { data } = supabase.storage.from("upload").getPublicUrl(path);
+      onDone(data.publicUrl);
+      toast.success("הסרטון הועלה");
+    } finally {
+      setUploadingVid(false);
+    }
   };
 
   const save = async (e: FormEvent) => {
@@ -80,8 +102,10 @@ function AdminSettings() {
     const { error } = await supabase.from("store_settings").upsert({
       id: 1,
       shipping_methods: shipping,
+      shipping_zones: zones,
       free_shipping_threshold: freeThreshold === "" ? null : Number(freeThreshold),
       hero,
+      hero_video: heroVideo || null,
       carousel_images: carousel,
       branding,
       company,
