@@ -195,6 +195,28 @@ function AdminSettings() {
             <div className="space-y-2"><Label>Button text</Label><Input value={hero.cta_text} onChange={(e) => setHero({ ...hero, cta_text: e.target.value })} /></div>
             <div className="space-y-2"><Label>Button link</Label><Input value={hero.cta_link} onChange={(e) => setHero({ ...hero, cta_link: e.target.value })} /></div>
           </div>
+
+          {/* Hero video (overlays the image when set) */}
+          <div className="space-y-2 pt-3 border-t">
+            <Label>סרטון רקע (אופציונלי) — מוצג מעל תמונת ה-Hero</Label>
+            {heroVideo && (
+              <div className="relative max-w-md rounded overflow-hidden bg-black">
+                <video src={heroVideo} controls className="w-full aspect-video" />
+                <button type="button" onClick={() => setHeroVideo("")} className="absolute top-2 end-2 bg-destructive text-destructive-foreground rounded p-1">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Input value={heroVideo} onChange={(e) => setHeroVideo(e.target.value)} placeholder="https://... (קובץ MP4 או YouTube/Vimeo)" />
+              <label className="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm cursor-pointer hover:bg-muted whitespace-nowrap">
+                <Upload className="h-4 w-4" /> {uploadingVid ? "מעלה…" : "העלה"}
+                <input type="file" accept="video/mp4,video/webm,video/quicktime" hidden disabled={uploadingVid}
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadVideoTo(f, setHeroVideo); e.target.value = ""; }} />
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground">MP4 / WEBM / MOV עד 50MB. אם יוזן קישור YouTube/Vimeo — יוצג כקישור (במקום הסרטון).</p>
+          </div>
         </section>
 
         {/* Carousel */}
