@@ -129,7 +129,7 @@ function CheckoutPage() {
       .from("orders")
       .insert({
         user_id: user.id,
-        status: paid ? "paid" : "pending",
+        status: paid ? "paid" : (needsApproval ? "awaiting_stock" : "pending"),
         subtotal,
         shipping: shippingFee,
         tax: 0,
