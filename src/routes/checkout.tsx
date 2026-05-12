@@ -111,6 +111,7 @@ function CheckoutPage() {
   }, [items]);
 
 
+  const shippingMethod = settings?.shipping_methods?.[shippingIdx];
   const shippingFee =
     settings?.free_shipping_threshold != null && subtotal >= settings.free_shipping_threshold
       ? 0
