@@ -672,7 +672,7 @@ function ProductEdit() {
               <Upload className="h-4 w-4 mb-1" /> Upload
               <input
                 type="file"
-                accept="image/png,image/jpeg"
+                accept="image/png,image/jpeg,image/webp"
                 hidden
                 onChange={(e) => {
                   const f = e.target.files?.[0];
