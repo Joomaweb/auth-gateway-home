@@ -101,7 +101,16 @@ function CheckoutPage() {
     }
   }, [user]);
 
-  const shippingMethod = settings?.shipping_methods?.[shippingIdx];
+  // Check if any product in cart requires stock approval
+  useEffect(() => {
+    if (items.length === 0) { setNeedsApproval(false); return; }
+    const ids = [...new Set(items.map((i) => i.productId))];
+    supabase.from("products").select("id,requires_stock_approval").in("id", ids).then(({ data }) => {
+      setNeedsApproval(!!data?.some((p: { requires_stock_approval?: boolean }) => p.requires_stock_approval));
+    });
+  }, [items]);
+
+
   const shippingFee =
     settings?.free_shipping_threshold != null && subtotal >= settings.free_shipping_threshold
       ? 0
