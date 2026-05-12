@@ -15,6 +15,7 @@ export const Route = createFileRoute("/admin/settings")({
 });
 
 type ShippingMethod = { name: string; price: number };
+type ShippingZone = { name: string; price: number; eta: string };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string };
 type Branding = { logo_url: string; favicon_url: string; site_name: string };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
@@ -33,19 +34,24 @@ function AdminSettings() {
   const { t } = useT();
   const { user } = useAuth();
   const [shipping, setShipping] = useState<ShippingMethod[]>([{ name: "Standard", price: 5.99 }]);
+  const [zones, setZones] = useState<ShippingZone[]>([]);
   const [freeThreshold, setFreeThreshold] = useState<string>("");
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
+  const [heroVideo, setHeroVideo] = useState<string>("");
   const [carousel, setCarousel] = useState<string[]>([]);
   const [branding, setBranding] = useState<Branding>(DEFAULT_BRANDING);
   const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
   const [busy, setBusy] = useState(false);
+  const [uploadingVid, setUploadingVid] = useState(false);
 
   useEffect(() => {
     supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
       if (!data) return;
       setShipping(data.shipping_methods ?? [{ name: "Standard", price: 5.99 }]);
+      setZones(Array.isArray(data.shipping_zones) ? data.shipping_zones : []);
       setFreeThreshold(data.free_shipping_threshold?.toString() ?? "");
       if (data.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
+      setHeroVideo(data.hero_video ?? "");
       if (Array.isArray(data.carousel_images)) setCarousel(data.carousel_images);
       if (data.branding) setBranding({ ...DEFAULT_BRANDING, ...(data.branding as Branding) });
       if (data.company) setCompany({ ...DEFAULT_COMPANY, ...(data.company as Company) });
