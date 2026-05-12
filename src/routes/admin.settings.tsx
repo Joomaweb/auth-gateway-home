@@ -177,7 +177,7 @@ function AdminSettings() {
                 <Input value={hero.image} onChange={(e) => setHero({ ...hero, image: e.target.value })} placeholder="Image URL" />
                 <label className="inline-flex items-center gap-2 text-sm cursor-pointer text-primary hover:underline">
                   <Upload className="h-4 w-4" /> Upload new image
-                  <input type="file" accept="image/png,image/jpeg" hidden
+                  <input type="file" accept="image/png,image/jpeg,image/webp" hidden
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo(f, (u) => setHero({ ...hero, image: u })); e.target.value = ""; }} />
                 </label>
               </div>
@@ -215,7 +215,7 @@ function AdminSettings() {
             ))}
             <label className="w-32 h-20 border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer text-xs text-muted-foreground hover:bg-muted/40">
               <Upload className="h-4 w-4 mb-1" /> Upload
-              <input type="file" accept="image/png,image/jpeg" hidden
+              <input type="file" accept="image/png,image/jpeg,image/webp" hidden
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo(f, (u) => setCarousel((c) => [...c, u])); e.target.value = ""; }} />
             </label>
           </div>
