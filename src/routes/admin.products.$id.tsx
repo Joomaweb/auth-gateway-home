@@ -167,9 +167,11 @@ function ProductEdit() {
           price: p.price != null ? String(p.price) : "",
           sale_price: p.sale_price != null ? String(p.sale_price) : "",
           images: Array.isArray(p.images) ? p.images : [],
+          video_url: p.video_url ?? "",
           category_id: p.category_id ?? "",
           featured: !!p.featured,
           active: p.active ?? true,
+          requires_stock_approval: !!p.requires_stock_approval,
         });
 
         if (vRes.error) console.error("variants load:", vRes.error);
