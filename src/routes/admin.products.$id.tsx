@@ -708,6 +708,54 @@ function ProductEdit() {
           </div>
         </section>
 
+        {/* Video (optional) */}
+        <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">סרטון מוצר (אופציונלי)</h2>
+            <span className="text-xs text-muted-foreground">MP4 / WEBM / MOV · עד 50MB · או קישור YouTube/Vimeo</span>
+          </div>
+          {form.video_url && (
+            <div className="relative w-full max-w-md rounded overflow-hidden border bg-black">
+              {/youtube\.com|youtu\.be|vimeo\.com/i.test(form.video_url) ? (
+                <div className="aspect-video bg-muted flex items-center justify-center text-sm text-muted-foreground p-4 text-center break-all">
+                  קישור חיצוני: {form.video_url}
+                </div>
+              ) : (
+                <video src={form.video_url} controls className="w-full aspect-video" />
+              )}
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, video_url: "" })}
+                className="absolute top-2 end-2 bg-destructive text-destructive-foreground rounded p-1"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+          <div className="flex gap-2">
+            <Input
+              value={form.video_url}
+              onChange={(e) => setForm({ ...form, video_url: e.target.value })}
+              onKeyDown={blockEnterSubmit}
+              placeholder="https://... (YouTube / Vimeo / קובץ וידאו)"
+            />
+            <label className="inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm cursor-pointer hover:bg-muted whitespace-nowrap">
+              <Upload className="h-4 w-4" /> {uploadingVideo ? "מעלה…" : "העלה סרטון"}
+              <input
+                type="file"
+                accept="video/mp4,video/webm,video/quicktime"
+                hidden
+                disabled={uploadingVideo}
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) uploadVideo(f);
+                  e.target.value = "";
+                }}
+              />
+            </label>
+          </div>
+        </section>
+
         {/* Sizes */}
         <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
           <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">Sizes</h2>
