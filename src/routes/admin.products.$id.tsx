@@ -603,7 +603,19 @@ function ProductEdit() {
               />
               Active (visible in shop)
             </label>
+            <label className="flex items-center gap-2 text-sm">
+              <Switch
+                checked={form.requires_stock_approval}
+                onCheckedChange={(v) => setForm({ ...form, requires_stock_approval: v })}
+              />
+              דורש אישור מלאי לפני רכישה
+            </label>
           </div>
+          {form.requires_stock_approval && (
+            <p className="text-xs text-muted-foreground bg-muted/40 rounded p-2">
+              ההזמנות של מוצר זה יקבלו סטטוס "ממתין לאישור מלאי" — תוכל לאשר/לדחות אותן מתוך עמוד ההזמנה.
+            </p>
+          )}
         </section>
 
         {/* Images */}
