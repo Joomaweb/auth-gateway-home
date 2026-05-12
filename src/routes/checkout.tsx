@@ -295,13 +295,21 @@ function CheckoutPage() {
                   <Label>{t("cart.shipping")}</Label>
                   {settings.shipping_methods.map((m, i) => (
                     <label key={i} className="flex items-center justify-between border rounded p-3 cursor-pointer hover:bg-muted/50">
-                      <span className="flex items-center gap-3">
-                        <input type="radio" name="shipping" checked={shippingIdx === i} onChange={() => setShippingIdx(i)} />
-                        {m.name}
+                      <span className="flex flex-col">
+                        <span className="flex items-center gap-3">
+                          <input type="radio" name="shipping" checked={shippingIdx === i} onChange={() => setShippingIdx(i)} />
+                          <span className="font-medium">{m.name}</span>
+                        </span>
+                        {m.eta && <span className="text-xs text-muted-foreground ms-6">זמן אספקה: {m.eta}</span>}
                       </span>
                       <span className="text-sm font-medium">${m.price.toFixed(2)}</span>
                     </label>
                   ))}
+                </div>
+              )}
+              {needsApproval && (
+                <div className="mt-5 border border-amber-500/40 bg-amber-500/10 rounded-lg p-3 text-sm">
+                  <strong>שים לב:</strong> אחד או יותר מהפריטים בעגלה דורש <strong>אישור מלאי מהחנות</strong> לפני סיום הרכישה. ההזמנה תישמר בסטטוס "ממתין לאישור מלאי" ותתבצע רק לאחר אישור.
                 </div>
               )}
             </section>
