@@ -395,9 +395,11 @@ function ProductEdit() {
           price: priceNum,
           sale_price: saleNum,
           images: form.images,
+          video_url: form.video_url || null,
           category_id: form.category_id || null,
           featured: form.featured,
           active: form.active,
+          requires_stock_approval: form.requires_stock_approval,
         };
         const { data, error } = await withTimeout(
           supabase.from("products").insert(insertPayload).select("id").single(),
@@ -413,9 +415,11 @@ function ProductEdit() {
           price: priceNum,
           sale_price: saleNum,
           images: form.images,
+          video_url: form.video_url || null,
           category_id: form.category_id || null,
           featured: form.featured,
           active: form.active,
+          requires_stock_approval: form.requires_stock_approval,
         };
         const { data, error } = await withTimeout(
           supabase.from("products").update(updatePayload).eq("id", id).select("id").single(),
