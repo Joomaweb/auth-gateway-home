@@ -104,10 +104,13 @@ function ProductEdit() {
     price: "" as string,
     sale_price: "" as string,
     images: [] as string[],
+    video_url: "",
     category_id: "",
     featured: false,
     active: true,
+    requires_stock_approval: false,
   });
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const [sizes, setSizes] = useState<string[]>([]);
   const [colors, setColors] = useState<string[]>([]);
   const [stockMap, setStockMap] = useState<Record<string, number>>({});
