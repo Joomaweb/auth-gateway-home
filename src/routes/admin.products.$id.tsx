@@ -207,15 +207,17 @@ function ProductEdit() {
       return;
     }
     try {
-      const { validateImageFile } = await import("@/lib/security");
+      const { validateImageFile, downscaleImage } = await import("@/lib/security");
       const v = await validateImageFile(file);
       if (!v.ok) {
         toast.error(v.error);
         return;
       }
-      const path = `products/${user.id}/${Date.now()}-${crypto.randomUUID()}.${v.ext}`;
-      const { error } = await supabase.storage.from("upload").upload(path, file, {
-        contentType: file.type,
+      const small = await downscaleImage(file);
+      const ext = small.type === "image/png" ? "png" : small.type === "image/webp" ? "webp" : "jpg";
+      const path = `products/${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from("upload").upload(path, small, {
+        contentType: small.type,
         upsert: false,
         cacheControl: "3600",
       });
@@ -229,6 +231,28 @@ function ProductEdit() {
     } catch (err) {
       console.error("Upload failed:", err);
       toast.error(err instanceof Error ? err.message : "Upload failed");
+    }
+  };
+
+  const uploadVideo = async (file: File) => {
+    if (!user) { toast.error("Not signed in"); return; }
+    try {
+      setUploadingVideo(true);
+      const { validateVideoFile } = await import("@/lib/security");
+      const v = await validateVideoFile(file);
+      if (!v.ok) { toast.error(v.error); return; }
+      const path = `products/${user.id}/video-${Date.now()}-${crypto.randomUUID()}.${v.ext}`;
+      const { error } = await supabase.storage.from("upload").upload(path, file, {
+        contentType: file.type, upsert: false, cacheControl: "3600",
+      });
+      if (error) { toast.error("Video upload failed: " + error.message); return; }
+      const { data } = supabase.storage.from("upload").getPublicUrl(path);
+      setForm((f) => ({ ...f, video_url: data.publicUrl }));
+      toast.success("הסרטון הועלה");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed");
+    } finally {
+      setUploadingVideo(false);
     }
   };
 
