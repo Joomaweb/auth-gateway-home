@@ -626,7 +626,7 @@ function ProductEdit() {
               <p className="text-xs text-destructive">{fieldErrors.images}</p>
             )}
             <span className="text-xs text-muted-foreground">
-              PNG / JPG · max 5MB · first image is the cover
+              PNG / JPG / WEBP · max 10MB · first image is the cover
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
