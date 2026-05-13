@@ -169,7 +169,7 @@ function HomePage() {
       )}
 
       {/* Featured carousel */}
-      {featured.length > 0 && (
+      {showFeatured && featured.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.featured")}</h2>
           <Carousel opts={{ align: "start" }}>
@@ -187,7 +187,7 @@ function HomePage() {
       )}
 
       {/* Sale */}
-      {sale.length > 0 && (
+      {showSale && sale.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16 border-t">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.sale")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
