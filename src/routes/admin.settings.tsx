@@ -256,6 +256,26 @@ function AdminSettings() {
           </div>
         </section>
 
+        {/* Homepage sections visibility */}
+        <section className="border rounded-lg p-6 bg-card space-y-3">
+          <h3 className="font-semibold">סקשנים בדף הבית</h3>
+          <p className="text-xs text-muted-foreground">הדלק/כבה סקשנים בדף הבית בזמן אמת.</p>
+          <label className="flex items-center justify-between gap-3 p-3 rounded border bg-background cursor-pointer">
+            <div>
+              <div className="font-medium">Featured</div>
+              <div className="text-xs text-muted-foreground">קרוסלת מוצרים מומלצים</div>
+            </div>
+            <input type="checkbox" className="h-5 w-5 accent-primary" checked={showFeatured} onChange={(e) => setShowFeatured(e.target.checked)} />
+          </label>
+          <label className="flex items-center justify-between gap-3 p-3 rounded border bg-background cursor-pointer">
+            <div>
+              <div className="font-medium">On Sale</div>
+              <div className="text-xs text-muted-foreground">סקשן מוצרי מבצע</div>
+            </div>
+            <input type="checkbox" className="h-5 w-5 accent-primary" checked={showSale} onChange={(e) => setShowSale(e.target.checked)} />
+          </label>
+        </section>
+
         {/* Shipping zones */}
         <section className="border rounded-lg p-6 bg-card space-y-3">
           <div className="flex items-center justify-between">
