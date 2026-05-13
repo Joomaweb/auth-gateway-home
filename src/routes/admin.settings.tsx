@@ -57,6 +57,8 @@ function AdminSettings() {
       if (Array.isArray(data.carousel_images)) setCarousel(data.carousel_images);
       if (data.branding) setBranding({ ...DEFAULT_BRANDING, ...(data.branding as Branding) });
       if (data.company) setCompany({ ...DEFAULT_COMPANY, ...(data.company as Company) });
+      setShowFeatured(data.show_featured ?? true);
+      setShowSale(data.show_sale ?? true);
     });
   }, []);
 
