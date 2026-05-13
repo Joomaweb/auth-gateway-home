@@ -41,6 +41,8 @@ function AdminSettings() {
   const [carousel, setCarousel] = useState<string[]>([]);
   const [branding, setBranding] = useState<Branding>(DEFAULT_BRANDING);
   const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
+  const [showFeatured, setShowFeatured] = useState(true);
+  const [showSale, setShowSale] = useState(true);
   const [busy, setBusy] = useState(false);
   const [uploadingVid, setUploadingVid] = useState(false);
 
