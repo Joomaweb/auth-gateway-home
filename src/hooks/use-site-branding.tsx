@@ -55,6 +55,26 @@ export function SiteBrandingProvider({ children }: { children: ReactNode }) {
     }
   }, [branding.favicon_url]);
 
+  // Dynamic document title from site_name
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (branding.site_name) {
+      document.title = branding.site_name;
+      const setMeta = (selector: string, attr: string, value: string) => {
+        let el = document.querySelector<HTMLMetaElement>(selector);
+        if (!el) {
+          el = document.createElement("meta");
+          const [k, v] = attr.split("=");
+          el.setAttribute(k, v.replace(/"/g, ""));
+          document.head.appendChild(el);
+        }
+        el.setAttribute("content", value);
+      };
+      setMeta('meta[property="og:title"]', 'property="og:title"', branding.site_name);
+      setMeta('meta[name="twitter:title"]', 'name="twitter:title"', branding.site_name);
+    }
+  }, [branding.site_name]);
+
   return <SiteCtx.Provider value={{ branding, legal, refresh }}>{children}</SiteCtx.Provider>;
 }
 
