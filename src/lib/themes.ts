@@ -3,13 +3,19 @@
 // tokens (bg-primary, text-foreground, etc.) so changing these vars
 // re-styles the entire site live, no reload required.
 
+export type LayoutVariant =
+  | "top-classic"
+  | "top-split"
+  | "top-stacked"
+  | "side-left"
+  | "floating-dock";
+
 export type ThemePreset = {
   id: string;
   name: string;
   description: string;
-  // Optional Google Fonts <link> URL to load when this theme is active
+  layout: LayoutVariant;
   fontUrl?: string;
-  // CSS custom property overrides (without the leading --)
   vars: Record<string, string>;
 };
 
