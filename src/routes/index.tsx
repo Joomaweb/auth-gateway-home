@@ -32,6 +32,8 @@ function HomePage() {
   const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
   const [heroVideo, setHeroVideo] = useState<string>("");
   const [slides, setSlides] = useState<string[]>([]);
+  const [showFeatured, setShowFeatured] = useState(true);
+  const [showSale, setShowSale] = useState(true);
 
   const load = () => {
     supabase.from("products")
@@ -48,11 +50,14 @@ function HomePage() {
       .then(({ data }) => setNewest((data ?? []) as ProductCardData[]));
     supabase.from("categories").select("*")
       .then(({ data }) => setCats((data ?? []) as Category[]));
-    supabase.from("store_settings").select("hero,hero_video,carousel_images").eq("id", 1).maybeSingle()
+    supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle()
       .then(({ data }) => {
         if (data?.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
-        setHeroVideo((data as { hero_video?: string } | null)?.hero_video ?? "");
-        if (Array.isArray(data?.carousel_images)) setSlides(data.carousel_images as string[]);
+        const d = data as { hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
+        setHeroVideo(d?.hero_video ?? "");
+        if (Array.isArray(d?.carousel_images)) setSlides(d!.carousel_images as string[]);
+        setShowFeatured(d?.show_featured ?? true);
+        setShowSale(d?.show_sale ?? true);
       });
   };
   useEffect(load, []);
@@ -164,7 +169,7 @@ function HomePage() {
       )}
 
       {/* Featured carousel */}
-      {featured.length > 0 && (
+      {showFeatured && featured.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.featured")}</h2>
           <Carousel opts={{ align: "start" }}>
@@ -182,7 +187,7 @@ function HomePage() {
       )}
 
       {/* Sale */}
-      {sale.length > 0 && (
+      {showSale && sale.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16 border-t">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.sale")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">

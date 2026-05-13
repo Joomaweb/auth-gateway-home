@@ -41,6 +41,8 @@ function AdminSettings() {
   const [carousel, setCarousel] = useState<string[]>([]);
   const [branding, setBranding] = useState<Branding>(DEFAULT_BRANDING);
   const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
+  const [showFeatured, setShowFeatured] = useState(true);
+  const [showSale, setShowSale] = useState(true);
   const [busy, setBusy] = useState(false);
   const [uploadingVid, setUploadingVid] = useState(false);
 
@@ -55,6 +57,8 @@ function AdminSettings() {
       if (Array.isArray(data.carousel_images)) setCarousel(data.carousel_images);
       if (data.branding) setBranding({ ...DEFAULT_BRANDING, ...(data.branding as Branding) });
       if (data.company) setCompany({ ...DEFAULT_COMPANY, ...(data.company as Company) });
+      setShowFeatured(data.show_featured ?? true);
+      setShowSale(data.show_sale ?? true);
     });
   }, []);
 
@@ -109,6 +113,8 @@ function AdminSettings() {
       carousel_images: carousel,
       branding,
       company,
+      show_featured: showFeatured,
+      show_sale: showSale,
     });
     setBusy(false);
     if (error) toast.error(error.message);
@@ -248,6 +254,26 @@ function AdminSettings() {
               const u = el?.value.trim(); if (u) { setCarousel([...carousel, u]); el.value = ""; }
             }}>Add</Button>
           </div>
+        </section>
+
+        {/* Homepage sections visibility */}
+        <section className="border rounded-lg p-6 bg-card space-y-3">
+          <h3 className="font-semibold">סקשנים בדף הבית</h3>
+          <p className="text-xs text-muted-foreground">הדלק/כבה סקשנים בדף הבית בזמן אמת.</p>
+          <label className="flex items-center justify-between gap-3 p-3 rounded border bg-background cursor-pointer">
+            <div>
+              <div className="font-medium">Featured</div>
+              <div className="text-xs text-muted-foreground">קרוסלת מוצרים מומלצים</div>
+            </div>
+            <input type="checkbox" className="h-5 w-5 accent-primary" checked={showFeatured} onChange={(e) => setShowFeatured(e.target.checked)} />
+          </label>
+          <label className="flex items-center justify-between gap-3 p-3 rounded border bg-background cursor-pointer">
+            <div>
+              <div className="font-medium">On Sale</div>
+              <div className="text-xs text-muted-foreground">סקשן מוצרי מבצע</div>
+            </div>
+            <input type="checkbox" className="h-5 w-5 accent-primary" checked={showSale} onChange={(e) => setShowSale(e.target.checked)} />
+          </label>
         </section>
 
         {/* Shipping zones */}
