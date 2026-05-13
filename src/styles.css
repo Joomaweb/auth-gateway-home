@@ -167,3 +167,144 @@
 @utility animate-fade-up { animation: fade-up 0.7s ease-out both; }
 @utility animate-float-slow { animation: float-slow 6s ease-in-out infinite; }
 @utility ring-gold-soft { box-shadow: 0 0 0 1px oklch(0.74 0.09 78 / 0.35), 0 12px 40px -16px oklch(0.74 0.09 78 / 0.35); }
+
+/* =====================================================
+   Per-theme deep overrides — beyond colors.
+   Activated by data-theme on <html>. Each theme changes
+   typography, body backgrounds, buttons, cards, headers,
+   hero overlays, selections, and animations.
+   ===================================================== */
+
+/* ---------- LUXURY GOLD ---------- */
+[data-theme="luxury-gold"] body {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  background-image:
+    radial-gradient(1200px 600px at 80% -10%, oklch(0.78 0.13 80 / 0.18), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, oklch(0.78 0.13 80 / 0.10), transparent 60%),
+    linear-gradient(oklch(0.78 0.13 80 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(0.78 0.13 80 / 0.05) 1px, transparent 1px);
+  background-size: auto, auto, 60px 60px, 60px 60px;
+}
+[data-theme="luxury-gold"] h1,
+[data-theme="luxury-gold"] h2,
+[data-theme="luxury-gold"] h3,
+[data-theme="luxury-gold"] .font-display {
+  font-family: "Cormorant Garamond", Georgia, serif !important;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+[data-theme="luxury-gold"] button,
+[data-theme="luxury-gold"] .rounded-md,
+[data-theme="luxury-gold"] .rounded-lg {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.85em;
+}
+[data-theme="luxury-gold"] [data-slot="card"],
+[data-theme="luxury-gold"] .rounded-xl {
+  border: 1px solid oklch(0.78 0.13 80 / 0.25);
+  box-shadow: 0 0 0 1px oklch(0.78 0.13 80 / 0.08), 0 30px 60px -30px oklch(0 0 0 / 0.6);
+}
+[data-theme="luxury-gold"] header { backdrop-filter: blur(20px) saturate(160%); }
+
+/* ---------- SOFT PASTEL ---------- */
+[data-theme="soft-pastel"] body {
+  font-family: "Quicksand", system-ui, sans-serif;
+  background-image:
+    radial-gradient(900px 500px at 90% -10%, oklch(0.88 0.08 25 / 0.45), transparent 60%),
+    radial-gradient(800px 500px at -10% 110%, oklch(0.92 0.06 60 / 0.50), transparent 60%),
+    radial-gradient(600px 400px at 50% 50%, oklch(0.95 0.04 340 / 0.35), transparent 70%);
+  background-size: auto;
+}
+[data-theme="soft-pastel"] h1,
+[data-theme="soft-pastel"] h2,
+[data-theme="soft-pastel"] h3,
+[data-theme="soft-pastel"] .font-display {
+  font-family: "DM Serif Display", Georgia, serif !important;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+[data-theme="soft-pastel"] [data-slot="card"],
+[data-theme="soft-pastel"] .rounded-xl,
+[data-theme="soft-pastel"] .rounded-lg {
+  border-radius: 1.25rem;
+  box-shadow: 0 20px 50px -20px oklch(0.72 0.13 15 / 0.18);
+}
+[data-theme="soft-pastel"] button { border-radius: 999px !important; }
+
+/* ---------- BOLD MODERN ---------- */
+[data-theme="bold-modern"] body {
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  background-image:
+    radial-gradient(700px 700px at 85% 10%, oklch(0.58 0.27 330 / 0.18), transparent 60%),
+    radial-gradient(700px 700px at 5% 90%, oklch(0.72 0.18 200 / 0.18), transparent 60%),
+    repeating-linear-gradient(45deg, oklch(0.14 0.02 280 / 0.04) 0 2px, transparent 2px 14px);
+}
+[data-theme="bold-modern"] h1,
+[data-theme="bold-modern"] h2,
+[data-theme="bold-modern"] h3,
+[data-theme="bold-modern"] .font-display {
+  font-family: "Space Grotesk", sans-serif !important;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+}
+[data-theme="bold-modern"] button {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+[data-theme="bold-modern"] [data-slot="card"] {
+  border: 2px solid oklch(0.14 0.02 280);
+  box-shadow: 6px 6px 0 0 oklch(0.58 0.27 330);
+  border-radius: 1rem;
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+[data-theme="bold-modern"] [data-slot="card"]:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 10px 10px 0 0 oklch(0.58 0.27 330);
+}
+[data-theme="bold-modern"] header {
+  border-bottom: 2px solid oklch(0.14 0.02 280);
+}
+
+/* ---------- DARK PREMIUM ---------- */
+[data-theme="dark-premium"] body {
+  font-family: "Inter", system-ui, sans-serif;
+  background-image:
+    radial-gradient(900px 600px at 80% -10%, oklch(0.78 0.18 165 / 0.18), transparent 60%),
+    radial-gradient(900px 600px at -10% 110%, oklch(0.7 0.2 295 / 0.18), transparent 60%),
+    linear-gradient(oklch(1 0 0 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(1 0 0 / 0.04) 1px, transparent 1px);
+  background-size: auto, auto, 36px 36px, 36px 36px;
+}
+[data-theme="dark-premium"] h1,
+[data-theme="dark-premium"] h2,
+[data-theme="dark-premium"] h3,
+[data-theme="dark-premium"] .font-display {
+  font-family: "Inter", sans-serif !important;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+[data-theme="dark-premium"] [data-slot="card"],
+[data-theme="dark-premium"] .rounded-xl {
+  background: oklch(1 0 0 / 0.04);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid oklch(1 0 0 / 0.10);
+  box-shadow: 0 30px 80px -30px oklch(0 0 0 / 0.7);
+}
+[data-theme="dark-premium"] header {
+  background: oklch(0.15 0.01 250 / 0.6) !important;
+  backdrop-filter: blur(20px) saturate(160%);
+  border-bottom: 1px solid oklch(1 0 0 / 0.08);
+}
+[data-theme="dark-premium"] button {
+  box-shadow: 0 0 0 1px oklch(0.78 0.18 165 / 0.25), 0 10px 30px -10px oklch(0.78 0.18 165 / 0.35);
+}
+
+/* ---------- CLASSIC (default already applied via :root, ensure font) ---------- */
+[data-theme="classic"] h1,
+[data-theme="classic"] h2,
+[data-theme="classic"] h3,
+[data-theme="classic"] .font-display {
+  font-family: "Playfair Display", Georgia, serif !important;
+}
