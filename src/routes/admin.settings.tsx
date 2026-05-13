@@ -113,6 +113,8 @@ function AdminSettings() {
       carousel_images: carousel,
       branding,
       company,
+      show_featured: showFeatured,
+      show_sale: showSale,
     });
     setBusy(false);
     if (error) toast.error(error.message);
