@@ -27,6 +27,7 @@ function ThemePreview({ t }: { t: ThemePreset }) {
   const v = t.vars;
   return (
     <div
+      data-theme={t.id}
       className="rounded-lg border overflow-hidden"
       style={{ background: v.background, color: v.foreground, borderColor: v.border, borderRadius: v.radius }}
     >
