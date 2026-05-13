@@ -3,13 +3,19 @@
 // tokens (bg-primary, text-foreground, etc.) so changing these vars
 // re-styles the entire site live, no reload required.
 
+export type LayoutVariant =
+  | "top-classic"
+  | "top-split"
+  | "top-stacked"
+  | "side-left"
+  | "floating-dock";
+
 export type ThemePreset = {
   id: string;
   name: string;
   description: string;
-  // Optional Google Fonts <link> URL to load when this theme is active
+  layout: LayoutVariant;
   fontUrl?: string;
-  // CSS custom property overrides (without the leading --)
   vars: Record<string, string>;
 };
 
@@ -18,6 +24,7 @@ export const THEMES: ThemePreset[] = [
     id: "classic",
     name: "Classic Atelier",
     description: "מינימליסטי שחור-לבן עם נגיעות זהב — העיצוב הנוכחי",
+    layout: "top-classic",
     fontUrl: "https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&display=swap",
     vars: {
       radius: "0.5rem",
@@ -54,6 +61,7 @@ export const THEMES: ThemePreset[] = [
     id: "luxury-gold",
     name: "Luxury Gold",
     description: "שחור עמוק + זהב מהודר, קלאס ויוקרה",
+    layout: "top-split",
     fontUrl: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&display=swap",
     vars: {
       radius: "0.25rem",
@@ -90,6 +98,7 @@ export const THEMES: ThemePreset[] = [
     id: "soft-pastel",
     name: "Soft Pastel",
     description: "ורוד עדין ובז׳ רך — נשי ומזמין",
+    layout: "top-stacked",
     fontUrl: "https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Quicksand:wght@400;500;600&display=swap",
     vars: {
       radius: "1rem",
@@ -126,6 +135,7 @@ export const THEMES: ThemePreset[] = [
     id: "bold-modern",
     name: "Bold Modern",
     description: "פוקסיה וציאן חיים — עכשווי ונועז",
+    layout: "side-left",
     fontUrl: "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap",
     vars: {
       radius: "0.75rem",
@@ -162,6 +172,7 @@ export const THEMES: ThemePreset[] = [
     id: "dark-premium",
     name: "Dark Premium",
     description: "Dark mode קבוע עם neon accents וזכוכית",
+    layout: "floating-dock",
     fontUrl: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
     vars: {
       radius: "0.625rem",
