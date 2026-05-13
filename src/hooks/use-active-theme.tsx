@@ -31,6 +31,9 @@ export function ActiveThemeProvider({ children }: { children: ReactNode }) {
     const t = getTheme(themeId);
     applyThemeVars(t.vars);
     applyThemeFont(t.fontUrl);
+    if (typeof document !== "undefined") {
+      document.documentElement.dataset.theme = t.id;
+    }
   }, [themeId]);
 
   return <ThemeCtx.Provider value={{ themeId, theme: getTheme(themeId), themes: THEMES }}>{children}</ThemeCtx.Provider>;
