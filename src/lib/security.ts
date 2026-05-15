@@ -39,7 +39,7 @@ export type ImageValidation =
 export async function validateImageFile(file: File): Promise<ImageValidation> {
   if (!file) return { ok: false, error: "לא נבחר קובץ" };
   if (file.size === 0) return { ok: false, error: "קובץ ריק" };
-  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "הקובץ גדול מ־10MB" };
+  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "הקובץ גדול מ־200MB" };
 
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   if (!ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number])) {
