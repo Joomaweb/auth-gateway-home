@@ -175,7 +175,8 @@ function CheckoutPage() {
     }
     setBusy(true);
     try {
-      const id = await persistOrder(false);
+      // Free orders are auto-marked as paid (used for checkout flow testing).
+      const id = await persistOrder(total === 0);
       clear();
       toast.success(t("checkout.success"));
       navigate({ to: "/orders/$id", params: { id } });
