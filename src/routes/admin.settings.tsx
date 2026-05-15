@@ -224,6 +224,9 @@ function AdminSettings() {
               איפוס למרכז
             </button>
           </div>
+
+          <div className="space-y-2">
+            <Label>תגית עליונה (Badge) — מעל הכותרת</Label>
             <Input value={hero.badge} onChange={(e) => setHero({ ...hero, badge: e.target.value })} placeholder="Atelier · 2026" />
             <p className="text-xs text-muted-foreground">השאר ריק כדי להסתיר. השינוי בזמן אמת.</p>
           </div>
