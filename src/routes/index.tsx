@@ -72,7 +72,7 @@ function HomePage() {
   return (
     <PublicLayout>
       {/* Hero */}
-      <section className="relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden bg-muted">
+      <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? "bg-black" : "bg-muted"}`}>
         {heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? (
           <video
             src={heroVideo}
