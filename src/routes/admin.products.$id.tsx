@@ -343,8 +343,8 @@ function ProductEdit() {
     if (badColor) errs.colors = `שם צבע לא תקין: "${badColor}" (אותיות בלבד, עד 25 תווים)`;
     if (colors.length !== new Set(colors).size) errs.colors = "יש צבעים כפולים";
 
-    // discount sanity
-    if (Number.isFinite(priceNum) && saleNum !== null) {
+    // discount sanity (skip when product is free)
+    if (Number.isFinite(priceNum) && priceNum > 0 && saleNum !== null) {
       const discount = ((priceNum - saleNum) / priceNum) * 100;
       if (discount < 1) errs.sale_price = "ההנחה חייבת להיות לפחות 1% מהמחיר";
       if (discount > 95) errs.sale_price = "ההנחה גדולה מ-95% — בדוק את המחירים";
