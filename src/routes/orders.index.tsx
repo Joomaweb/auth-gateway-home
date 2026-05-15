@@ -34,18 +34,18 @@ type ItemPreview = {
 
 type ProductImage = { id: string; images: string[] | null };
 
-const STATUS_STYLES: Record<string, { label: string; cls: string; Icon: typeof CheckCircle2 }> = {
-  paid:           { label: "שולם",       cls: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",   Icon: CheckCircle2 },
-  pending:        { label: "ממתין",      cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",   Icon: Clock },
-  awaiting_stock: { label: "אישור מלאי", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",   Icon: AlertTriangle },
-  shipped:        { label: "נשלח",       cls: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",       Icon: Truck },
-  delivered:      { label: "נמסר",       cls: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",   Icon: Package },
-  failed:         { label: "נכשל",       cls: "bg-destructive/15 text-destructive border-destructive/30",                  Icon: XCircle },
-  cancelled:      { label: "בוטל",       cls: "bg-muted text-muted-foreground border-border",                              Icon: XCircle },
+const STATUS_STYLES: Record<string, { cls: string; Icon: typeof CheckCircle2 }> = {
+  paid:           { cls: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",   Icon: CheckCircle2 },
+  pending:        { cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",   Icon: Clock },
+  awaiting_stock: { cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",   Icon: AlertTriangle },
+  shipped:        { cls: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",       Icon: Truck },
+  delivered:      { cls: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",   Icon: Package },
+  failed:         { cls: "bg-destructive/15 text-destructive border-destructive/30",                  Icon: XCircle },
+  cancelled:      { cls: "bg-muted text-muted-foreground border-border",                              Icon: XCircle },
 };
 
 function statusInfo(s: string) {
-  return STATUS_STYLES[s] ?? { label: s, cls: "bg-muted text-muted-foreground border-border", Icon: Package };
+  return STATUS_STYLES[s] ?? { cls: "bg-muted text-muted-foreground border-border", Icon: Package };
 }
 
 function OrdersPage() {
