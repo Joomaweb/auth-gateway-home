@@ -319,6 +319,33 @@ function CheckoutPage() {
         <h1 className="font-display text-4xl font-semibold mb-8">{t("checkout.title")}</h1>
         <form onSubmit={handleManualSubmit} className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
+            {!user && (
+              <section className="border rounded-lg p-6 bg-card">
+                <h2 className="font-semibold mb-1">יצירת חשבון מהירה</h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  כדי שנוכל לעקוב אחר ההזמנה שלך, יווצר עבורך חשבון אוטומטית. כבר רשום?{" "}
+                  <button type="button" className="text-primary underline" onClick={() => navigate({ to: "/login" })}>
+                    התחבר
+                  </button>
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="אימייל"
+                    type="email"
+                    value={form.email}
+                    onChange={(v) => setForm({ ...form, email: v })}
+                    required
+                  />
+                  <Field
+                    label="סיסמה (לפחות 6 תווים)"
+                    type="password"
+                    value={form.password}
+                    onChange={(v) => setForm({ ...form, password: v })}
+                    required
+                  />
+                </div>
+              </section>
+            )}
             <section className="border rounded-lg p-6 bg-card">
               <h2 className="font-semibold mb-4">{t("checkout.shipping")}</h2>
               <div className="grid gap-4 sm:grid-cols-2">
