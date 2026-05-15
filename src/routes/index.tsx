@@ -161,7 +161,7 @@ function HomePage() {
               <Link key={c.id} to="/shop" search={{ category: c.slug }}
                 className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
                 <img src={c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800"}
-                  alt={c.name}
+                  alt={c.name} loading="lazy" decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                   <h3 className="text-white font-display text-2xl font-semibold">{c.name}</h3>
