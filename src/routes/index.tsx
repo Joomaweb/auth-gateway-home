@@ -120,7 +120,7 @@ function HomePage() {
               {slides.map((src, i) => (
                 <CarouselItem key={i}>
                   <div className="aspect-[16/6] rounded-lg overflow-hidden bg-muted">
-                    <img src={src} alt="" className="w-full h-full object-cover" />
+                    <img src={src} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </div>
                 </CarouselItem>
               ))}
