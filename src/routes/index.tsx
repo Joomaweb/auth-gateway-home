@@ -77,8 +77,7 @@ function HomePage() {
           <video
             src={heroVideo}
             autoPlay muted loop playsInline
-            preload="metadata"
-            poster={hero.image}
+            preload="auto"
             className="absolute inset-0 w-full h-full object-cover scale-105"
             style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
           />
