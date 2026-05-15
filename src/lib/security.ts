@@ -95,7 +95,7 @@ export type VideoValidation =
 export async function validateVideoFile(file: File): Promise<VideoValidation> {
   if (!file) return { ok: false, error: "לא נבחר קובץ" };
   if (file.size === 0) return { ok: false, error: "קובץ ריק" };
-  if (file.size > MAX_VIDEO_BYTES) return { ok: false, error: "הסרטון גדול מ־50MB" };
+  if (file.size > MAX_VIDEO_BYTES) return { ok: false, error: "הסרטון גדול מ־200MB" };
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   if (!ALLOWED_VIDEO_EXT.includes(ext as (typeof ALLOWED_VIDEO_EXT)[number])) {
     return { ok: false, error: "סיומת לא נתמכת. רק MP4 / WEBM / MOV" };
