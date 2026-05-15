@@ -73,7 +73,16 @@ export function Header({ variant = "top-classic" }: { variant?: HeaderVariant })
         <img
           src={branding.logo_url}
           alt={siteName}
-          className={size === "lg" ? "h-12 md:h-14 w-auto object-contain" : size === "sm" ? "h-7 w-auto object-contain" : "h-8 md:h-10 w-auto object-contain"}
+          style={branding.logo_height ? { height: `${branding.logo_height}px`, width: "auto" } : undefined}
+          className={
+            branding.logo_height
+              ? "object-contain"
+              : size === "lg"
+              ? "h-12 md:h-14 w-auto object-contain"
+              : size === "sm"
+              ? "h-7 w-auto object-contain"
+              : "h-8 md:h-10 w-auto object-contain"
+          }
         />
       ) : (
         <span

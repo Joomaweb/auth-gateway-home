@@ -1,10 +1,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/lib/supabase";
 
-export type Branding = { logo_url: string; favicon_url: string; site_name: string };
+export type Branding = { logo_url: string; favicon_url: string; site_name: string; logo_height?: number };
 export type Legal = { terms_en: string; terms_he: string; policy_en: string; policy_he: string };
 
-const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER" };
+const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER", logo_height: 40 };
 const DEFAULT_LEGAL: Legal = { terms_en: "", terms_he: "", policy_en: "", policy_he: "" };
 
 type Ctx = { branding: Branding; legal: Legal; refresh: () => void };

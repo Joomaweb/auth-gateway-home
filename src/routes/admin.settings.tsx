@@ -17,7 +17,7 @@ export const Route = createFileRoute("/admin/settings")({
 type ShippingMethod = { name: string; price: number };
 type ShippingZone = { name: string; price: number; eta: string };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number; show_overlay?: boolean };
-type Branding = { logo_url: string; favicon_url: string; site_name: string };
+type Branding = { logo_url: string; favicon_url: string; site_name: string; logo_height?: number };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
 const DEFAULT_HERO: Hero = {
@@ -31,7 +31,7 @@ const DEFAULT_HERO: Hero = {
   pos_y: 50,
   show_overlay: true,
 };
-const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER" };
+const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER", logo_height: 40 };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
 
 function AdminSettings() {
@@ -142,8 +142,12 @@ function AdminSettings() {
           <div className="space-y-2">
             <Label>לוגו (Logo)</Label>
             <div className="flex items-start gap-3">
-              <div className="w-40 h-16 rounded overflow-hidden bg-muted border flex-shrink-0 flex items-center justify-center">
-                {branding.logo_url ? <img src={branding.logo_url} alt="" className="max-h-full max-w-full object-contain" /> : <span className="text-xs text-muted-foreground">ללא לוגו</span>}
+              <div className="w-40 h-20 rounded overflow-hidden bg-muted border flex-shrink-0 flex items-center justify-center">
+                {branding.logo_url ? (
+                  <img src={branding.logo_url} alt="" style={{ height: `${branding.logo_height ?? 40}px`, width: "auto" }} className="object-contain" />
+                ) : (
+                  <span className="text-xs text-muted-foreground">ללא לוגו</span>
+                )}
               </div>
               <div className="flex-1 space-y-2">
                 <Input value={branding.logo_url} onChange={(e) => setBranding({ ...branding, logo_url: e.target.value })} placeholder="https://..." />
@@ -152,6 +156,33 @@ function AdminSettings() {
                   <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" hidden
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo(f, (u) => setBranding({ ...branding, logo_url: u })); e.target.value = ""; }} />
                 </label>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 pt-2">
+              <div className="flex items-center justify-between">
+                <Label>גודל לוגו (Logo height)</Label>
+                <span className="text-xs text-muted-foreground tabular-nums">{branding.logo_height ?? 40}px</span>
+              </div>
+              <input
+                type="range"
+                min={20}
+                max={140}
+                step={1}
+                value={branding.logo_height ?? 40}
+                onChange={(e) => setBranding({ ...branding, logo_height: Number(e.target.value) })}
+                className="w-full accent-primary"
+              />
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min={20}
+                  max={200}
+                  value={branding.logo_height ?? 40}
+                  onChange={(e) => setBranding({ ...branding, logo_height: Number(e.target.value) || 40 })}
+                  className="w-24"
+                />
+                <span className="text-xs text-muted-foreground">פיקסלים — מתעדכן בזמן אמת</span>
               </div>
             </div>
           </div>
