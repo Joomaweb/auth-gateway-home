@@ -500,11 +500,11 @@ function CheckoutPage() {
   );
 }
 
-function Field({ label, value, onChange, required }: { label: string; value: string; onChange: (v: string) => void; required?: boolean }) {
+function Field({ label, value, onChange, required, type }: { label: string; value: string; onChange: (v: string) => void; required?: boolean; type?: string }) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} required={required} />
+      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} required={required} />
     </div>
   );
 }
