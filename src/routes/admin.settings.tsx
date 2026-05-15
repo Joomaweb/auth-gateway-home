@@ -191,6 +191,11 @@ function AdminSettings() {
             </div>
           </div>
           <div className="space-y-2">
+            <Label>תגית עליונה (Badge) — מעל הכותרת</Label>
+            <Input value={hero.badge} onChange={(e) => setHero({ ...hero, badge: e.target.value })} placeholder="Atelier · 2026" />
+            <p className="text-xs text-muted-foreground">השאר ריק כדי להסתיר. השינוי בזמן אמת.</p>
+          </div>
+          <div className="space-y-2">
             <Label>Title</Label>
             <Input value={hero.title} onChange={(e) => setHero({ ...hero, title: e.target.value })} />
           </div>
