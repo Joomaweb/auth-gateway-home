@@ -226,6 +226,15 @@ function AdminSettings() {
             </button>
           </div>
 
+          <label className="flex items-center justify-between gap-3 p-3 rounded border bg-muted/30">
+            <div>
+              <div className="text-sm font-medium">הצג כיתובים וכפתור על ה-Hero</div>
+              <p className="text-xs text-muted-foreground">כבה כדי להציג את הסרטון/תמונה בלבד, ללא טקסטים וכפתור.</p>
+            </div>
+            <input type="checkbox" className="h-5 w-5" checked={hero.show_overlay !== false}
+              onChange={(e) => setHero({ ...hero, show_overlay: e.target.checked })} />
+          </label>
+
           <div className="space-y-2">
             <Label>תגית עליונה (Badge) — מעל הכותרת</Label>
             <Input value={hero.badge} onChange={(e) => setHero({ ...hero, badge: e.target.value })} placeholder="Atelier · 2026" />
