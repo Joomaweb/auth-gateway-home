@@ -93,7 +93,7 @@ function AdminSettings() {
     try {
       const path = `site/${user.id}/video-${Date.now()}-${crypto.randomUUID()}.${v.ext}`;
       const { error } = await supabase.storage.from("upload").upload(path, file, {
-        contentType: file.type, upsert: false, cacheControl: "3600",
+        contentType: file.type, upsert: false, cacheControl: "31536000",
       });
       if (error) { toast.error("Video upload failed: " + error.message); return; }
       const { data } = supabase.storage.from("upload").getPublicUrl(path);

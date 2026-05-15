@@ -74,11 +74,17 @@ function HomePage() {
       {/* Hero */}
       <section className="relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden bg-muted">
         {heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? (
-          <video src={heroVideo} autoPlay muted loop playsInline
+          <video
+            src={heroVideo}
+            autoPlay muted loop playsInline
+            preload="metadata"
+            poster={hero.image}
             className="absolute inset-0 w-full h-full object-cover scale-105"
-            style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }} />
+            style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
+          />
         ) : (
           <img src={hero.image} alt="Hero"
+            fetchPriority="high" decoding="async"
             className="absolute inset-0 w-full h-full object-cover scale-105"
             style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }} />
         )}
@@ -114,7 +120,7 @@ function HomePage() {
               {slides.map((src, i) => (
                 <CarouselItem key={i}>
                   <div className="aspect-[16/6] rounded-lg overflow-hidden bg-muted">
-                    <img src={src} alt="" className="w-full h-full object-cover" />
+                    <img src={src} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </div>
                 </CarouselItem>
               ))}
@@ -138,7 +144,7 @@ function HomePage() {
                     <Link to="/shop" search={{ category: c.slug }}
                       className="group relative block aspect-[4/3] overflow-hidden rounded-xl bg-muted shadow-soft">
                       <img src={c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800"}
-                        alt={c.name}
+                        alt={c.name} loading="lazy" decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent flex items-end p-4">
                         <h3 className="text-white font-display text-xl font-semibold drop-shadow">{c.name}</h3>
@@ -155,7 +161,7 @@ function HomePage() {
               <Link key={c.id} to="/shop" search={{ category: c.slug }}
                 className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
                 <img src={c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800"}
-                  alt={c.name}
+                  alt={c.name} loading="lazy" decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                   <h3 className="text-white font-display text-2xl font-semibold">{c.name}</h3>

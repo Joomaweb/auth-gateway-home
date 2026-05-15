@@ -19,6 +19,7 @@ export function ProductCard({ p }: { p: ProductCardData }) {
           src={img}
           alt={p.name}
           loading="lazy"
+          decoding="async"
           className="absolute inset-0 w-full h-full object-cover transition-all duration-700 group-hover:opacity-0 group-hover:scale-105"
         />
         <img
@@ -26,6 +27,7 @@ export function ProductCard({ p }: { p: ProductCardData }) {
           alt=""
           aria-hidden
           loading="lazy"
+          decoding="async"
           className="absolute inset-0 w-full h-full object-cover scale-110 opacity-0 transition-all duration-700 group-hover:opacity-100 group-hover:scale-100"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
