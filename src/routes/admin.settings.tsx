@@ -221,7 +221,7 @@ function AdminSettings() {
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadVideoTo(f, setHeroVideo); e.target.value = ""; }} />
               </label>
             </div>
-            <p className="text-xs text-muted-foreground">MP4 / WEBM / MOV עד 50MB. אם יוזן קישור YouTube/Vimeo — יוצג כקישור (במקום הסרטון).</p>
+            <p className="text-xs text-muted-foreground">MP4 / WEBM / MOV עד 200MB. אם יוזן קישור YouTube/Vimeo — יוצג כקישור (במקום הסרטון).</p>
           </div>
         </section>
 
