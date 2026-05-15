@@ -170,7 +170,7 @@ function OrdersPage() {
                               {o.invoice_number ? `#${o.invoice_number}` : `#${o.id.slice(0, 8).toUpperCase()}`}
                             </span>
                             <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${s.cls}`}>
-                              <StatusIcon className="h-3 w-3" /> {s.label}
+                              <StatusIcon className="h-3 w-3" /> {t(`orderStatus.${o.status}` as never) || o.status}
                             </span>
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
