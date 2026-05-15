@@ -13,7 +13,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Category = { id: string; name: string; slug: string; image_url: string | null };
-type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number };
+type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number; show_overlay?: boolean };
 
 const DEFAULT_HERO: Hero = {
   image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600",
@@ -24,6 +24,7 @@ const DEFAULT_HERO: Hero = {
   badge: "Atelier · 2026",
   pos_x: 50,
   pos_y: 50,
+  show_overlay: true,
 };
 
 function HomePage() {
