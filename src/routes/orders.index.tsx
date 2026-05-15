@@ -11,7 +11,7 @@ import {
   ChevronLeft, Receipt, ShoppingBag,
 } from "lucide-react";
 
-export const Route = createFileRoute("/orders")({
+export const Route = createFileRoute("/orders/")({
   component: OrdersPage,
 });
 
