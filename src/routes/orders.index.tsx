@@ -109,7 +109,7 @@ function OrdersPage() {
             <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight">{t("orders.title")}</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {orders.length > 0
-                ? `${orders.length} ${orders.length === 1 ? "הזמנה" : "הזמנות"}`
+                ? `${orders.length} ${orders.length === 1 ? t("orders.count_one") : t("orders.count_other")}`
                 : t("orders.empty")}
             </p>
           </div>
