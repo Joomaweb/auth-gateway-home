@@ -47,14 +47,14 @@ function CheckoutPage() {
     zip: "",
     country: "",
     notes: "",
+    email: "",
+    password: "",
   });
   const [shippingIdx, setShippingIdx] = useState(0);
   const [payment, setPayment] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
-  }, [loading, user, navigate]);
+  // Guest checkout: no redirect to /login. Account is created inline at order time.
 
   useEffect(() => {
     supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
