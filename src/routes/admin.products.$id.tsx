@@ -543,6 +543,16 @@ function ProductEdit() {
                 className={cn(fieldErrors.price && "border-destructive focus-visible:ring-destructive")}
                 aria-invalid={!!fieldErrors.price}
               />
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, price: "0", sale_price: "" })}
+                className="text-xs text-primary hover:underline"
+              >
+                הפוך למוצר חינם (0₪) — לבדיקת מערכת התשלומים
+              </button>
+              {Number(form.price) === 0 && form.price !== "" && (
+                <p className="text-xs text-gold font-semibold">🆓 מוצר חינם — שימושי לבדיקת checkout</p>
+              )}
               {fieldErrors.price && <p className="text-xs text-destructive">{fieldErrors.price}</p>}
             </div>
             <div className="space-y-2">
