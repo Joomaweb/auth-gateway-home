@@ -16,7 +16,7 @@ export const Route = createFileRoute("/admin/settings")({
 
 type ShippingMethod = { name: string; price: number };
 type ShippingZone = { name: string; price: number; eta: string };
-type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number };
+type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number; show_overlay?: boolean };
 type Branding = { logo_url: string; favicon_url: string; site_name: string };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
@@ -29,6 +29,7 @@ const DEFAULT_HERO: Hero = {
   badge: "Atelier · 2026",
   pos_x: 50,
   pos_y: 50,
+  show_overlay: true,
 };
 const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER" };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
@@ -224,6 +225,15 @@ function AdminSettings() {
               איפוס למרכז
             </button>
           </div>
+
+          <label className="flex items-center justify-between gap-3 p-3 rounded border bg-muted/30">
+            <div>
+              <div className="text-sm font-medium">הצג כיתובים וכפתור על ה-Hero</div>
+              <p className="text-xs text-muted-foreground">כבה כדי להציג את הסרטון/תמונה בלבד, ללא טקסטים וכפתור.</p>
+            </div>
+            <input type="checkbox" className="h-5 w-5" checked={hero.show_overlay !== false}
+              onChange={(e) => setHero({ ...hero, show_overlay: e.target.checked })} />
+          </label>
 
           <div className="space-y-2">
             <Label>תגית עליונה (Badge) — מעל הכותרת</Label>
