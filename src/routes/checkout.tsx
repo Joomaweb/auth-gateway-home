@@ -316,58 +316,68 @@ function CheckoutPage() {
 
             <section className="border rounded-lg p-6 bg-card">
               <h2 className="font-semibold mb-4">{t("checkout.payment")}</h2>
-              <div className="space-y-2">
-                {settings?.payment_methods?.filter((m) => m.enabled).map((m) => (
-                  <label key={m.name} className="flex items-center gap-3 border rounded p-3 cursor-pointer hover:bg-muted/50">
-                    <input type="radio" name="payment" checked={payment === m.name} onChange={() => setPayment(m.name)} />
-                    <span className="flex-1">{m.name}</span>
-                    {m.name === "PayPal" && (
-                      <span className="text-xs text-muted-foreground">PayPal · Credit / Debit card</span>
-                    )}
-                    {m.name === "Square" && (
-                      <span className="text-xs text-muted-foreground">Credit / Debit card</span>
-                    )}
-                  </label>
-                ))}
-              </div>
 
-              {isPayPal && settings?.paypal && (
-                <div className="mt-5 pt-5 border-t space-y-3">
-                  <p className="text-xs text-muted-foreground">
-                    Pay securely with PayPal balance, or click <strong>Debit or Credit Card</strong> to enter card details directly — no PayPal account required.
-                  </p>
-                  <PayPalCheckout
-                    clientId={settings.paypal.client_id}
-                    mode={settings.paypal.mode}
-                    amount={total}
-                    currency="USD"
-                    disabled={!requiredFieldsValid || busy}
-                    onApproved={handlePayPalApproved}
-                  />
-                  {!requiredFieldsValid && (
-                    <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
-                  )}
+              {total === 0 ? (
+                <div className="border border-gold/40 bg-gold/10 rounded-lg p-4 text-sm space-y-2">
+                  <p className="font-semibold">🆓 הזמנה חינם</p>
+                  <p className="text-muted-foreground">סכום ההזמנה הוא 0 — אין צורך בתשלום. ההזמנה תיווצר ישירות לבדיקת זרימת הצ׳קאאוט.</p>
                 </div>
-              )}
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    {settings?.payment_methods?.filter((m) => m.enabled).map((m) => (
+                      <label key={m.name} className="flex items-center gap-3 border rounded p-3 cursor-pointer hover:bg-muted/50">
+                        <input type="radio" name="payment" checked={payment === m.name} onChange={() => setPayment(m.name)} />
+                        <span className="flex-1">{m.name}</span>
+                        {m.name === "PayPal" && (
+                          <span className="text-xs text-muted-foreground">PayPal · Credit / Debit card</span>
+                        )}
+                        {m.name === "Square" && (
+                          <span className="text-xs text-muted-foreground">Credit / Debit card</span>
+                        )}
+                      </label>
+                    ))}
+                  </div>
 
-              {isSquare && settings?.square && (
-                <div className="mt-5 pt-5 border-t space-y-3">
-                  <p className="text-xs text-muted-foreground">
-                    Pay securely with your credit or debit card via Square.
-                  </p>
-                  <SquareCheckout
-                    applicationId={settings.square.application_id}
-                    locationId={settings.square.location_id}
-                    mode={settings.square.mode}
-                    amount={total}
-                    currency="USD"
-                    disabled={!requiredFieldsValid || busy}
-                    onTokenized={handleSquareTokenized}
-                  />
-                  {!requiredFieldsValid && (
-                    <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
+                  {isPayPal && settings?.paypal && (
+                    <div className="mt-5 pt-5 border-t space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Pay securely with PayPal balance, or click <strong>Debit or Credit Card</strong> to enter card details directly — no PayPal account required.
+                      </p>
+                      <PayPalCheckout
+                        clientId={settings.paypal.client_id}
+                        mode={settings.paypal.mode}
+                        amount={total}
+                        currency="USD"
+                        disabled={!requiredFieldsValid || busy}
+                        onApproved={handlePayPalApproved}
+                      />
+                      {!requiredFieldsValid && (
+                        <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
+                      )}
+                    </div>
                   )}
-                </div>
+
+                  {isSquare && settings?.square && (
+                    <div className="mt-5 pt-5 border-t space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        Pay securely with your credit or debit card via Square.
+                      </p>
+                      <SquareCheckout
+                        applicationId={settings.square.application_id}
+                        locationId={settings.square.location_id}
+                        mode={settings.square.mode}
+                        amount={total}
+                        currency="USD"
+                        disabled={!requiredFieldsValid || busy}
+                        onTokenized={handleSquareTokenized}
+                      />
+                      {!requiredFieldsValid && (
+                        <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </section>
           </div>
