@@ -14,6 +14,7 @@ import { Route as ShopRouteImport } from './routes/shop'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PolicyRouteImport } from './routes/policy'
+import { Route as OrdersRouteImport } from './routes/orders'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as ContactRouteImport } from './routes/contact'
@@ -67,6 +68,11 @@ const PolicyRoute = PolicyRouteImport.update({
   path: '/policy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OrdersRoute = OrdersRouteImport.update({
+  id: '/orders',
+  path: '/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -108,9 +114,9 @@ const IndexRoute = IndexRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersIndexRoute = OrdersIndexRouteImport.update({
-  id: '/orders/',
-  path: '/orders/',
-  getParentRoute: () => rootRouteImport,
+  id: '/',
+  path: '/',
+  getParentRoute: () => OrdersRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
@@ -123,9 +129,9 @@ const ProductIdRoute = ProductIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const OrdersIdRoute = OrdersIdRouteImport.update({
-  id: '/orders/$id',
-  path: '/orders/$id',
-  getParentRoute: () => rootRouteImport,
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => OrdersRoute,
 } as any)
 const AdminThemesRoute = AdminThemesRouteImport.update({
   id: '/themes',
@@ -212,6 +218,7 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/policy': typeof PolicyRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
@@ -280,6 +287,7 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/inbox': typeof InboxRoute
   '/login': typeof LoginRoute
+  '/orders': typeof OrdersRouteWithChildren
   '/policy': typeof PolicyRoute
   '/profile': typeof ProfileRoute
   '/register': typeof RegisterRoute
@@ -316,6 +324,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/inbox'
     | '/login'
+    | '/orders'
     | '/policy'
     | '/profile'
     | '/register'
@@ -383,6 +392,7 @@ export interface FileRouteTypes {
     | '/contact'
     | '/inbox'
     | '/login'
+    | '/orders'
     | '/policy'
     | '/profile'
     | '/register'
@@ -418,14 +428,13 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   InboxRoute: typeof InboxRoute
   LoginRoute: typeof LoginRoute
+  OrdersRoute: typeof OrdersRouteWithChildren
   PolicyRoute: typeof PolicyRoute
   ProfileRoute: typeof ProfileRoute
   RegisterRoute: typeof RegisterRoute
   ShopRoute: typeof ShopRoute
   TermsRoute: typeof TermsRoute
-  OrdersIdRoute: typeof OrdersIdRoute
   ProductIdRoute: typeof ProductIdRoute
-  OrdersIndexRoute: typeof OrdersIndexRoute
   ApiPublicSquareWebhookRoute: typeof ApiPublicSquareWebhookRoute
 }
 
@@ -464,6 +473,13 @@ declare module '@tanstack/react-router' {
       path: '/policy'
       fullPath: '/policy'
       preLoaderRoute: typeof PolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/orders': {
+      id: '/orders'
+      path: '/orders'
+      fullPath: '/orders'
+      preLoaderRoute: typeof OrdersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -524,10 +540,10 @@ declare module '@tanstack/react-router' {
     }
     '/orders/': {
       id: '/orders/'
-      path: '/orders'
+      path: '/'
       fullPath: '/orders/'
       preLoaderRoute: typeof OrdersIndexRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OrdersRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -545,10 +561,10 @@ declare module '@tanstack/react-router' {
     }
     '/orders/$id': {
       id: '/orders/$id'
-      path: '/orders/$id'
+      path: '/$id'
       fullPath: '/orders/$id'
       preLoaderRoute: typeof OrdersIdRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof OrdersRoute
     }
     '/admin/themes': {
       id: '/admin/themes'
@@ -696,6 +712,19 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface OrdersRouteChildren {
+  OrdersIdRoute: typeof OrdersIdRoute
+  OrdersIndexRoute: typeof OrdersIndexRoute
+}
+
+const OrdersRouteChildren: OrdersRouteChildren = {
+  OrdersIdRoute: OrdersIdRoute,
+  OrdersIndexRoute: OrdersIndexRoute,
+}
+
+const OrdersRouteWithChildren =
+  OrdersRoute._addFileChildren(OrdersRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AboutRoute: AboutRoute,
@@ -705,14 +734,13 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   InboxRoute: InboxRoute,
   LoginRoute: LoginRoute,
+  OrdersRoute: OrdersRouteWithChildren,
   PolicyRoute: PolicyRoute,
   ProfileRoute: ProfileRoute,
   RegisterRoute: RegisterRoute,
   ShopRoute: ShopRoute,
   TermsRoute: TermsRoute,
-  OrdersIdRoute: OrdersIdRoute,
   ProductIdRoute: ProductIdRoute,
-  OrdersIndexRoute: OrdersIndexRoute,
   ApiPublicSquareWebhookRoute: ApiPublicSquareWebhookRoute,
 }
 export const routeTree = rootRouteImport
