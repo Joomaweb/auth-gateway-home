@@ -29,6 +29,7 @@ const DEFAULT_HERO: Hero = {
   badge: "Atelier · 2026",
   pos_x: 50,
   pos_y: 50,
+  show_overlay: true,
 };
 const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER" };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
