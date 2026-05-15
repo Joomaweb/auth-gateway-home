@@ -73,9 +73,13 @@ function HomePage() {
       {/* Hero */}
       <section className="relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden bg-muted">
         {heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? (
-          <video src={heroVideo} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover scale-105" />
+          <video src={heroVideo} autoPlay muted loop playsInline
+            className="absolute inset-0 w-full h-full object-cover scale-105"
+            style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }} />
         ) : (
-          <img src={hero.image} alt="Hero" className="absolute inset-0 w-full h-full object-cover scale-105" />
+          <img src={hero.image} alt="Hero"
+            className="absolute inset-0 w-full h-full object-cover scale-105"
+            style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }} />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/10" />
         <div className="absolute inset-0 opacity-[0.07] mix-blend-overlay" style={{ backgroundImage: "linear-gradient(oklch(0.18 0.005 60) 1px, transparent 1px), linear-gradient(90deg, oklch(0.18 0.005 60) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
