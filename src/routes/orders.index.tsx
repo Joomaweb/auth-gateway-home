@@ -174,9 +174,9 @@ function OrdersPage() {
                             </span>
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {date.toLocaleDateString("he-IL", { day: "2-digit", month: "short", year: "numeric" })}
+                            {date.toLocaleDateString(dateLocale, { day: "2-digit", month: "short", year: "numeric" })}
                             {" · "}
-                            {date.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+                            {date.toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
                             {o.payment_method ? ` · ${o.payment_method}` : ""}
                           </div>
                         </div>
@@ -185,7 +185,7 @@ function OrdersPage() {
                             ${Number(o.total).toFixed(2)}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {totalQty} {totalQty === 1 ? "פריט" : "פריטים"}
+                            {totalQty} {totalQty === 1 ? t("orders.items_one") : t("orders.items_other")}
                           </div>
                         </div>
                       </div>
@@ -199,10 +199,10 @@ function OrdersPage() {
                       <div className="mt-4 pt-4 border-t border-dashed flex items-center justify-between gap-3">
                         <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
                           <Receipt className="h-3.5 w-3.5" />
-                          לחץ לצפייה בקבלה ובפרטים המלאים
+                          {t("orders.clickForReceipt")}
                         </span>
                         <span className="text-sm font-medium text-primary inline-flex items-center gap-1 group-hover:gap-2 transition-all">
-                          פרטים <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+                          {t("orders.details")} <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
                         </span>
                       </div>
                     </div>
