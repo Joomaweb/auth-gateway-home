@@ -168,9 +168,21 @@ function OrderDetailPage() {
               {company.tax_id ? <><br />Tax ID: {company.tax_id}</> : null}
             </div>
           </div>
-          <Button onClick={handleDownload} variant="outline" className="gap-2">
-            <Download className="h-4 w-4" /> Download PDF
-          </Button>
+          <div className="flex flex-col items-end gap-1">
+            <Button
+              onClick={handleDownload}
+              variant="outline"
+              className="gap-2"
+              disabled={order.shipment_status !== "delivered"}
+            >
+              <Download className="h-4 w-4" /> הורד קבלה PDF
+            </Button>
+            {order.shipment_status !== "delivered" && (
+              <span className="text-[11px] text-muted-foreground max-w-[220px] text-end leading-snug">
+                הקבלה תהיה זמינה להורדה רק לאחר שההזמנה תגיע ליעדה.
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Invoice meta block */}
