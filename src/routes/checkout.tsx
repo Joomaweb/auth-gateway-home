@@ -424,10 +424,10 @@ function CheckoutPage() {
                         mode={settings.paypal.mode}
                         amount={total}
                         currency="USD"
-                        disabled={!requiredFieldsValid || busy}
+                        disabled={!requiredFieldsValid || !guestFieldsValid || busy}
                         onApproved={handlePayPalApproved}
                       />
-                      {!requiredFieldsValid && (
+                      {(!requiredFieldsValid || !guestFieldsValid) && (
                         <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
                       )}
                     </div>
@@ -444,10 +444,10 @@ function CheckoutPage() {
                         mode={settings.square.mode}
                         amount={total}
                         currency="USD"
-                        disabled={!requiredFieldsValid || busy}
+                        disabled={!requiredFieldsValid || !guestFieldsValid || busy}
                         onTokenized={handleSquareTokenized}
                       />
-                      {!requiredFieldsValid && (
+                      {(!requiredFieldsValid || !guestFieldsValid) && (
                         <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
                       )}
                     </div>
