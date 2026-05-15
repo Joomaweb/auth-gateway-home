@@ -94,15 +94,21 @@ function HomePage() {
             <div className="absolute inset-0 opacity-[0.07] mix-blend-overlay" style={{ backgroundImage: "linear-gradient(oklch(0.18 0.005 60) 1px, transparent 1px), linear-gradient(90deg, oklch(0.18 0.005 60) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
             <div className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-gradient-gold opacity-30 blur-3xl animate-float-slow" />
             <div className="relative z-10 text-center px-4 max-w-3xl animate-fade-up">
-              {hero.badge && (
+              {hero.badge?.trim() && (
                 <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.4em] uppercase text-gold font-semibold mb-5 px-3 py-1 rounded-full glass-panel">
                   <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" /> {hero.badge}
                 </span>
               )}
-              <h1 className="font-display text-5xl md:text-7xl font-semibold tracking-tight text-gradient-gold">{hero.title}</h1>
-              <div className="hairline-gold w-40 mx-auto my-5" />
-              <p className="text-lg text-foreground/75 max-w-xl mx-auto">{hero.subtitle}</p>
-              {hero.cta_text && (
+              {hero.title?.trim() && (
+                <h1 className="font-display text-5xl md:text-7xl font-semibold tracking-tight text-gradient-gold">{hero.title}</h1>
+              )}
+              {(hero.title?.trim() || hero.subtitle?.trim()) && (
+                <div className="hairline-gold w-40 mx-auto my-5" />
+              )}
+              {hero.subtitle?.trim() && (
+                <p className="text-lg text-foreground/75 max-w-xl mx-auto">{hero.subtitle}</p>
+              )}
+              {hero.cta_text?.trim() && (
                 <Button asChild size="lg" className="mt-8 ring-gold-soft bg-gradient-gold text-gold-foreground hover:opacity-90">
                   <a href={hero.cta_link}>{hero.cta_text}</a>
                 </Button>
