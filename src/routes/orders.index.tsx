@@ -49,7 +49,8 @@ function statusInfo(s: string) {
 }
 
 function OrdersPage() {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const dateLocale = lang === "he" ? "he-IL" : "en-US";
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
