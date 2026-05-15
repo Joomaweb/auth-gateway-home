@@ -47,14 +47,14 @@ function CheckoutPage() {
     zip: "",
     country: "",
     notes: "",
+    email: "",
+    password: "",
   });
   const [shippingIdx, setShippingIdx] = useState(0);
   const [payment, setPayment] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    if (!loading && !user) navigate({ to: "/login" });
-  }, [loading, user, navigate]);
+  // Guest checkout: no redirect to /login. Account is created inline at order time.
 
   useEffect(() => {
     supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
@@ -119,16 +119,56 @@ function CheckoutPage() {
   const total = subtotal + shippingFee;
 
   const requiredFieldsValid = !!(form.full_name && form.phone && form.address && form.city && form.zip && form.country);
+  const guestFieldsValid = !!user || (form.email.trim().length > 3 && form.password.length >= 6);
+
+  // Ensures we have an authenticated user before persisting the order.
+  // For guests: signs them up with email/password (session is auto-persisted in localStorage).
+  // If the email already exists, we try signing in with the provided password.
+  const ensureAccount = async (): Promise<{ id: string }> => {
+    if (user) return { id: user.id };
+    const email = form.email.trim().toLowerCase();
+    const password = form.password;
+    if (!email || password.length < 6) {
+      throw new Error("נדרש אימייל וסיסמה (לפחות 6 תווים) ליצירת חשבון");
+    }
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: { full_name: form.full_name, phone: form.phone },
+      },
+    });
+    if (signUpError) {
+      // If user exists, try to sign in instead
+      const msg = signUpError.message.toLowerCase();
+      if (msg.includes("registered") || msg.includes("exists") || msg.includes("already")) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError || !signInData.user) {
+          throw new Error("חשבון עם אימייל זה כבר קיים — סיסמה שגויה. נסה להתחבר.");
+        }
+        return { id: signInData.user.id };
+      }
+      throw signUpError;
+    }
+    if (!signUpData.user) throw new Error("Failed to create account");
+    // If session not auto-created (email confirmation enabled), try password sign-in.
+    if (!signUpData.session) {
+      const { data: signInData } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInData.user) return { id: signInData.user.id };
+    }
+    return { id: signUpData.user.id };
+  };
 
   const persistOrder = async (
+    userId: string,
     paid: boolean,
     paypalIds?: { order_id: string; capture_id: string },
   ) => {
-    if (!user) throw new Error("Not signed in");
     const { data: order, error } = await supabase
       .from("orders")
       .insert({
-        user_id: user.id,
+        user_id: userId,
         status: paid ? "paid" : (needsApproval ? "awaiting_stock" : "pending"),
         subtotal,
         shipping: shippingFee,
@@ -168,15 +208,20 @@ function CheckoutPage() {
 
   const handleManualSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!user || items.length === 0) return;
+    if (items.length === 0) return;
     if (!requiredFieldsValid) {
       toast.error("Please fill in all shipping fields");
       return;
     }
+    if (!guestFieldsValid) {
+      toast.error("נדרש אימייל וסיסמה ליצירת חשבון");
+      return;
+    }
     setBusy(true);
     try {
+      const acct = await ensureAccount();
       // Free orders are auto-marked as paid (used for checkout flow testing).
-      const id = await persistOrder(total === 0);
+      const id = await persistOrder(acct.id, total === 0);
       clear();
       toast.success(t("checkout.success"));
       navigate({ to: "/orders/$id", params: { id } });
@@ -188,13 +233,14 @@ function CheckoutPage() {
   };
 
   const handlePayPalApproved = async (orderId: string, captureId: string) => {
-    if (!user || items.length === 0) return;
+    if (items.length === 0) return;
     if (!requiredFieldsValid) {
       toast.error("Please fill in all shipping fields before paying");
       return;
     }
     try {
-      const id = await persistOrder(true, { order_id: orderId, capture_id: captureId });
+      const acct = await ensureAccount();
+      const id = await persistOrder(acct.id, true, { order_id: orderId, capture_id: captureId });
       clear();
       toast.success("Payment successful");
       navigate({ to: "/orders/$id", params: { id } });
@@ -206,7 +252,7 @@ function CheckoutPage() {
   const chargeSquare = useServerFn(chargeSquarePayment);
 
   const handleSquareTokenized = async (sourceId: string, verificationToken?: string) => {
-    if (!user || items.length === 0) return;
+    if (items.length === 0) return;
     if (!requiredFieldsValid) {
       toast.error("Please fill in all shipping fields before paying");
       return;
@@ -215,8 +261,9 @@ function CheckoutPage() {
     setBusy(true);
     let orderId: string | null = null;
     try {
+      const acct = await ensureAccount();
       // 1) Create the pending order in Supabase first (so failures are still tracked).
-      orderId = await persistOrder(false);
+      orderId = await persistOrder(acct.id, false);
       // 2) Charge via Square server function with reference_id = order.id
       const res = await chargeSquare({
         data: {
@@ -272,6 +319,33 @@ function CheckoutPage() {
         <h1 className="font-display text-4xl font-semibold mb-8">{t("checkout.title")}</h1>
         <form onSubmit={handleManualSubmit} className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
+            {!user && (
+              <section className="border rounded-lg p-6 bg-card">
+                <h2 className="font-semibold mb-1">יצירת חשבון מהירה</h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  כדי שנוכל לעקוב אחר ההזמנה שלך, יווצר עבורך חשבון אוטומטית. כבר רשום?{" "}
+                  <button type="button" className="text-primary underline" onClick={() => navigate({ to: "/login" })}>
+                    התחבר
+                  </button>
+                </p>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field
+                    label="אימייל"
+                    type="email"
+                    value={form.email}
+                    onChange={(v) => setForm({ ...form, email: v })}
+                    required
+                  />
+                  <Field
+                    label="סיסמה (לפחות 6 תווים)"
+                    type="password"
+                    value={form.password}
+                    onChange={(v) => setForm({ ...form, password: v })}
+                    required
+                  />
+                </div>
+              </section>
+            )}
             <section className="border rounded-lg p-6 bg-card">
               <h2 className="font-semibold mb-4">{t("checkout.shipping")}</h2>
               <div className="grid gap-4 sm:grid-cols-2">
@@ -350,10 +424,10 @@ function CheckoutPage() {
                         mode={settings.paypal.mode}
                         amount={total}
                         currency="USD"
-                        disabled={!requiredFieldsValid || busy}
+                        disabled={!requiredFieldsValid || !guestFieldsValid || busy}
                         onApproved={handlePayPalApproved}
                       />
-                      {!requiredFieldsValid && (
+                      {(!requiredFieldsValid || !guestFieldsValid) && (
                         <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
                       )}
                     </div>
@@ -370,10 +444,10 @@ function CheckoutPage() {
                         mode={settings.square.mode}
                         amount={total}
                         currency="USD"
-                        disabled={!requiredFieldsValid || busy}
+                        disabled={!requiredFieldsValid || !guestFieldsValid || busy}
                         onTokenized={handleSquareTokenized}
                       />
-                      {!requiredFieldsValid && (
+                      {(!requiredFieldsValid || !guestFieldsValid) && (
                         <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
                       )}
                     </div>
@@ -426,11 +500,11 @@ function CheckoutPage() {
   );
 }
 
-function Field({ label, value, onChange, required }: { label: string; value: string; onChange: (v: string) => void; required?: boolean }) {
+function Field({ label, value, onChange, required, type }: { label: string; value: string; onChange: (v: string) => void; required?: boolean; type?: string }) {
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
-      <Input value={value} onChange={(e) => onChange(e.target.value)} required={required} />
+      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} required={required} />
     </div>
   );
 }
