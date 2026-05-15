@@ -31,7 +31,7 @@ const DEFAULT_HERO: Hero = {
   pos_y: 50,
   show_overlay: true,
 };
-const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER" };
+const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER", logo_height: 40 };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
 
 function AdminSettings() {
