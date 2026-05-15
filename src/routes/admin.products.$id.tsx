@@ -21,13 +21,13 @@ const productSchema = z
   .object({
     name: z.string().trim().min(2, "שם המוצר חייב להכיל לפחות 2 תווים").max(200, "שם ארוך מדי (עד 200 תווים)"),
     description: z.string().trim().max(5000, "תיאור ארוך מדי (עד 5000 תווים)").optional(),
-    price: z.number({ invalid_type_error: "מחיר חייב להיות מספר" }).positive("המחיר חייב להיות גדול מאפס").max(1_000_000, "מחיר לא הגיוני"),
+    price: z.number({ invalid_type_error: "מחיר חייב להיות מספר" }).nonnegative("מחיר לא יכול להיות שלילי").max(1_000_000, "מחיר לא הגיוני"),
     sale_price: z.number().nonnegative("מחיר מבצע לא יכול להיות שלילי").max(1_000_000, "מחיר מבצע לא הגיוני").nullable(),
     images: z.array(z.string().url("כתובת תמונה לא תקינה")).min(1, "חובה תמונה אחת לפחות"),
     sizes: z.array(z.string()).max(50, "יותר מדי מידות"),
     colors: z.array(z.string()).max(50, "יותר מדי צבעים"),
   })
-  .refine((d) => d.sale_price === null || d.sale_price < d.price, {
+  .refine((d) => d.sale_price === null || d.price === 0 || d.sale_price < d.price, {
     message: "מחיר המבצע חייב להיות נמוך מהמחיר הרגיל",
     path: ["sale_price"],
   });
@@ -343,8 +343,8 @@ function ProductEdit() {
     if (badColor) errs.colors = `שם צבע לא תקין: "${badColor}" (אותיות בלבד, עד 25 תווים)`;
     if (colors.length !== new Set(colors).size) errs.colors = "יש צבעים כפולים";
 
-    // discount sanity
-    if (Number.isFinite(priceNum) && saleNum !== null) {
+    // discount sanity (skip when product is free)
+    if (Number.isFinite(priceNum) && priceNum > 0 && saleNum !== null) {
       const discount = ((priceNum - saleNum) / priceNum) * 100;
       if (discount < 1) errs.sale_price = "ההנחה חייבת להיות לפחות 1% מהמחיר";
       if (discount > 95) errs.sale_price = "ההנחה גדולה מ-95% — בדוק את המחירים";
@@ -543,6 +543,16 @@ function ProductEdit() {
                 className={cn(fieldErrors.price && "border-destructive focus-visible:ring-destructive")}
                 aria-invalid={!!fieldErrors.price}
               />
+              <button
+                type="button"
+                onClick={() => setForm({ ...form, price: "0", sale_price: "" })}
+                className="text-xs text-primary hover:underline"
+              >
+                הפוך למוצר חינם (0₪) — לבדיקת מערכת התשלומים
+              </button>
+              {Number(form.price) === 0 && form.price !== "" && (
+                <p className="text-xs text-gold font-semibold">🆓 מוצר חינם — שימושי לבדיקת checkout</p>
+              )}
               {fieldErrors.price && <p className="text-xs text-destructive">{fieldErrors.price}</p>}
             </div>
             <div className="space-y-2">
