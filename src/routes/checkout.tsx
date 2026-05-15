@@ -119,6 +119,46 @@ function CheckoutPage() {
   const total = subtotal + shippingFee;
 
   const requiredFieldsValid = !!(form.full_name && form.phone && form.address && form.city && form.zip && form.country);
+  const guestFieldsValid = !!user || (form.email.trim().length > 3 && form.password.length >= 6);
+
+  // Ensures we have an authenticated user before persisting the order.
+  // For guests: signs them up with email/password (session is auto-persisted in localStorage).
+  // If the email already exists, we try signing in with the provided password.
+  const ensureAccount = async (): Promise<{ id: string }> => {
+    if (user) return { id: user.id };
+    const email = form.email.trim().toLowerCase();
+    const password = form.password;
+    if (!email || password.length < 6) {
+      throw new Error("נדרש אימייל וסיסמה (לפחות 6 תווים) ליצירת חשבון");
+    }
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: { full_name: form.full_name, phone: form.phone },
+      },
+    });
+    if (signUpError) {
+      // If user exists, try to sign in instead
+      const msg = signUpError.message.toLowerCase();
+      if (msg.includes("registered") || msg.includes("exists") || msg.includes("already")) {
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        if (signInError || !signInData.user) {
+          throw new Error("חשבון עם אימייל זה כבר קיים — סיסמה שגויה. נסה להתחבר.");
+        }
+        return { id: signInData.user.id };
+      }
+      throw signUpError;
+    }
+    if (!signUpData.user) throw new Error("Failed to create account");
+    // If session not auto-created (email confirmation enabled), try password sign-in.
+    if (!signUpData.session) {
+      const { data: signInData } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInData.user) return { id: signInData.user.id };
+    }
+    return { id: signUpData.user.id };
+  };
 
   const persistOrder = async (
     paid: boolean,
