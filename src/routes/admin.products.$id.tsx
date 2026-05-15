@@ -712,7 +712,7 @@ function ProductEdit() {
         <section className="bg-card/70 backdrop-blur border rounded-2xl p-6 sm:p-7 shadow-sm transition hover:shadow-md space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-lg font-semibold tracking-wide flex items-center gap-2 before:content-[''] before:w-1 before:h-5 before:bg-gradient-gold before:rounded-full">סרטון מוצר (אופציונלי)</h2>
-            <span className="text-xs text-muted-foreground">MP4 / WEBM / MOV · עד 50MB · או קישור YouTube/Vimeo</span>
+            <span className="text-xs text-muted-foreground">MP4 / WEBM / MOV · עד 200MB · או קישור YouTube/Vimeo</span>
           </div>
           {form.video_url && (
             <div className="relative w-full max-w-md rounded overflow-hidden border bg-black">

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Category = { id: string; name: string; slug: string; image_url: string | null };
-type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string };
+type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string };
 
 const DEFAULT_HERO: Hero = {
   image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600",
@@ -21,6 +21,7 @@ const DEFAULT_HERO: Hero = {
   subtitle: "Modern essentials, classic silhouettes — crafted to last.",
   cta_text: "Shop now",
   cta_link: "/shop",
+  badge: "Atelier · 2026",
 };
 
 function HomePage() {
@@ -78,9 +79,11 @@ function HomePage() {
         <div className="absolute inset-0 opacity-[0.07] mix-blend-overlay" style={{ backgroundImage: "linear-gradient(oklch(0.18 0.005 60) 1px, transparent 1px), linear-gradient(90deg, oklch(0.18 0.005 60) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
         <div className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-gradient-gold opacity-30 blur-3xl animate-float-slow" />
         <div className="relative z-10 text-center px-4 max-w-3xl animate-fade-up">
-          <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.4em] uppercase text-gold font-semibold mb-5 px-3 py-1 rounded-full glass-panel">
-            <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" /> Atelier · 2026
-          </span>
+          {hero.badge && (
+            <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.4em] uppercase text-gold font-semibold mb-5 px-3 py-1 rounded-full glass-panel">
+              <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" /> {hero.badge}
+            </span>
+          )}
           <h1 className="font-display text-5xl md:text-7xl font-semibold tracking-tight text-gradient-gold">{hero.title}</h1>
           <div className="hairline-gold w-40 mx-auto my-5" />
           <p className="text-lg text-foreground/75 max-w-xl mx-auto">{hero.subtitle}</p>

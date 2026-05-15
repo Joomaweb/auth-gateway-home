@@ -16,7 +16,7 @@ export const Route = createFileRoute("/admin/settings")({
 
 type ShippingMethod = { name: string; price: number };
 type ShippingZone = { name: string; price: number; eta: string };
-type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string };
+type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string };
 type Branding = { logo_url: string; favicon_url: string; site_name: string };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
@@ -26,6 +26,7 @@ const DEFAULT_HERO: Hero = {
   subtitle: "Modern essentials, classic silhouettes — crafted to last.",
   cta_text: "Shop now",
   cta_link: "/shop",
+  badge: "Atelier · 2026",
 };
 const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER" };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
@@ -190,6 +191,11 @@ function AdminSettings() {
             </div>
           </div>
           <div className="space-y-2">
+            <Label>תגית עליונה (Badge) — מעל הכותרת</Label>
+            <Input value={hero.badge} onChange={(e) => setHero({ ...hero, badge: e.target.value })} placeholder="Atelier · 2026" />
+            <p className="text-xs text-muted-foreground">השאר ריק כדי להסתיר. השינוי בזמן אמת.</p>
+          </div>
+          <div className="space-y-2">
             <Label>Title</Label>
             <Input value={hero.title} onChange={(e) => setHero({ ...hero, title: e.target.value })} />
           </div>
@@ -221,7 +227,7 @@ function AdminSettings() {
                   onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadVideoTo(f, setHeroVideo); e.target.value = ""; }} />
               </label>
             </div>
-            <p className="text-xs text-muted-foreground">MP4 / WEBM / MOV עד 50MB. אם יוזן קישור YouTube/Vimeo — יוצג כקישור (במקום הסרטון).</p>
+            <p className="text-xs text-muted-foreground">MP4 / WEBM / MOV עד 200MB. אם יוזן קישור YouTube/Vimeo — יוצג כקישור (במקום הסרטון).</p>
           </div>
         </section>
 
