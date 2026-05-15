@@ -161,14 +161,14 @@ function CheckoutPage() {
   };
 
   const persistOrder = async (
+    userId: string,
     paid: boolean,
     paypalIds?: { order_id: string; capture_id: string },
   ) => {
-    if (!user) throw new Error("Not signed in");
     const { data: order, error } = await supabase
       .from("orders")
       .insert({
-        user_id: user.id,
+        user_id: userId,
         status: paid ? "paid" : (needsApproval ? "awaiting_stock" : "pending"),
         subtotal,
         shipping: shippingFee,
@@ -208,15 +208,20 @@ function CheckoutPage() {
 
   const handleManualSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!user || items.length === 0) return;
+    if (items.length === 0) return;
     if (!requiredFieldsValid) {
       toast.error("Please fill in all shipping fields");
       return;
     }
+    if (!guestFieldsValid) {
+      toast.error("נדרש אימייל וסיסמה ליצירת חשבון");
+      return;
+    }
     setBusy(true);
     try {
+      const acct = await ensureAccount();
       // Free orders are auto-marked as paid (used for checkout flow testing).
-      const id = await persistOrder(total === 0);
+      const id = await persistOrder(acct.id, total === 0);
       clear();
       toast.success(t("checkout.success"));
       navigate({ to: "/orders/$id", params: { id } });
@@ -228,13 +233,14 @@ function CheckoutPage() {
   };
 
   const handlePayPalApproved = async (orderId: string, captureId: string) => {
-    if (!user || items.length === 0) return;
+    if (items.length === 0) return;
     if (!requiredFieldsValid) {
       toast.error("Please fill in all shipping fields before paying");
       return;
     }
     try {
-      const id = await persistOrder(true, { order_id: orderId, capture_id: captureId });
+      const acct = await ensureAccount();
+      const id = await persistOrder(acct.id, true, { order_id: orderId, capture_id: captureId });
       clear();
       toast.success("Payment successful");
       navigate({ to: "/orders/$id", params: { id } });
@@ -246,7 +252,7 @@ function CheckoutPage() {
   const chargeSquare = useServerFn(chargeSquarePayment);
 
   const handleSquareTokenized = async (sourceId: string, verificationToken?: string) => {
-    if (!user || items.length === 0) return;
+    if (items.length === 0) return;
     if (!requiredFieldsValid) {
       toast.error("Please fill in all shipping fields before paying");
       return;
@@ -255,8 +261,9 @@ function CheckoutPage() {
     setBusy(true);
     let orderId: string | null = null;
     try {
+      const acct = await ensureAccount();
       // 1) Create the pending order in Supabase first (so failures are still tracked).
-      orderId = await persistOrder(false);
+      orderId = await persistOrder(acct.id, false);
       // 2) Charge via Square server function with reference_id = order.id
       const res = await chargeSquare({
         data: {
