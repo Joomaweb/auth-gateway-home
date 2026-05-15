@@ -400,7 +400,11 @@ function CheckoutPage() {
                 <span>{t("cart.total")}</span><span>${total.toFixed(2)}</span>
               </div>
             </div>
-            {!isPayPal && !isSquare && (
+            {total === 0 ? (
+              <Button type="submit" className="w-full" size="lg" disabled={busy}>
+                {busy ? t("common.loading") : "השלם הזמנה חינם"}
+              </Button>
+            ) : (!isPayPal && !isSquare) && (
               <Button type="submit" className="w-full" size="lg" disabled={busy || !payment}>
                 {busy ? t("common.loading") : t("checkout.placeOrder")}
               </Button>
