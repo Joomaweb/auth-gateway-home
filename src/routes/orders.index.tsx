@@ -34,22 +34,23 @@ type ItemPreview = {
 
 type ProductImage = { id: string; images: string[] | null };
 
-const STATUS_STYLES: Record<string, { label: string; cls: string; Icon: typeof CheckCircle2 }> = {
-  paid:           { label: "שולם",       cls: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",   Icon: CheckCircle2 },
-  pending:        { label: "ממתין",      cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",   Icon: Clock },
-  awaiting_stock: { label: "אישור מלאי", cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",   Icon: AlertTriangle },
-  shipped:        { label: "נשלח",       cls: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",       Icon: Truck },
-  delivered:      { label: "נמסר",       cls: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",   Icon: Package },
-  failed:         { label: "נכשל",       cls: "bg-destructive/15 text-destructive border-destructive/30",                  Icon: XCircle },
-  cancelled:      { label: "בוטל",       cls: "bg-muted text-muted-foreground border-border",                              Icon: XCircle },
+const STATUS_STYLES: Record<string, { cls: string; Icon: typeof CheckCircle2 }> = {
+  paid:           { cls: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",   Icon: CheckCircle2 },
+  pending:        { cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",   Icon: Clock },
+  awaiting_stock: { cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",   Icon: AlertTriangle },
+  shipped:        { cls: "bg-blue-500/15 text-blue-700 dark:text-blue-400 border-blue-500/30",       Icon: Truck },
+  delivered:      { cls: "bg-green-500/15 text-green-700 dark:text-green-400 border-green-500/30",   Icon: Package },
+  failed:         { cls: "bg-destructive/15 text-destructive border-destructive/30",                  Icon: XCircle },
+  cancelled:      { cls: "bg-muted text-muted-foreground border-border",                              Icon: XCircle },
 };
 
 function statusInfo(s: string) {
-  return STATUS_STYLES[s] ?? { label: s, cls: "bg-muted text-muted-foreground border-border", Icon: Package };
+  return STATUS_STYLES[s] ?? { cls: "bg-muted text-muted-foreground border-border", Icon: Package };
 }
 
 function OrdersPage() {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const dateLocale = lang === "he" ? "he-IL" : "en-US";
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [orders, setOrders] = useState<Order[]>([]);
@@ -108,7 +109,7 @@ function OrdersPage() {
             <h1 className="font-display text-4xl md:text-5xl font-semibold tracking-tight">{t("orders.title")}</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {orders.length > 0
-                ? `${orders.length} ${orders.length === 1 ? "הזמנה" : "הזמנות"}`
+                ? `${orders.length} ${orders.length === 1 ? t("orders.count_one") : t("orders.count_other")}`
                 : t("orders.empty")}
             </p>
           </div>
@@ -169,13 +170,13 @@ function OrdersPage() {
                               {o.invoice_number ? `#${o.invoice_number}` : `#${o.id.slice(0, 8).toUpperCase()}`}
                             </span>
                             <span className={`inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full border ${s.cls}`}>
-                              <StatusIcon className="h-3 w-3" /> {s.label}
+                              <StatusIcon className="h-3 w-3" /> {t(`orderStatus.${o.status}` as never) || o.status}
                             </span>
                           </div>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {date.toLocaleDateString("he-IL", { day: "2-digit", month: "short", year: "numeric" })}
+                            {date.toLocaleDateString(dateLocale, { day: "2-digit", month: "short", year: "numeric" })}
                             {" · "}
-                            {date.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+                            {date.toLocaleTimeString(dateLocale, { hour: "2-digit", minute: "2-digit" })}
                             {o.payment_method ? ` · ${o.payment_method}` : ""}
                           </div>
                         </div>
@@ -184,7 +185,7 @@ function OrdersPage() {
                             ${Number(o.total).toFixed(2)}
                           </div>
                           <div className="text-xs text-muted-foreground">
-                            {totalQty} {totalQty === 1 ? "פריט" : "פריטים"}
+                            {totalQty} {totalQty === 1 ? t("orders.items_one") : t("orders.items_other")}
                           </div>
                         </div>
                       </div>
@@ -198,10 +199,10 @@ function OrdersPage() {
                       <div className="mt-4 pt-4 border-t border-dashed flex items-center justify-between gap-3">
                         <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
                           <Receipt className="h-3.5 w-3.5" />
-                          לחץ לצפייה בקבלה ובפרטים המלאים
+                          {t("orders.clickForReceipt")}
                         </span>
                         <span className="text-sm font-medium text-primary inline-flex items-center gap-1 group-hover:gap-2 transition-all">
-                          פרטים <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+                          {t("orders.details")} <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
                         </span>
                       </div>
                     </div>
