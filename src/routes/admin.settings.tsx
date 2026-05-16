@@ -17,7 +17,15 @@ export const Route = createFileRoute("/admin/settings")({
 type ShippingMethod = { name: string; price: number };
 type ShippingZone = { name: string; price: number; eta: string };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number; show_overlay?: boolean };
-type Branding = { logo_url: string; favicon_url: string; site_name: string; logo_height?: number };
+type Branding = {
+  logo_url: string;
+  favicon_url: string;
+  site_name: string;
+  logo_height?: number;
+  seo_title?: string;
+  seo_description?: string;
+  seo_keywords?: string;
+};
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
 const DEFAULT_HERO: Hero = {
@@ -31,7 +39,15 @@ const DEFAULT_HERO: Hero = {
   pos_y: 50,
   show_overlay: true,
 };
-const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER", logo_height: 40 };
+const DEFAULT_BRANDING: Branding = {
+  logo_url: "",
+  favicon_url: "",
+  site_name: "ATELIER",
+  logo_height: 40,
+  seo_title: "",
+  seo_description: "",
+  seo_keywords: "",
+};
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
 
 function AdminSettings() {
@@ -201,6 +217,62 @@ function AdminSettings() {
                     onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadTo(f, (u) => setBranding({ ...branding, favicon_url: u })); e.target.value = ""; }} />
                 </label>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* SEO / Google */}
+        <section className="border rounded-lg p-6 bg-card space-y-4">
+          <h3 className="font-semibold">SEO וגוגל</h3>
+          <p className="text-xs text-muted-foreground">
+            כך האתר ייראה בתוצאות החיפוש של גוגל ובשיתוף לרשתות חברתיות. השינויים בזמן אמת.
+          </p>
+
+          <div className="space-y-2">
+            <Label>כותרת לגוגל (Title) — מומלץ עד 60 תווים</Label>
+            <Input
+              value={branding.seo_title ?? ""}
+              onChange={(e) => setBranding({ ...branding, seo_title: e.target.value })}
+              placeholder="חנות בגדים קלאסיים — ATELIER"
+              maxLength={70}
+            />
+            <div className="text-xs text-muted-foreground tabular-nums">{(branding.seo_title ?? "").length}/60</div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>תיאור לגוגל (Description) — מומלץ עד 160 תווים</Label>
+            <Textarea
+              rows={3}
+              value={branding.seo_description ?? ""}
+              onChange={(e) => setBranding({ ...branding, seo_description: e.target.value })}
+              placeholder="גלו קולקציית בגדים קלאסיים ועכשוויים — איכות, עיצוב, ומשלוח מהיר."
+              maxLength={180}
+            />
+            <div className="text-xs text-muted-foreground tabular-nums">{(branding.seo_description ?? "").length}/160</div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>מילות מפתח (Keywords) — מופרדות בפסיקים</Label>
+            <Textarea
+              rows={2}
+              value={branding.seo_keywords ?? ""}
+              onChange={(e) => setBranding({ ...branding, seo_keywords: e.target.value })}
+              placeholder="חנות בגדים, אופנה, חולצות, מכנסיים, מעילים, אקססוריז"
+              maxLength={500}
+            />
+            <p className="text-xs text-muted-foreground">
+              מילות חיפוש שעוזרות לגוגל להבין על מה האתר. דוגמה: חנות בגדים, אופנת גברים, חולצות פולו.
+            </p>
+          </div>
+
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+            <div className="text-xs text-muted-foreground">תצוגה מקדימה בגוגל:</div>
+            <div className="text-[#1a0dab] text-base leading-tight truncate">
+              {branding.seo_title?.trim() || branding.site_name || "כותרת האתר"}
+            </div>
+            <div className="text-[#006621] text-xs truncate">https://auth-gateway-home.lovable.app</div>
+            <div className="text-[#545454] text-xs line-clamp-2">
+              {branding.seo_description?.trim() || "תיאור האתר יופיע כאן..."}
             </div>
           </div>
         </section>
