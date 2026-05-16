@@ -21,12 +21,10 @@ const SECURITY_HEADERS: Record<string, string> = {
 
 const securityHeadersMiddleware = createMiddleware().server(async ({ next }) => {
   const result = await next();
-  // result is a Response in TanStack Start request middleware.
-  const res = (result as unknown) as { response?: Response } & Response;
-  const target: Response | undefined = (res?.response instanceof Response ? res.response : (result as unknown as Response));
-  if (target && typeof target.headers?.set === "function") {
+  const response = result as unknown as Response;
+  if (response && response.headers && typeof response.headers.set === "function") {
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
-      if (!target.headers.has(k)) target.headers.set(k, v);
+      if (!response.headers.has(k)) response.headers.set(k, v);
     }
   }
   return result;
