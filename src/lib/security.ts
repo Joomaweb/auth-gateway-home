@@ -111,8 +111,22 @@ export function sanitizeText(input: string, maxLen = 200): string {
   return input
     .replace(/<[^>]*>/g, "")
     .replace(/[\u0000-\u001f\u007f]/g, "")
+    .replace(/javascript:/gi, "")
+    .replace(/data:text\/html/gi, "")
+    .replace(/on\w+\s*=/gi, "")
     .trim()
     .slice(0, maxLen);
+}
+
+// Validate URLs — only allow http/https/relative paths. Blocks javascript:, data:, vbscript:.
+export function sanitizeUrl(input: string, maxLen = 2048): string {
+  const v = input.trim().slice(0, maxLen);
+  if (!v) return "";
+  // Allow relative paths
+  if (v.startsWith("/") || v.startsWith("#") || v.startsWith("?")) return v;
+  // Only http/https allowed for absolute URLs
+  if (/^https?:\/\//i.test(v)) return v;
+  return "";
 }
 
 export type PasswordCheck = { ok: boolean; error?: string };

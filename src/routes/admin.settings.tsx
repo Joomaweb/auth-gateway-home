@@ -17,7 +17,15 @@ export const Route = createFileRoute("/admin/settings")({
 type ShippingMethod = { name: string; price: number };
 type ShippingZone = { name: string; price: number; eta: string };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number; show_overlay?: boolean };
-type Branding = { logo_url: string; favicon_url: string; site_name: string; logo_height?: number };
+type Branding = {
+  logo_url: string;
+  favicon_url: string;
+  site_name: string;
+  logo_height?: number;
+  seo_title?: string;
+  seo_description?: string;
+  seo_keywords?: string;
+};
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
 const DEFAULT_HERO: Hero = {
@@ -31,7 +39,15 @@ const DEFAULT_HERO: Hero = {
   pos_y: 50,
   show_overlay: true,
 };
-const DEFAULT_BRANDING: Branding = { logo_url: "", favicon_url: "", site_name: "ATELIER", logo_height: 40 };
+const DEFAULT_BRANDING: Branding = {
+  logo_url: "",
+  favicon_url: "",
+  site_name: "ATELIER",
+  logo_height: 40,
+  seo_title: "",
+  seo_description: "",
+  seo_keywords: "",
+};
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
 
 function AdminSettings() {
