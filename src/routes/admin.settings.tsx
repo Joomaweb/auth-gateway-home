@@ -221,6 +221,62 @@ function AdminSettings() {
           </div>
         </section>
 
+        {/* SEO / Google */}
+        <section className="border rounded-lg p-6 bg-card space-y-4">
+          <h3 className="font-semibold">SEO וגוגל</h3>
+          <p className="text-xs text-muted-foreground">
+            כך האתר ייראה בתוצאות החיפוש של גוגל ובשיתוף לרשתות חברתיות. השינויים בזמן אמת.
+          </p>
+
+          <div className="space-y-2">
+            <Label>כותרת לגוגל (Title) — מומלץ עד 60 תווים</Label>
+            <Input
+              value={branding.seo_title ?? ""}
+              onChange={(e) => setBranding({ ...branding, seo_title: e.target.value })}
+              placeholder="חנות בגדים קלאסיים — ATELIER"
+              maxLength={70}
+            />
+            <div className="text-xs text-muted-foreground tabular-nums">{(branding.seo_title ?? "").length}/60</div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>תיאור לגוגל (Description) — מומלץ עד 160 תווים</Label>
+            <Textarea
+              rows={3}
+              value={branding.seo_description ?? ""}
+              onChange={(e) => setBranding({ ...branding, seo_description: e.target.value })}
+              placeholder="גלו קולקציית בגדים קלאסיים ועכשוויים — איכות, עיצוב, ומשלוח מהיר."
+              maxLength={180}
+            />
+            <div className="text-xs text-muted-foreground tabular-nums">{(branding.seo_description ?? "").length}/160</div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>מילות מפתח (Keywords) — מופרדות בפסיקים</Label>
+            <Textarea
+              rows={2}
+              value={branding.seo_keywords ?? ""}
+              onChange={(e) => setBranding({ ...branding, seo_keywords: e.target.value })}
+              placeholder="חנות בגדים, אופנה, חולצות, מכנסיים, מעילים, אקססוריז"
+              maxLength={500}
+            />
+            <p className="text-xs text-muted-foreground">
+              מילות חיפוש שעוזרות לגוגל להבין על מה האתר. דוגמה: חנות בגדים, אופנת גברים, חולצות פולו.
+            </p>
+          </div>
+
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+            <div className="text-xs text-muted-foreground">תצוגה מקדימה בגוגל:</div>
+            <div className="text-[#1a0dab] text-base leading-tight truncate">
+              {branding.seo_title?.trim() || branding.site_name || "כותרת האתר"}
+            </div>
+            <div className="text-[#006621] text-xs truncate">https://auth-gateway-home.lovable.app</div>
+            <div className="text-[#545454] text-xs line-clamp-2">
+              {branding.seo_description?.trim() || "תיאור האתר יופיע כאן..."}
+            </div>
+          </div>
+        </section>
+
         {/* Hero banner */}
         <section className="border rounded-lg p-6 bg-card space-y-4">
           <h3 className="font-semibold">Hero banner (homepage)</h3>
