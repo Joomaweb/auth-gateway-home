@@ -45,8 +45,8 @@ export default defineConfig({
     },
   },
   ssr: {
-    // Edge runtime can't resolve bare imports at runtime — bundle everything inline.
+    // Bundle everything inline; serverless function dir has no node_modules.
     noExternal: true,
-    target: "webworker",
+    target: "node",
   },
 });

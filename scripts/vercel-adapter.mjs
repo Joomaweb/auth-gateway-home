@@ -20,7 +20,7 @@ mkdirSync(out, { recursive: true });
 mkdirSync(resolve(out, "static"), { recursive: true });
 cpSync(resolve(dist, "client"), resolve(out, "static"), { recursive: true });
 
-// 2. Edge function that wraps the Worker-style fetch handler.
+// 2. Node.js serverless function that wraps the Worker-style fetch handler.
 const funcDir = resolve(out, "functions/_ssr.func");
 mkdirSync(funcDir, { recursive: true });
 cpSync(resolve(dist, "server"), funcDir, { recursive: true });
@@ -29,20 +29,70 @@ writeFileSync(
   resolve(funcDir, ".vc-config.json"),
   JSON.stringify(
     {
-      runtime: "edge",
-      entrypoint: "index.js",
+      runtime: "nodejs20.x",
+      handler: "index.mjs",
+      launcherType: "Nodejs",
+      shouldAddHelpers: false,
+      supportsResponseStreaming: true,
     },
     null,
     2,
   ),
 );
 
-// Edge entry: re-export the Worker fetch as a (Request) => Response handler.
+// Node entry: convert IncomingMessage/ServerResponse <-> Web Fetch Request/Response,
+// then delegate to the Worker-style fetch handler exported by server.js.
 writeFileSync(
-  resolve(funcDir, "index.js"),
+  resolve(funcDir, "package.json"),
+  JSON.stringify({ type: "module" }, null, 2),
+);
+
+writeFileSync(
+  resolve(funcDir, "index.mjs"),
   `import server from "./server.js";
-export default async function handler(request) {
-  return server.fetch(request, globalThis.process?.env ?? {}, {});
+
+function buildRequest(req) {
+  const proto = req.headers["x-forwarded-proto"] || "https";
+  const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost";
+  const url = new URL(req.url, \`\${proto}://\${host}\`);
+  const headers = new Headers();
+  for (const [k, v] of Object.entries(req.headers)) {
+    if (Array.isArray(v)) v.forEach((vv) => headers.append(k, vv));
+    else if (v != null) headers.set(k, String(v));
+  }
+  const method = (req.method || "GET").toUpperCase();
+  const init = { method, headers };
+  if (method !== "GET" && method !== "HEAD") {
+    init.body = req;
+    init.duplex = "half";
+  }
+  return new Request(url.toString(), init);
+}
+
+async function writeResponse(res, response) {
+  res.statusCode = response.status;
+  response.headers.forEach((value, key) => res.setHeader(key, value));
+  if (!response.body) return res.end();
+  const reader = response.body.getReader();
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    res.write(value);
+  }
+  res.end();
+}
+
+export default async function handler(req, res) {
+  try {
+    const request = buildRequest(req);
+    const response = await server.fetch(request, process.env, {});
+    await writeResponse(res, response);
+  } catch (err) {
+    console.error(err);
+    res.statusCode = 500;
+    res.setHeader("content-type", "text/plain; charset=utf-8");
+    res.end("Internal Server Error");
+  }
 }
 `,
 );
