@@ -17,4 +17,9 @@ export default defineConfig({
   resolve: {
     dedupe: ["react", "react-dom", "@tanstack/react-router", "@tanstack/react-start"],
   },
+  ssr: {
+    // Edge runtime can't resolve bare imports at runtime — bundle everything inline.
+    noExternal: true,
+    target: "webworker",
+  },
 });
