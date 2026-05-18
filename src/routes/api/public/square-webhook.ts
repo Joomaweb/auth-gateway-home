@@ -1,23 +1,50 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac, timingSafeEqual } from "crypto";
 import { createClient } from "@supabase/supabase-js";
 
 // Square sends the signature in this header (HMAC-SHA256 of notificationUrl + body, base64).
 const SIGNATURE_HEADER = "x-square-hmacsha256-signature";
 
-function verifySquareSignature(
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  }
+  return btoa(binary);
+}
+
+function constantTimeEqual(a: string, b: string): boolean {
+  const max = Math.max(a.length, b.length);
+  let mismatch = a.length === b.length ? 0 : 1;
+
+  for (let i = 0; i < max; i += 1) {
+    const ac = i < a.length ? a.charCodeAt(i) : 0;
+    const bc = i < b.length ? b.charCodeAt(i) : 0;
+    mismatch |= ac ^ bc;
+  }
+
+  return mismatch === 0;
+}
+
+async function verifySquareSignature(
   signatureKey: string,
   notificationUrl: string,
   body: string,
   receivedSignature: string,
-): boolean {
-  const hmac = createHmac("sha256", signatureKey);
-  hmac.update(notificationUrl + body);
-  const expected = hmac.digest("base64");
-  const a = Buffer.from(expected);
-  const b = Buffer.from(receivedSignature);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
+): Promise<boolean> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(signatureKey),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(notificationUrl + body),
+  );
+  return constantTimeEqual(arrayBufferToBase64(signature), receivedSignature);
 }
 
 function getSupabaseAdmin() {
@@ -48,7 +75,7 @@ export const Route = createFileRoute("/api/public/square-webhook")({
         const body = await request.text();
         const notificationUrl = `${new URL(request.url).origin}/api/public/square-webhook`;
 
-        if (!verifySquareSignature(signatureKey, notificationUrl, body, signature)) {
+        if (!(await verifySquareSignature(signatureKey, notificationUrl, body, signature))) {
           return new Response("Invalid signature", { status: 401 });
         }
 
