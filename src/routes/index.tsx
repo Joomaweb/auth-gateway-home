@@ -15,17 +15,6 @@ export const Route = createFileRoute("/")({
 type Category = { id: string; name: string; slug: string; image_url: string | null };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number; show_overlay?: boolean };
 
-const DEFAULT_HERO: Hero = {
-  image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600",
-  title: "Timeless wardrobe staples.",
-  subtitle: "Modern essentials, classic silhouettes — crafted to last.",
-  cta_text: "Shop now",
-  cta_link: "/shop",
-  badge: "Atelier · 2026",
-  pos_x: 50,
-  pos_y: 50,
-  show_overlay: true,
-};
 
 function HomePage() {
   const { t } = useT();
@@ -33,7 +22,7 @@ function HomePage() {
   const [sale, setSale] = useState<ProductCardData[]>([]);
   const [newest, setNewest] = useState<ProductCardData[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
-  const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
+  const [hero, setHero] = useState<Hero | null>(null);
   const [heroVideo, setHeroVideo] = useState<string>("");
   const [slides, setSlides] = useState<string[]>([]);
   const [showFeatured, setShowFeatured] = useState(true);
@@ -56,7 +45,7 @@ function HomePage() {
       .then(({ data }) => setCats((data ?? []) as Category[]));
     supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle()
       .then(({ data }) => {
-        if (data?.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
+        setHero((data?.hero as Hero) ?? { image: "", title: "", subtitle: "", cta_text: "", cta_link: "", badge: "", show_overlay: false });
         const d = data as { hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
         setHeroVideo(d?.hero_video ?? "");
         if (Array.isArray(d?.carousel_images)) setSlides(d!.carousel_images as string[]);
@@ -72,6 +61,9 @@ function HomePage() {
   return (
     <PublicLayout>
       {/* Hero */}
+      {!hero ? (
+        <section className="relative h-[78vh] min-h-[560px] bg-muted animate-pulse" />
+      ) : (
       <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? "bg-black" : "bg-muted"}`}>
         {heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? (
           <video
@@ -116,6 +108,7 @@ function HomePage() {
           </>
         )}
       </section>
+      )}
 
       {/* Promo carousel */}
       {slides.length > 0 && (
