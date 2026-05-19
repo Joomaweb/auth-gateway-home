@@ -15,7 +15,7 @@ export type Legal = { terms_en: string; terms_he: string; policy_en: string; pol
 const DEFAULT_BRANDING: Branding = {
   logo_url: "",
   favicon_url: "",
-  site_name: "ATELIER",
+  site_name: "",
   logo_height: 40,
   seo_title: "",
   seo_description: "",
