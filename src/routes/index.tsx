@@ -45,7 +45,7 @@ function HomePage() {
       .then(({ data }) => setCats((data ?? []) as Category[]));
     supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle()
       .then(({ data }) => {
-        if (data?.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
+        setHero((data?.hero as Hero) ?? { image: "", title: "", subtitle: "", cta_text: "", cta_link: "", badge: "", show_overlay: false });
         const d = data as { hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
         setHeroVideo(d?.hero_video ?? "");
         if (Array.isArray(d?.carousel_images)) setSlides(d!.carousel_images as string[]);
