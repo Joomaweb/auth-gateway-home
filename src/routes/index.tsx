@@ -72,6 +72,9 @@ function HomePage() {
   return (
     <PublicLayout>
       {/* Hero */}
+      {!hero ? (
+        <section className="relative h-[78vh] min-h-[560px] bg-muted animate-pulse" />
+      ) : (
       <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? "bg-black" : "bg-muted"}`}>
         {heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? (
           <video
@@ -116,6 +119,7 @@ function HomePage() {
           </>
         )}
       </section>
+      )}
 
       {/* Promo carousel */}
       {slides.length > 0 && (
