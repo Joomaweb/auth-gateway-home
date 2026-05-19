@@ -34,7 +34,7 @@ export function Header({ variant = "top-classic" }: { variant?: HeaderVariant })
   const cartCount = useCart((s) => s.items.reduce((n, i) => n + i.qty, 0));
   const unread = useUnreadMessages();
   const [open, setOpen] = useState(false);
-  const siteName = branding.site_name || "ATELIER";
+  const siteName = branding.site_name || "";
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
