@@ -33,7 +33,7 @@ function HomePage() {
   const [sale, setSale] = useState<ProductCardData[]>([]);
   const [newest, setNewest] = useState<ProductCardData[]>([]);
   const [cats, setCats] = useState<Category[]>([]);
-  const [hero, setHero] = useState<Hero>(DEFAULT_HERO);
+  const [hero, setHero] = useState<Hero | null>(null);
   const [heroVideo, setHeroVideo] = useState<string>("");
   const [slides, setSlides] = useState<string[]>([]);
   const [showFeatured, setShowFeatured] = useState(true);
