@@ -98,10 +98,6 @@ export function Header({ variant = "top-classic" }: { variant?: HeaderVariant })
 
   const Actions = () => (
     <div className="flex items-center gap-0.5 md:gap-1">
-      <Button variant="ghost" size="sm" onClick={() => setLang(lang === "en" ? "he" : "en")} className="gap-1.5 px-2 md:px-3">
-        <Globe className="h-4 w-4" />
-        <span className="text-xs font-medium">{lang === "en" ? "עב" : "EN"}</span>
-      </Button>
       {user && (
         <Button asChild variant="ghost" size="icon" className="relative hidden sm:inline-flex">
           <Link to="/inbox">
