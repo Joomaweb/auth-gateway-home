@@ -291,13 +291,29 @@ const I18nContext = createContext<Ctx>({
   dir: "ltr",
 });
 
+function getLangFromPath(): Lang {
+  if (typeof window === "undefined") return "en";
+  return window.location.pathname.startsWith("/admin") ? "he" : "en";
+}
+
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>("he");
+  const [lang, setLangState] = useState<Lang>(() => getLangFromPath());
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const saved = (localStorage.getItem("lang") as Lang | null) ?? "he";
-    setLangState(saved);
+    const update = () => setLangState(getLangFromPath());
+    update();
+    window.addEventListener("popstate", update);
+    // Patch pushState/replaceState to detect SPA nav
+    const origPush = history.pushState;
+    const origReplace = history.replaceState;
+    history.pushState = function (...args) { origPush.apply(this, args); update(); } as typeof history.pushState;
+    history.replaceState = function (...args) { origReplace.apply(this, args); update(); } as typeof history.replaceState;
+    return () => {
+      window.removeEventListener("popstate", update);
+      history.pushState = origPush;
+      history.replaceState = origReplace;
+    };
   }, []);
 
   useEffect(() => {
@@ -306,10 +322,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     document.documentElement.dir = lang === "he" ? "rtl" : "ltr";
   }, [lang]);
 
-  const setLang = (l: Lang) => {
-    setLangState(l);
-    if (typeof window !== "undefined") localStorage.setItem("lang", l);
-  };
+  const setLang = (_l: Lang) => { /* language is route-driven; no-op */ };
 
   const t = (k: Key) => dict[lang][k] ?? k;
   const dir = lang === "he" ? "rtl" : "ltr";
