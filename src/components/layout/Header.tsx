@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ShoppingBag, User, Mail, Globe, LogOut, Shield, Menu } from "lucide-react";
+import { ShoppingBag, User, Mail, LogOut, Shield, Menu } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsAdmin } from "@/hooks/use-role";
 import { useUnreadMessages } from "@/hooks/use-unread";
