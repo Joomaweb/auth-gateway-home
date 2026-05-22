@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { ShoppingBag, User, Mail, Globe, LogOut, Shield, Menu } from "lucide-react";
+import { ShoppingBag, User, Mail, LogOut, Shield, Menu } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsAdmin } from "@/hooks/use-role";
 import { useUnreadMessages } from "@/hooks/use-unread";
@@ -27,7 +27,7 @@ import {
 export type HeaderVariant = "top-classic" | "top-split" | "top-stacked" | "side-left" | "floating";
 
 export function Header({ variant = "top-classic" }: { variant?: HeaderVariant }) {
-  const { t, lang, setLang } = useT();
+  const { t, lang } = useT();
   const { branding } = useSiteBranding();
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
@@ -98,10 +98,6 @@ export function Header({ variant = "top-classic" }: { variant?: HeaderVariant })
 
   const Actions = () => (
     <div className="flex items-center gap-0.5 md:gap-1">
-      <Button variant="ghost" size="sm" onClick={() => setLang(lang === "en" ? "he" : "en")} className="gap-1.5 px-2 md:px-3">
-        <Globe className="h-4 w-4" />
-        <span className="text-xs font-medium">{lang === "en" ? "עב" : "EN"}</span>
-      </Button>
       {user && (
         <Button asChild variant="ghost" size="icon" className="relative hidden sm:inline-flex">
           <Link to="/inbox">
