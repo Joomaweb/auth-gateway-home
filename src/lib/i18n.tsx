@@ -307,8 +307,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     // Patch pushState/replaceState to detect SPA nav
     const origPush = history.pushState;
     const origReplace = history.replaceState;
-    history.pushState = function (...args) { origPush.apply(this, args); update(); } as typeof history.pushState;
-    history.replaceState = function (...args) { origReplace.apply(this, args); update(); } as typeof history.replaceState;
+    history.pushState = function (this: History, ...args: Parameters<typeof history.pushState>) { origPush.apply(this, args); update(); };
+    history.replaceState = function (this: History, ...args: Parameters<typeof history.replaceState>) { origReplace.apply(this, args); update(); };
     return () => {
       window.removeEventListener("popstate", update);
       history.pushState = origPush;
