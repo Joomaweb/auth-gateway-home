@@ -27,7 +27,7 @@ import {
 export type HeaderVariant = "top-classic" | "top-split" | "top-stacked" | "side-left" | "floating";
 
 export function Header({ variant = "top-classic" }: { variant?: HeaderVariant }) {
-  const { t, lang, setLang } = useT();
+  const { t, lang } = useT();
   const { branding } = useSiteBranding();
   const { user } = useAuth();
   const { isAdmin } = useIsAdmin();
