@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { THEMES, type ThemePreset } from "@/lib/themes";
+import { THEMES, type ThemePreset, applyThemeVars, applyThemeFont, getTheme } from "@/lib/themes";
 import { useActiveTheme } from "@/hooks/use-active-theme";
 import { Button } from "@/components/ui/button";
 import { Check, Palette } from "lucide-react";
@@ -60,6 +60,11 @@ function AdminThemes() {
 
   const apply = async (id: string) => {
     setBusy(id);
+    // Optimistic local apply — avoids waiting for DB roundtrip + realtime echo
+    const t = getTheme(id);
+    applyThemeVars(t.vars);
+    applyThemeFont(t.fontUrl);
+    if (typeof document !== "undefined") document.documentElement.dataset.theme = t.id;
     const { error } = await supabase.from("store_settings").upsert({ id: 1, active_theme: id });
     setBusy(null);
     if (error) toast.error(error.message);
