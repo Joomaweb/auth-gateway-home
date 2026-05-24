@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { THEMES, type ThemePreset } from "@/lib/themes";
+import { THEMES, type ThemePreset, applyThemeVars, applyThemeFont, getTheme } from "@/lib/themes";
 import { useActiveTheme } from "@/hooks/use-active-theme";
 import { Button } from "@/components/ui/button";
 import { Check, Palette } from "lucide-react";
