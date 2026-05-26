@@ -5,9 +5,12 @@ import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { useSiteBranding } from "@/hooks/use-site-branding";
 
 export function AdminLayout({ children }: { children: ReactNode }) {
   const { t } = useT();
+  const { branding } = useSiteBranding();
+  const brandName = branding.site_name?.trim() || "ATELIER";
   const [open, setOpen] = useState(false);
   const path = useRouterState({ select: (s) => s.location.pathname });
 
@@ -64,7 +67,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
       <aside className="hidden md:flex w-60 border-e flex-col bg-sidebar text-sidebar-foreground shadow-soft">
         <div className="px-5 py-4 border-b">
           <Link to="/admin" className="font-display text-lg font-semibold tracking-wide">
-            ATELIER · <span className="text-gold">{t("nav.admin")}</span>
+            {brandName} · <span className="text-gold">{t("nav.admin")}</span>
           </Link>
         </div>
         <Nav />
@@ -82,7 +85,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
               <Nav onClick={() => setOpen(false)} />
             </SheetContent>
           </Sheet>
-          <span className="font-display text-base font-semibold">ATELIER · {t("nav.admin")}</span>
+          <span className="font-display text-base font-semibold">{brandName} · {t("nav.admin")}</span>
         </header>
         <div className="flex-1 p-4 md:p-8 overflow-x-hidden">{children}</div>
       </div>
