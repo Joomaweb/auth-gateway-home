@@ -148,7 +148,7 @@ function ProductPage() {
           )}
           {product.video_url && /youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url) && (
             <a href={product.video_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm underline text-primary">
-              צפה בסרטון המוצר ↗
+              Watch product video ↗
             </a>
           )}
 
