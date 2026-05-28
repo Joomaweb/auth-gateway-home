@@ -37,26 +37,26 @@ export type ImageValidation =
   | { ok: false; error: string };
 
 export async function validateImageFile(file: File): Promise<ImageValidation> {
-  if (!file) return { ok: false, error: "לא נבחר קובץ" };
-  if (file.size === 0) return { ok: false, error: "קובץ ריק" };
-  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "הקובץ גדול מ־200MB" };
+  if (!file) return { ok: false, error: "No file selected" };
+  if (file.size === 0) return { ok: false, error: "Empty file" };
+  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "File is larger than 200MB" };
 
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   if (!ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number])) {
-    return { ok: false, error: "סיומת לא נתמכת. רק PNG / JPG / WEBP" };
+    return { ok: false, error: "Unsupported extension. Only PNG / JPG / WEBP" };
   }
   if (!ALLOWED_MIME.includes(file.type as (typeof ALLOWED_MIME)[number])) {
-    return { ok: false, error: "סוג קובץ לא נתמך. רק PNG / JPG / WEBP" };
+    return { ok: false, error: "Unsupported file type. Only PNG / JPG / WEBP" };
   }
 
   const sig = await readSignature(file);
   const png = isPng(sig);
   const jpg = isJpeg(sig);
   const webp = isWebp(sig);
-  if (!png && !jpg && !webp) return { ok: false, error: "תוכן הקובץ אינו תמונה תקינה" };
-  if (png && file.type !== "image/png") return { ok: false, error: "אי־התאמה בין תוכן הקובץ לסוגו" };
-  if (jpg && file.type !== "image/jpeg") return { ok: false, error: "אי־התאמה בין תוכן הקובץ לסוגו" };
-  if (webp && file.type !== "image/webp") return { ok: false, error: "אי־התאמה בין תוכן הקובץ לסוגו" };
+  if (!png && !jpg && !webp) return { ok: false, error: "File content is not a valid image" };
+  if (png && file.type !== "image/png") return { ok: false, error: "File content does not match its type" };
+  if (jpg && file.type !== "image/jpeg") return { ok: false, error: "File content does not match its type" };
+  if (webp && file.type !== "image/webp") return { ok: false, error: "File content does not match its type" };
 
   return { ok: true, ext: png ? "png" : webp ? "webp" : "jpg" };
 }
