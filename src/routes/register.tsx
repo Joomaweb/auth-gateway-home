@@ -11,8 +11,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
-      { title: "הרשמה" },
-      { name: "description", content: "צור חשבון חדש" },
+      { title: "Sign Up" },
+      { name: "description", content: "Create a new account" },
     ],
   }),
   component: RegisterPage,
@@ -35,15 +35,15 @@ function RegisterPage() {
     const cleanEmail = email.trim().toLowerCase();
 
     if (cleanName.length < 2) {
-      setError("שם חייב להכיל לפחות 2 תווים");
+      setError("Name must be at least 2 characters");
       return;
     }
     if (!isValidEmail(cleanEmail)) {
-      setError("כתובת אימייל לא תקינה");
+      setError("Invalid email address");
       return;
     }
     if (password !== confirm) {
-      setError("הסיסמאות אינן תואמות");
+      setError("Passwords do not match");
       return;
     }
     const pw = checkPassword(password);
@@ -64,23 +64,20 @@ function RegisterPage() {
 
     if (signUpError) {
       setLoading(false);
-      // Generic error to avoid account enumeration.
       setError(GENERIC_SIGNUP_ERROR);
       toast.error(GENERIC_SIGNUP_ERROR);
       return;
     }
 
-    // Profile row is created by a DB trigger (handle_new_user). No client insert.
-
     setLoading(false);
 
     if (!data.session) {
-      toast.success("נרשמת בהצלחה! אנא בדוק את האימייל שלך לאישור.");
+      toast.success("Account created! Please check your email to confirm.");
       navigate({ to: "/login" });
       return;
     }
 
-    toast.success("נרשמת בהצלחה");
+    toast.success("Account created");
     navigate({ to: "/" });
   };
 
@@ -93,13 +90,13 @@ function RegisterPage() {
               <path d="M12 2L2 12l10 10 10-10L12 2z" fill="currentColor" />
             </svg>
           </div>
-          <CardTitle className="text-2xl">יצירת חשבון</CardTitle>
-          <CardDescription>הצטרף אלינו עוד היום</CardDescription>
+          <CardTitle className="text-2xl">Create account</CardTitle>
+          <CardDescription>Join us today</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">שם מלא</Label>
+              <Label htmlFor="fullName">Full name</Label>
               <Input
                 id="fullName"
                 value={fullName}
@@ -108,7 +105,7 @@ function RegisterPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">אימייל</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -116,11 +113,10 @@ function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 dir="ltr"
-                className="text-right"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">סיסמה</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -128,11 +124,10 @@ function RegisterPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 dir="ltr"
-                className="text-right"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="confirm">אימות סיסמה</Label>
+              <Label htmlFor="confirm">Confirm password</Label>
               <Input
                 id="confirm"
                 type="password"
@@ -140,7 +135,6 @@ function RegisterPage() {
                 onChange={(e) => setConfirm(e.target.value)}
                 required
                 dir="ltr"
-                className="text-right"
               />
             </div>
             {error && (
@@ -149,13 +143,13 @@ function RegisterPage() {
               </div>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "נרשם..." : "הירשם"}
+              {loading ? "Creating..." : "Sign up"}
             </Button>
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            כבר יש לך חשבון?{" "}
+            Already have an account?{" "}
             <Link to="/login" className="text-primary font-medium hover:underline">
-              התחברות
+              Sign in
             </Link>
           </p>
         </CardContent>
