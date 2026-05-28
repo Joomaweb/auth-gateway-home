@@ -394,8 +394,8 @@ function CheckoutPage() {
 
               {total === 0 ? (
                 <div className="border border-gold/40 bg-gold/10 rounded-lg p-4 text-sm space-y-2">
-                  <p className="font-semibold">🆓 הזמנה חינם</p>
-                  <p className="text-muted-foreground">סכום ההזמנה הוא 0 — אין צורך בתשלום. ההזמנה תיווצר ישירות לבדיקת זרימת הצ׳קאאוט.</p>
+                  <p className="font-semibold">🆓 Free order</p>
+                  <p className="text-muted-foreground">Order total is $0 — no payment required. The order will be created directly to test the checkout flow.</p>
                 </div>
               ) : (
                 <>
