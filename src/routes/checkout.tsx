@@ -321,23 +321,23 @@ function CheckoutPage() {
           <div className="lg:col-span-2 space-y-6">
             {!user && (
               <section className="border rounded-lg p-6 bg-card">
-                <h2 className="font-semibold mb-1">יצירת חשבון מהירה</h2>
+                <h2 className="font-semibold mb-1">Quick account creation</h2>
                 <p className="text-xs text-muted-foreground mb-4">
-                  כדי שנוכל לעקוב אחר ההזמנה שלך, יווצר עבורך חשבון אוטומטית. כבר רשום?{" "}
+                  So we can track your order, an account will be created for you automatically. Already registered?{" "}
                   <button type="button" className="text-primary underline" onClick={() => navigate({ to: "/login" })}>
-                    התחבר
+                    Sign in
                   </button>
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field
-                    label="אימייל"
+                    label="Email"
                     type="email"
                     value={form.email}
                     onChange={(v) => setForm({ ...form, email: v })}
                     required
                   />
                   <Field
-                    label="סיסמה (לפחות 6 תווים)"
+                    label="Password (min 6 characters)"
                     type="password"
                     value={form.password}
                     onChange={(v) => setForm({ ...form, password: v })}
