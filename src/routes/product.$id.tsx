@@ -48,6 +48,15 @@ function ProductPage() {
   useRealtime("products", load, `id=eq.${id}`);
   useRealtime("product_variants", load, `product_id=eq.${id}`);
 
+  // Auto-show video on entering product (only for uploaded videos, not YT/Vimeo)
+  useEffect(() => {
+    if (product?.video_url && !/youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url)) {
+      setShowVideo(true);
+    } else {
+      setShowVideo(false);
+    }
+  }, [product?.video_url]);
+
   if (!product) {
     return (
       <PublicLayout>
