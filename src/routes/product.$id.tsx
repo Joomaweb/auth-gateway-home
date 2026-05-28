@@ -112,25 +112,92 @@ function ProductPage() {
     <PublicLayout>
       <div className="max-w-7xl mx-auto px-4 py-10 grid gap-10 lg:grid-cols-2">
         <div>
-          <div className="aspect-[3/4] rounded-lg overflow-hidden bg-muted">
-            <img src={images[imgIdx]} alt={product.name} className="w-full h-full object-cover" />
-          </div>
-          {images.length > 1 && (
-            <div className="flex gap-2 mt-3">
-              {images.map((src, i) => (
-                <button
-                  key={i}
-                  onClick={() => setImgIdx(i)}
-                  className={cn(
-                    "w-16 h-20 rounded overflow-hidden bg-muted border-2",
-                    i === imgIdx ? "border-primary" : "border-transparent",
-                  )}
+          {(() => {
+            const isUploadedVideo =
+              !!product.video_url &&
+              !/youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url);
+            const sizeMap: Record<string, string> = {
+              small: "400px",
+              medium: "600px",
+              large: "900px",
+              full: "100%",
+            };
+            const maxW = sizeMap[product.video_size ?? "large"] ?? "900px";
+
+            return (
+              <>
+                <div
+                  className="rounded-lg overflow-hidden bg-muted mx-auto"
+                  style={{
+                    maxWidth: showVideo && isUploadedVideo ? maxW : undefined,
+                  }}
                 >
-                  <img src={src} alt="" className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
+                  {showVideo && isUploadedVideo ? (
+                    <video
+                      src={product.video_url!}
+                      controls
+                      autoPlay
+                      muted
+                      playsInline
+                      loop
+                      className="w-full aspect-video bg-black"
+                    />
+                  ) : (
+                    <div className="aspect-[3/4]">
+                      <img
+                        src={images[imgIdx]}
+                        alt={product.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {(images.length > 1 || isUploadedVideo) && (
+                  <div className="flex gap-2 mt-3 flex-wrap">
+                    {images.map((src, i) => (
+                      <button
+                        key={i}
+                        onClick={() => {
+                          setShowVideo(false);
+                          setImgIdx(i);
+                        }}
+                        className={cn(
+                          "w-16 h-20 rounded overflow-hidden bg-muted border-2",
+                          !showVideo && i === imgIdx
+                            ? "border-primary"
+                            : "border-transparent",
+                        )}
+                      >
+                        <img src={src} alt="" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                    {isUploadedVideo && (
+                      <button
+                        onClick={() => setShowVideo(true)}
+                        className={cn(
+                          "relative w-16 h-20 rounded overflow-hidden bg-black border-2 flex items-center justify-center",
+                          showVideo ? "border-primary" : "border-transparent",
+                        )}
+                        aria-label="Play video"
+                      >
+                        <video
+                          src={product.video_url!}
+                          muted
+                          playsInline
+                          preload="metadata"
+                          className="absolute inset-0 w-full h-full object-cover opacity-70"
+                        />
+                        <svg viewBox="0 0 24 24" className="relative h-6 w-6 text-white drop-shadow" fill="currentColor">
+                          <path d="M8 5v14l11-7z" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         <div>
