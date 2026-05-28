@@ -105,6 +105,7 @@ function ProductEdit() {
     sale_price: "" as string,
     images: [] as string[],
     video_url: "",
+    video_size: "large" as "small" | "medium" | "large" | "full",
     category_id: "",
     featured: false,
     active: true,
