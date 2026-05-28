@@ -384,7 +384,7 @@ function CheckoutPage() {
               )}
               {needsApproval && (
                 <div className="mt-5 border border-amber-500/40 bg-amber-500/10 rounded-lg p-3 text-sm">
-                  <strong>שים לב:</strong> אחד או יותר מהפריטים בעגלה דורש <strong>אישור מלאי מהחנות</strong> לפני סיום הרכישה. ההזמנה תישמר בסטטוס "ממתין לאישור מלאי" ותתבצע רק לאחר אישור.
+                  <strong>Note:</strong> One or more items in your cart require <strong>stock approval from the store</strong> before checkout can be completed. The order will be saved as "awaiting stock approval" and will only be processed after confirmation.
                 </div>
               )}
             </section>
