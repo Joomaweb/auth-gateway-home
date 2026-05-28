@@ -175,12 +175,13 @@ function OrderDetailPage() {
               className="gap-2"
               disabled={order.shipment_status !== "delivered"}
             >
-              <Download className="h-4 w-4" /> הורד קבלה PDF
+              <Download className="h-4 w-4" /> Download PDF Receipt
             </Button>
             {order.shipment_status !== "delivered" && (
               <span className="text-[11px] text-muted-foreground max-w-[220px] text-end leading-snug">
-                הקבלה תהיה זמינה להורדה רק לאחר שההזמנה תגיע ליעדה.
+                The receipt will be available for download only after the order has been delivered.
               </span>
+            )}
             )}
           </div>
         </div>
