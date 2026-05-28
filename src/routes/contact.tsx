@@ -43,7 +43,7 @@ function ContactPage() {
       .single();
     if (error || !conv) {
       setBusy(false);
-      toast.error("שליחה נכשלה");
+      toast.error("Failed to send");
       return;
     }
     await supabase.from("messages").insert({
