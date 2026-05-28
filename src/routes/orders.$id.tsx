@@ -182,7 +182,6 @@ function OrderDetailPage() {
                 The receipt will be available for download only after the order has been delivered.
               </span>
             )}
-            )}
           </div>
         </div>
 
