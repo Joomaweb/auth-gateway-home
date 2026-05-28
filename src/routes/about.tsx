@@ -21,7 +21,6 @@ const DEFAULT_ABOUT: About = {
     { title: "Transparency", body: "Fair pricing, no hidden fees." },
   ],
 };
-};
 
 function AboutPage() {
   const [a, setA] = useState<About>(DEFAULT_ABOUT);
