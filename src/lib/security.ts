@@ -131,10 +131,10 @@ export function sanitizeUrl(input: string, maxLen = 2048): string {
 
 export type PasswordCheck = { ok: boolean; error?: string };
 export function checkPassword(pw: string): PasswordCheck {
-  if (pw.length < 8) return { ok: false, error: "סיסמה חייבת להכיל לפחות 8 תווים" };
-  if (pw.length > 128) return { ok: false, error: "סיסמה ארוכה מדי" };
+  if (pw.length < 8) return { ok: false, error: "Password must be at least 8 characters" };
+  if (pw.length > 128) return { ok: false, error: "Password is too long" };
   if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) {
-    return { ok: false, error: "הסיסמה חייבת לכלול אותיות וספרות" };
+    return { ok: false, error: "Password must contain letters and numbers" };
   }
   return { ok: true };
 }
@@ -143,5 +143,5 @@ export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
 }
 
-export const GENERIC_AUTH_ERROR = "פרטי ההתחברות שגויים";
-export const GENERIC_SIGNUP_ERROR = "לא ניתן ליצור חשבון כעת. אנא נסה שוב";
+export const GENERIC_AUTH_ERROR = "Invalid login credentials";
+export const GENERIC_SIGNUP_ERROR = "Unable to create account right now. Please try again";
