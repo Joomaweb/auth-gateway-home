@@ -419,6 +419,7 @@ function ProductEdit() {
           sale_price: saleNum,
           images: form.images,
           video_url: form.video_url || null,
+          video_size: form.video_size,
           category_id: form.category_id || null,
           featured: form.featured,
           active: form.active,
