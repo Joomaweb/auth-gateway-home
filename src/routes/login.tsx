@@ -11,8 +11,8 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "התחברות" },
-      { name: "description", content: "התחבר לחשבון שלך" },
+      { title: "Sign In" },
+      { name: "description", content: "Sign in to your account" },
     ],
   }),
   component: LoginPage,
