@@ -21,6 +21,7 @@ type Product = {
   sale_price: number | null;
   images: string[] | null;
   video_url?: string | null;
+  video_size?: "small" | "medium" | "large" | "full" | null;
   requires_stock_approval?: boolean | null;
 };
 type Variant = { id: string; size: string | null; color: string | null; stock: number };
