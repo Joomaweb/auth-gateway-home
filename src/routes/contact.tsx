@@ -32,7 +32,7 @@ function ContactPage() {
     const cleanSubject = sanitizeText(subject, 120);
     const cleanBody = sanitizeText(body, 4000);
     if (cleanSubject.length < 2 || cleanBody.length < 2) {
-      toast.error("נא למלא נושא והודעה");
+      toast.error("Please fill in both subject and message");
       return;
     }
     setBusy(true);
