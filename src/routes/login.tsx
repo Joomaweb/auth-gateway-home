@@ -57,13 +57,13 @@ function LoginPage() {
               <path d="M12 2L2 12l10 10 10-10L12 2z" fill="currentColor" />
             </svg>
           </div>
-          <CardTitle className="text-2xl">ברוך הבא</CardTitle>
-          <CardDescription>התחבר לחשבון שלך כדי להמשיך</CardDescription>
+          <CardTitle className="text-2xl">Welcome back</CardTitle>
+          <CardDescription>Sign in to your account to continue</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">אימייל</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -72,11 +72,10 @@ function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 dir="ltr"
-                className="text-right"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">סיסמה</Label>
+              <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -85,7 +84,6 @@ function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 dir="ltr"
-                className="text-right"
               />
             </div>
             {error && (
@@ -94,13 +92,13 @@ function LoginPage() {
               </div>
             )}
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "מתחבר..." : "התחבר"}
+              {loading ? "Signing in..." : "Sign in"}
             </Button>
           </form>
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            אין לך חשבון?{" "}
+            Don't have an account?{" "}
             <Link to="/register" className="text-primary font-medium hover:underline">
-              הרשמה
+              Sign up
             </Link>
           </p>
         </CardContent>
