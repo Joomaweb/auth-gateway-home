@@ -105,6 +105,7 @@ function ProductEdit() {
     sale_price: "" as string,
     images: [] as string[],
     video_url: "",
+    video_size: "large" as "small" | "medium" | "large" | "full",
     category_id: "",
     featured: false,
     active: true,
@@ -168,6 +169,7 @@ function ProductEdit() {
           sale_price: p.sale_price != null ? String(p.sale_price) : "",
           images: Array.isArray(p.images) ? p.images : [],
           video_url: p.video_url ?? "",
+          video_size: (p.video_size ?? "large") as "small" | "medium" | "large" | "full",
           category_id: p.category_id ?? "",
           featured: !!p.featured,
           active: p.active ?? true,
@@ -396,6 +398,7 @@ function ProductEdit() {
           sale_price: saleNum,
           images: form.images,
           video_url: form.video_url || null,
+          video_size: form.video_size,
           category_id: form.category_id || null,
           featured: form.featured,
           active: form.active,
@@ -416,6 +419,7 @@ function ProductEdit() {
           sale_price: saleNum,
           images: form.images,
           video_url: form.video_url || null,
+          video_size: form.video_size,
           category_id: form.category_id || null,
           featured: form.featured,
           active: form.active,
@@ -763,6 +767,23 @@ function ProductEdit() {
                 }}
               />
             </label>
+          </div>
+          <div className="grid sm:grid-cols-[200px,1fr] gap-2 items-center pt-2 border-t">
+            <label className="text-sm font-medium">גודל חלון הסרטון</label>
+            <Select
+              value={form.video_size}
+              onValueChange={(v) => setForm({ ...form, video_size: v as typeof form.video_size })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="small">קטן (max 400px)</SelectItem>
+                <SelectItem value="medium">בינוני (max 600px)</SelectItem>
+                <SelectItem value="large">גדול (max 900px) — ברירת מחדל</SelectItem>
+                <SelectItem value="full">מלא (רוחב מקסימלי)</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </section>
 
