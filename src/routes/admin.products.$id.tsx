@@ -768,6 +768,23 @@ function ProductEdit() {
               />
             </label>
           </div>
+          <div className="grid sm:grid-cols-[200px,1fr] gap-2 items-center pt-2 border-t">
+            <label className="text-sm font-medium">גודל חלון הסרטון</label>
+            <Select
+              value={form.video_size}
+              onValueChange={(v) => setForm({ ...form, video_size: v as typeof form.video_size })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="small">קטן (max 400px)</SelectItem>
+                <SelectItem value="medium">בינוני (max 600px)</SelectItem>
+                <SelectItem value="large">גדול (max 900px) — ברירת מחדל</SelectItem>
+                <SelectItem value="full">מלא (רוחב מקסימלי)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </section>
 
         {/* Sizes */}
