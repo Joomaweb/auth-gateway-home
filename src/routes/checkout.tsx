@@ -129,7 +129,7 @@ function CheckoutPage() {
     const email = form.email.trim().toLowerCase();
     const password = form.password;
     if (!email || password.length < 6) {
-      throw new Error("נדרש אימייל וסיסמה (לפחות 6 תווים) ליצירת חשבון");
+      throw new Error("Email and password (min 6 characters) are required to create an account");
     }
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
