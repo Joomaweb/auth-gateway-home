@@ -61,16 +61,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "ATELIER — Modern Classic Clothing" },
-      { name: "description", content: "Timeless, modern wardrobe staples." },
-      { property: "og:title", content: "ATELIER — Modern Classic Clothing" },
-      { name: "twitter:title", content: "ATELIER — Modern Classic Clothing" },
-      { property: "og:description", content: "Timeless, modern wardrobe staples." },
-      { name: "twitter:description", content: "Timeless, modern wardrobe staples." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9d011b42-a113-4345-b488-cb38ccef85d0/id-preview-2ee65826--1cbce5df-b3c9-4a0d-812f-a2653bab38d5.lovable.app-1778419654527.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/9d011b42-a113-4345-b488-cb38ccef85d0/id-preview-2ee65826--1cbce5df-b3c9-4a0d-812f-a2653bab38d5.lovable.app-1778419654527.png" },
-      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
