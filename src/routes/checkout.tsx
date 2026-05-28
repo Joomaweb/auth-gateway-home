@@ -375,7 +375,7 @@ function CheckoutPage() {
                           <input type="radio" name="shipping" checked={shippingIdx === i} onChange={() => setShippingIdx(i)} />
                           <span className="font-medium">{m.name}</span>
                         </span>
-                        {m.eta && <span className="text-xs text-muted-foreground ms-6">זמן אספקה: {m.eta}</span>}
+                        {m.eta && <span className="text-xs text-muted-foreground ms-6">Delivery time: {m.eta}</span>}
                       </span>
                       <span className="text-sm font-medium">${m.price.toFixed(2)}</span>
                     </label>
