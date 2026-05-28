@@ -93,15 +93,15 @@ export type VideoValidation =
   | { ok: false; error: string };
 
 export async function validateVideoFile(file: File): Promise<VideoValidation> {
-  if (!file) return { ok: false, error: "לא נבחר קובץ" };
-  if (file.size === 0) return { ok: false, error: "קובץ ריק" };
-  if (file.size > MAX_VIDEO_BYTES) return { ok: false, error: "הסרטון גדול מ־200MB" };
+  if (!file) return { ok: false, error: "No file selected" };
+  if (file.size === 0) return { ok: false, error: "Empty file" };
+  if (file.size > MAX_VIDEO_BYTES) return { ok: false, error: "Video is larger than 200MB" };
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   if (!ALLOWED_VIDEO_EXT.includes(ext as (typeof ALLOWED_VIDEO_EXT)[number])) {
-    return { ok: false, error: "סיומת לא נתמכת. רק MP4 / WEBM / MOV" };
+    return { ok: false, error: "Unsupported extension. Only MP4 / WEBM / MOV" };
   }
   if (!ALLOWED_VIDEO_MIME.includes(file.type as (typeof ALLOWED_VIDEO_MIME)[number])) {
-    return { ok: false, error: "סוג קובץ לא נתמך. רק MP4 / WEBM / MOV" };
+    return { ok: false, error: "Unsupported file type. Only MP4 / WEBM / MOV" };
   }
   return { ok: true, ext: ext === "mp4" ? "mp4" : ext === "webm" ? "webm" : "mov" };
 }
