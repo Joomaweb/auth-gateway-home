@@ -13,13 +13,14 @@ type Feature = { title: string; body: string };
 type About = { title: string; body: string; features: Feature[] };
 
 const DEFAULT_ABOUT: About = {
-  title: "אודות ATELIER",
-  body: "חנות בוטיק לאופנה קלאסית ועדינה — בדים יוקרתיים, גזרות נצחיות, יצירה אחראית.",
+  title: "About ATELIER",
+  body: "A boutique for classic, refined fashion — premium fabrics, timeless cuts, responsible craftsmanship.",
   features: [
-    { title: "איכות", body: "בדים יוקרתיים ומלאכת יד מוקפדת." },
-    { title: "קלאסי", body: "גזרות שלא יוצאות מהאופנה." },
-    { title: "שקיפות", body: "מחירים הוגנים, בלי תוספות נסתרות." },
+    { title: "Quality", body: "Premium fabrics and meticulous craftsmanship." },
+    { title: "Classic", body: "Cuts that never go out of style." },
+    { title: "Transparency", body: "Fair pricing, no hidden fees." },
   ],
+};
 };
 
 function AboutPage() {
