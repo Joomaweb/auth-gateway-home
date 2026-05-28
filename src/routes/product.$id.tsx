@@ -154,7 +154,7 @@ function ProductPage() {
 
           {product.requires_stock_approval && (
             <div className="mt-4 border border-amber-500/40 bg-amber-500/10 rounded-lg p-3 text-sm">
-              <strong>שים לב:</strong> רכישת מוצר זה כפופה לאישור מלאי מהחנות — ההזמנה תתבצע רק לאחר אישור.
+              <strong>Note:</strong> This item is subject to stock approval — your order will only be processed after confirmation.
             </div>
           )}
 
