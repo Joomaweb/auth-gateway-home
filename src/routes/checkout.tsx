@@ -214,7 +214,7 @@ function CheckoutPage() {
       return;
     }
     if (!guestFieldsValid) {
-      toast.error("נדרש אימייל וסיסמה ליצירת חשבון");
+      toast.error("Email and password are required to create an account");
       return;
     }
     setBusy(true);
