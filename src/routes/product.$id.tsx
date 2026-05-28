@@ -34,9 +34,9 @@ function ProductPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [variants, setVariants] = useState<Variant[]>([]);
   const [size, setSize] = useState<string | null>(null);
+  const [color, setColor] = useState<string | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
-  const [imgIdx, setImgIdx] = useState(0);
 
   const load = () => {
     supabase.from("products").select("*").eq("id", id).maybeSingle().then(({ data }) => setProduct(data));
