@@ -148,13 +148,13 @@ function ProductPage() {
           )}
           {product.video_url && /youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url) && (
             <a href={product.video_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm underline text-primary">
-              צפה בסרטון המוצר ↗
+              Watch product video ↗
             </a>
           )}
 
           {product.requires_stock_approval && (
             <div className="mt-4 border border-amber-500/40 bg-amber-500/10 rounded-lg p-3 text-sm">
-              <strong>שים לב:</strong> רכישת מוצר זה כפופה לאישור מלאי מהחנות — ההזמנה תתבצע רק לאחר אישור.
+              <strong>Note:</strong> This item is subject to stock approval — your order will only be processed after confirmation.
             </div>
           )}
 

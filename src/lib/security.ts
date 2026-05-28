@@ -37,26 +37,26 @@ export type ImageValidation =
   | { ok: false; error: string };
 
 export async function validateImageFile(file: File): Promise<ImageValidation> {
-  if (!file) return { ok: false, error: "לא נבחר קובץ" };
-  if (file.size === 0) return { ok: false, error: "קובץ ריק" };
-  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "הקובץ גדול מ־200MB" };
+  if (!file) return { ok: false, error: "No file selected" };
+  if (file.size === 0) return { ok: false, error: "Empty file" };
+  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "File is larger than 200MB" };
 
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   if (!ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number])) {
-    return { ok: false, error: "סיומת לא נתמכת. רק PNG / JPG / WEBP" };
+    return { ok: false, error: "Unsupported extension. Only PNG / JPG / WEBP" };
   }
   if (!ALLOWED_MIME.includes(file.type as (typeof ALLOWED_MIME)[number])) {
-    return { ok: false, error: "סוג קובץ לא נתמך. רק PNG / JPG / WEBP" };
+    return { ok: false, error: "Unsupported file type. Only PNG / JPG / WEBP" };
   }
 
   const sig = await readSignature(file);
   const png = isPng(sig);
   const jpg = isJpeg(sig);
   const webp = isWebp(sig);
-  if (!png && !jpg && !webp) return { ok: false, error: "תוכן הקובץ אינו תמונה תקינה" };
-  if (png && file.type !== "image/png") return { ok: false, error: "אי־התאמה בין תוכן הקובץ לסוגו" };
-  if (jpg && file.type !== "image/jpeg") return { ok: false, error: "אי־התאמה בין תוכן הקובץ לסוגו" };
-  if (webp && file.type !== "image/webp") return { ok: false, error: "אי־התאמה בין תוכן הקובץ לסוגו" };
+  if (!png && !jpg && !webp) return { ok: false, error: "File content is not a valid image" };
+  if (png && file.type !== "image/png") return { ok: false, error: "File content does not match its type" };
+  if (jpg && file.type !== "image/jpeg") return { ok: false, error: "File content does not match its type" };
+  if (webp && file.type !== "image/webp") return { ok: false, error: "File content does not match its type" };
 
   return { ok: true, ext: png ? "png" : webp ? "webp" : "jpg" };
 }
@@ -93,15 +93,15 @@ export type VideoValidation =
   | { ok: false; error: string };
 
 export async function validateVideoFile(file: File): Promise<VideoValidation> {
-  if (!file) return { ok: false, error: "לא נבחר קובץ" };
-  if (file.size === 0) return { ok: false, error: "קובץ ריק" };
-  if (file.size > MAX_VIDEO_BYTES) return { ok: false, error: "הסרטון גדול מ־200MB" };
+  if (!file) return { ok: false, error: "No file selected" };
+  if (file.size === 0) return { ok: false, error: "Empty file" };
+  if (file.size > MAX_VIDEO_BYTES) return { ok: false, error: "Video is larger than 200MB" };
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   if (!ALLOWED_VIDEO_EXT.includes(ext as (typeof ALLOWED_VIDEO_EXT)[number])) {
-    return { ok: false, error: "סיומת לא נתמכת. רק MP4 / WEBM / MOV" };
+    return { ok: false, error: "Unsupported extension. Only MP4 / WEBM / MOV" };
   }
   if (!ALLOWED_VIDEO_MIME.includes(file.type as (typeof ALLOWED_VIDEO_MIME)[number])) {
-    return { ok: false, error: "סוג קובץ לא נתמך. רק MP4 / WEBM / MOV" };
+    return { ok: false, error: "Unsupported file type. Only MP4 / WEBM / MOV" };
   }
   return { ok: true, ext: ext === "mp4" ? "mp4" : ext === "webm" ? "webm" : "mov" };
 }
@@ -131,10 +131,10 @@ export function sanitizeUrl(input: string, maxLen = 2048): string {
 
 export type PasswordCheck = { ok: boolean; error?: string };
 export function checkPassword(pw: string): PasswordCheck {
-  if (pw.length < 8) return { ok: false, error: "סיסמה חייבת להכיל לפחות 8 תווים" };
-  if (pw.length > 128) return { ok: false, error: "סיסמה ארוכה מדי" };
+  if (pw.length < 8) return { ok: false, error: "Password must be at least 8 characters" };
+  if (pw.length > 128) return { ok: false, error: "Password is too long" };
   if (!/[A-Za-z]/.test(pw) || !/[0-9]/.test(pw)) {
-    return { ok: false, error: "הסיסמה חייבת לכלול אותיות וספרות" };
+    return { ok: false, error: "Password must contain letters and numbers" };
   }
   return { ok: true };
 }
@@ -143,5 +143,5 @@ export function isValidEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254;
 }
 
-export const GENERIC_AUTH_ERROR = "פרטי ההתחברות שגויים";
-export const GENERIC_SIGNUP_ERROR = "לא ניתן ליצור חשבון כעת. אנא נסה שוב";
+export const GENERIC_AUTH_ERROR = "Invalid login credentials";
+export const GENERIC_SIGNUP_ERROR = "Unable to create account right now. Please try again";

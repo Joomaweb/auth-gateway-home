@@ -129,7 +129,7 @@ function CheckoutPage() {
     const email = form.email.trim().toLowerCase();
     const password = form.password;
     if (!email || password.length < 6) {
-      throw new Error("נדרש אימייל וסיסמה (לפחות 6 תווים) ליצירת חשבון");
+      throw new Error("Email and password (min 6 characters) are required to create an account");
     }
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -145,7 +145,7 @@ function CheckoutPage() {
       if (msg.includes("registered") || msg.includes("exists") || msg.includes("already")) {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError || !signInData.user) {
-          throw new Error("חשבון עם אימייל זה כבר קיים — סיסמה שגויה. נסה להתחבר.");
+          throw new Error("An account with this email already exists — incorrect password. Try signing in.");
         }
         return { id: signInData.user.id };
       }
@@ -214,7 +214,7 @@ function CheckoutPage() {
       return;
     }
     if (!guestFieldsValid) {
-      toast.error("נדרש אימייל וסיסמה ליצירת חשבון");
+      toast.error("Email and password are required to create an account");
       return;
     }
     setBusy(true);
@@ -321,23 +321,23 @@ function CheckoutPage() {
           <div className="lg:col-span-2 space-y-6">
             {!user && (
               <section className="border rounded-lg p-6 bg-card">
-                <h2 className="font-semibold mb-1">יצירת חשבון מהירה</h2>
+                <h2 className="font-semibold mb-1">Quick account creation</h2>
                 <p className="text-xs text-muted-foreground mb-4">
-                  כדי שנוכל לעקוב אחר ההזמנה שלך, יווצר עבורך חשבון אוטומטית. כבר רשום?{" "}
+                  So we can track your order, an account will be created for you automatically. Already registered?{" "}
                   <button type="button" className="text-primary underline" onClick={() => navigate({ to: "/login" })}>
-                    התחבר
+                    Sign in
                   </button>
                 </p>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <Field
-                    label="אימייל"
+                    label="Email"
                     type="email"
                     value={form.email}
                     onChange={(v) => setForm({ ...form, email: v })}
                     required
                   />
                   <Field
-                    label="סיסמה (לפחות 6 תווים)"
+                    label="Password (min 6 characters)"
                     type="password"
                     value={form.password}
                     onChange={(v) => setForm({ ...form, password: v })}
@@ -375,7 +375,7 @@ function CheckoutPage() {
                           <input type="radio" name="shipping" checked={shippingIdx === i} onChange={() => setShippingIdx(i)} />
                           <span className="font-medium">{m.name}</span>
                         </span>
-                        {m.eta && <span className="text-xs text-muted-foreground ms-6">זמן אספקה: {m.eta}</span>}
+                        {m.eta && <span className="text-xs text-muted-foreground ms-6">Delivery time: {m.eta}</span>}
                       </span>
                       <span className="text-sm font-medium">${m.price.toFixed(2)}</span>
                     </label>
@@ -384,7 +384,7 @@ function CheckoutPage() {
               )}
               {needsApproval && (
                 <div className="mt-5 border border-amber-500/40 bg-amber-500/10 rounded-lg p-3 text-sm">
-                  <strong>שים לב:</strong> אחד או יותר מהפריטים בעגלה דורש <strong>אישור מלאי מהחנות</strong> לפני סיום הרכישה. ההזמנה תישמר בסטטוס "ממתין לאישור מלאי" ותתבצע רק לאחר אישור.
+                  <strong>Note:</strong> One or more items in your cart require <strong>stock approval from the store</strong> before checkout can be completed. The order will be saved as "awaiting stock approval" and will only be processed after confirmation.
                 </div>
               )}
             </section>
@@ -394,8 +394,8 @@ function CheckoutPage() {
 
               {total === 0 ? (
                 <div className="border border-gold/40 bg-gold/10 rounded-lg p-4 text-sm space-y-2">
-                  <p className="font-semibold">🆓 הזמנה חינם</p>
-                  <p className="text-muted-foreground">סכום ההזמנה הוא 0 — אין צורך בתשלום. ההזמנה תיווצר ישירות לבדיקת זרימת הצ׳קאאוט.</p>
+                  <p className="font-semibold">🆓 Free order</p>
+                  <p className="text-muted-foreground">Order total is $0 — no payment required. The order will be created directly to test the checkout flow.</p>
                 </div>
               ) : (
                 <>
@@ -476,7 +476,7 @@ function CheckoutPage() {
             </div>
             {total === 0 ? (
               <Button type="submit" className="w-full" size="lg" disabled={busy}>
-                {busy ? t("common.loading") : "השלם הזמנה חינם"}
+                {busy ? t("common.loading") : "Complete free order"}
               </Button>
             ) : (!isPayPal && !isSquare) && (
               <Button type="submit" className="w-full" size="lg" disabled={busy || !payment}>
