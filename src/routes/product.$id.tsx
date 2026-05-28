@@ -219,11 +219,6 @@ function ProductPage() {
             <p className="mt-6 text-muted-foreground leading-relaxed">{product.description}</p>
           )}
 
-          {product.video_url && !/youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url) && (
-            <div className="mt-6 rounded-lg overflow-hidden border bg-black">
-              <video src={product.video_url} controls className="w-full aspect-video" />
-            </div>
-          )}
           {product.video_url && /youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url) && (
             <a href={product.video_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm underline text-primary">
               Watch product video ↗
