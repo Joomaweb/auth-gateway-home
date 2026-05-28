@@ -476,7 +476,7 @@ function CheckoutPage() {
             </div>
             {total === 0 ? (
               <Button type="submit" className="w-full" size="lg" disabled={busy}>
-                {busy ? t("common.loading") : "השלם הזמנה חינם"}
+                {busy ? t("common.loading") : "Complete free order"}
               </Button>
             ) : (!isPayPal && !isSquare) && (
               <Button type="submit" className="w-full" size="lg" disabled={busy || !payment}>
