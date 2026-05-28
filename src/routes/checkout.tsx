@@ -145,7 +145,7 @@ function CheckoutPage() {
       if (msg.includes("registered") || msg.includes("exists") || msg.includes("already")) {
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         if (signInError || !signInData.user) {
-          throw new Error("חשבון עם אימייל זה כבר קיים — סיסמה שגויה. נסה להתחבר.");
+          throw new Error("An account with this email already exists — incorrect password. Try signing in.");
         }
         return { id: signInData.user.id };
       }
