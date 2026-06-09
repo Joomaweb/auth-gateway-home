@@ -223,6 +223,35 @@ function AdminSettings() {
               </div>
             </div>
           </div>
+
+          <div className="space-y-3 pt-4 border-t">
+            <div>
+              <h4 className="font-medium text-sm">טקסט פוטר (Footer tagline)</h4>
+              <p className="text-xs text-muted-foreground">הטקסט שמופיע מתחת לשם המותג בתחתית האתר. מתעדכן בזמן אמת.</p>
+            </div>
+            <div className="grid md:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>עברית</Label>
+                <Textarea
+                  rows={3}
+                  dir="rtl"
+                  value={branding.footer_tagline_he ?? ""}
+                  onChange={(e) => setBranding({ ...branding, footer_tagline_he: e.target.value })}
+                  placeholder="אנחנו מעצבים בגדים שנועדו להישאר..."
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>English</Label>
+                <Textarea
+                  rows={3}
+                  dir="ltr"
+                  value={branding.footer_tagline_en ?? ""}
+                  onChange={(e) => setBranding({ ...branding, footer_tagline_en: e.target.value })}
+                  placeholder="We design clothing made to last — timeless silhouettes..."
+                />
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* SEO / Google */}
