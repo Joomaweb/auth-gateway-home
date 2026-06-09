@@ -1,16 +1,20 @@
 import { Link } from "@tanstack/react-router";
 import { useT } from "@/lib/i18n";
+import { useSiteBranding } from "@/hooks/use-site-branding";
 
 export function Footer() {
-  const { t } = useT();
+  const { t, lang } = useT();
+  const { branding } = useSiteBranding();
+  const brandName = branding.site_name?.trim() || "ATELIER";
+  const tagline =
+    (lang === "he" ? branding.footer_tagline_he : branding.footer_tagline_en)?.trim() ||
+    t("about.body");
   return (
     <footer className="border-t mt-20 bg-secondary/30">
       <div className="max-w-7xl mx-auto px-4 py-12 grid gap-8 md:grid-cols-4">
         <div>
-          <h3 className="font-display text-xl font-semibold mb-2">ATELIER</h3>
-          <p className="text-sm text-muted-foreground">
-            {t("about.body")}
-          </p>
+          <h3 className="font-display text-xl font-semibold mb-2">{brandName}</h3>
+          <p className="text-sm text-muted-foreground">{tagline}</p>
         </div>
         <div>
           <h4 className="font-medium text-sm mb-3">{t("footer.shop")}</h4>
@@ -35,7 +39,7 @@ export function Footer() {
       </div>
       <div className="border-t">
         <div className="max-w-7xl mx-auto px-4 py-4 text-xs text-muted-foreground text-center">
-          © {new Date().getFullYear()} ATELIER. {t("footer.rights")}
+          © {new Date().getFullYear()} {brandName}. {t("footer.rights")}
         </div>
       </div>
     </footer>

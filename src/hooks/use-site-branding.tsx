@@ -9,6 +9,8 @@ export type Branding = {
   seo_title?: string;
   seo_description?: string;
   seo_keywords?: string;
+  footer_tagline_en?: string;
+  footer_tagline_he?: string;
 };
 export type Legal = { terms_en: string; terms_he: string; policy_en: string; policy_he: string };
 
@@ -20,6 +22,8 @@ const DEFAULT_BRANDING: Branding = {
   seo_title: "",
   seo_description: "",
   seo_keywords: "",
+  footer_tagline_en: "",
+  footer_tagline_he: "",
 };
 const DEFAULT_LEGAL: Legal = { terms_en: "", terms_he: "", policy_en: "", policy_he: "" };
 
