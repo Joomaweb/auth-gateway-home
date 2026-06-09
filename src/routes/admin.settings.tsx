@@ -25,6 +25,8 @@ type Branding = {
   seo_title?: string;
   seo_description?: string;
   seo_keywords?: string;
+  footer_tagline_en?: string;
+  footer_tagline_he?: string;
 };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
@@ -47,6 +49,8 @@ const DEFAULT_BRANDING: Branding = {
   seo_title: "",
   seo_description: "",
   seo_keywords: "",
+  footer_tagline_en: "",
+  footer_tagline_he: "",
 };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
 
