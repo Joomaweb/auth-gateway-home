@@ -1,8 +1,8 @@
-import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, Outlet, Link } from "@tanstack/react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useIsAdmin } from "@/hooks/use-role";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/admin")({
   component: AdminGate,
@@ -11,19 +11,21 @@ export const Route = createFileRoute("/admin")({
 function AdminGate() {
   const { user, loading } = useAuth();
   const { isAdmin, checking } = useIsAdmin();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (loading || checking) return;
-    if (!user) {
-      navigate({ to: "/login" });
-    }
-  }, [user, loading, checking, navigate]);
 
   if (loading || checking) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">טוען...</div>;
   }
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6" dir="rtl">
+        <div className="max-w-md w-full border rounded-lg p-6 space-y-4 text-center bg-card">
+          <h1 className="text-xl font-semibold">נדרשת התחברות</h1>
+          <p className="text-sm text-muted-foreground">יש להתחבר עם משתמש אדמין כדי לגשת לפאנל הניהול.</p>
+          <Button asChild className="w-full"><Link to="/login">התחבר</Link></Button>
+        </div>
+      </div>
+    );
+  }
   if (!isAdmin) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6" dir="rtl">
