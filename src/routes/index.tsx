@@ -29,29 +29,32 @@ function HomePage() {
   const [showSale, setShowSale] = useState(true);
 
   const load = () => {
-    supabase.from("products")
-      .select("id,name,price,sale_price,images,featured")
-      .eq("active", true).eq("featured", true).limit(12)
-      .then(({ data }) => setFeatured((data ?? []) as ProductCardData[]));
-    supabase.from("products")
-      .select("id,name,price,sale_price,images")
-      .eq("active", true).not("sale_price", "is", null).limit(8)
-      .then(({ data }) => setSale((data ?? []) as ProductCardData[]));
-    supabase.from("products")
-      .select("id,name,price,sale_price,images,created_at")
-      .eq("active", true).order("created_at", { ascending: false }).limit(6)
-      .then(({ data }) => setNewest((data ?? []) as ProductCardData[]));
-    supabase.from("categories").select("*")
-      .then(({ data }) => setCats((data ?? []) as Category[]));
-    supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle()
-      .then(({ data }) => {
-        setHero((data?.hero as Hero) ?? { image: "", title: "", subtitle: "", cta_text: "", cta_link: "", badge: "", show_overlay: false });
-        const d = data as { hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
-        setHeroVideo(d?.hero_video ?? "");
-        if (Array.isArray(d?.carousel_images)) setSlides(d!.carousel_images as string[]);
-        setShowFeatured(d?.show_featured ?? true);
-        setShowSale(d?.show_sale ?? true);
-      });
+    // Fire all queries in parallel via a single Promise.all so React batches updates
+    Promise.all([
+      supabase.from("products")
+        .select("id,name,price,sale_price,images,featured")
+        .eq("active", true).eq("featured", true).limit(12),
+      supabase.from("products")
+        .select("id,name,price,sale_price,images")
+        .eq("active", true).not("sale_price", "is", null).limit(8),
+      supabase.from("products")
+        .select("id,name,price,sale_price,images,created_at")
+        .eq("active", true).order("created_at", { ascending: false }).limit(6),
+      supabase.from("categories").select("id,name,slug,image_url"),
+      supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle(),
+    ]).then(([f, s, n, c, ss]) => {
+      setFeatured((f.data ?? []) as ProductCardData[]);
+      setSale((s.data ?? []) as ProductCardData[]);
+      setNewest((n.data ?? []) as ProductCardData[]);
+      setCats((c.data ?? []) as Category[]);
+      const data = ss.data;
+      setHero((data?.hero as Hero) ?? { image: "", title: "", subtitle: "", cta_text: "", cta_link: "", badge: "", show_overlay: false });
+      const d = data as { hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
+      setHeroVideo(d?.hero_video ?? "");
+      if (Array.isArray(d?.carousel_images)) setSlides(d!.carousel_images as string[]);
+      setShowFeatured(d?.show_featured ?? true);
+      setShowSale(d?.show_sale ?? true);
+    });
   };
   useEffect(load, []);
   useRealtime("products", load);
