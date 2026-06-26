@@ -29,13 +29,17 @@ type HomeData = {
   showSale: boolean;
 };
 
-const CACHE_KEY = "home:v2";
+const CACHE_KEY = "home:v3";
+const CACHE_TTL = 10 * 60_000; // 10 min
 
 function readCache(): HomeData | undefined {
-  if (typeof sessionStorage === "undefined") return undefined;
+  if (typeof localStorage === "undefined") return undefined;
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
-    return raw ? (JSON.parse(raw) as HomeData) : undefined;
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return undefined;
+    const { t, d } = JSON.parse(raw) as { t: number; d: HomeData };
+    if (Date.now() - t > CACHE_TTL) return undefined;
+    return d;
   } catch { return undefined; }
 }
 
@@ -59,7 +63,7 @@ async function fetchHome(): Promise<HomeData> {
     showFeatured: d?.show_featured ?? true,
     showSale: d?.show_sale ?? true,
   };
-  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch { /* ignore quota */ }
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d: data })); } catch { /* ignore quota */ }
   return data;
 }
 
@@ -70,8 +74,9 @@ function HomePage() {
     queryKey: ["home"],
     queryFn: fetchHome,
     initialData: initial,
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
   });
+
   // Defer realtime subscriptions until after first paint so they don't slow TTI.
   const [rtReady, setRtReady] = useState(false);
   useEffect(() => {
