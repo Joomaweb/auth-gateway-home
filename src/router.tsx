@@ -11,8 +11,12 @@ export const getRouter = () => {
         gcTime: 10 * 60_000,      // keep in memory 10 min
         refetchOnWindowFocus: false,
         refetchOnReconnect: false,
-        retry: 1,
+        retry: 2,
+        // Exponential backoff with jitter, capped at 4s.
+        retryDelay: (i) => Math.min(4000, 300 * Math.pow(2, i)) + Math.random() * 150,
+        networkMode: "offlineFirst",
       },
+      mutations: { retry: 1, networkMode: "offlineFirst" },
     },
   });
 
