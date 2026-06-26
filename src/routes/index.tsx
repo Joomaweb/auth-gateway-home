@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useRealtime } from "@/hooks/use-realtime";
+import { optimizeImg, srcSet } from "@/lib/img";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
