@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useRealtime } from "@/hooks/use-realtime";
+import { optimizeImg, srcSet } from "@/lib/img";
 
 export const Route = createFileRoute("/product/$id")({
   component: ProductPage,
