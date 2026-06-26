@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
@@ -15,51 +16,80 @@ export const Route = createFileRoute("/")({
 type Category = { id: string; name: string; slug: string; image_url: string | null };
 type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number; show_overlay?: boolean };
 
+type HomeData = {
+  featured: ProductCardData[];
+  sale: ProductCardData[];
+  newest: ProductCardData[];
+  cats: Category[];
+  hero: Hero;
+  heroVideo: string;
+  slides: string[];
+  showFeatured: boolean;
+  showSale: boolean;
+};
+
+const CACHE_KEY = "home:v2";
+
+function readCache(): HomeData | undefined {
+  if (typeof sessionStorage === "undefined") return undefined;
+  try {
+    const raw = sessionStorage.getItem(CACHE_KEY);
+    return raw ? (JSON.parse(raw) as HomeData) : undefined;
+  } catch { return undefined; }
+}
+
+async function fetchHome(): Promise<HomeData> {
+  const [f, s, n, c, ss] = await Promise.all([
+    supabase.from("products").select("id,name,price,sale_price,images,featured").eq("active", true).eq("featured", true).limit(12),
+    supabase.from("products").select("id,name,price,sale_price,images").eq("active", true).not("sale_price", "is", null).limit(8),
+    supabase.from("products").select("id,name,price,sale_price,images,created_at").eq("active", true).order("created_at", { ascending: false }).limit(6),
+    supabase.from("categories").select("id,name,slug,image_url"),
+    supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle(),
+  ]);
+  const d = ss.data as { hero?: Hero; hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
+  const data: HomeData = {
+    featured: (f.data ?? []) as ProductCardData[],
+    sale: (s.data ?? []) as ProductCardData[],
+    newest: (n.data ?? []) as ProductCardData[],
+    cats: (c.data ?? []) as Category[],
+    hero: (d?.hero as Hero) ?? { image: "", title: "", subtitle: "", cta_text: "", cta_link: "", badge: "", show_overlay: false },
+    heroVideo: d?.hero_video ?? "",
+    slides: Array.isArray(d?.carousel_images) ? (d!.carousel_images as string[]) : [],
+    showFeatured: d?.show_featured ?? true,
+    showSale: d?.show_sale ?? true,
+  };
+  try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch { /* ignore quota */ }
+  return data;
+}
 
 function HomePage() {
   const { t } = useT();
-  const [featured, setFeatured] = useState<ProductCardData[]>([]);
-  const [sale, setSale] = useState<ProductCardData[]>([]);
-  const [newest, setNewest] = useState<ProductCardData[]>([]);
-  const [cats, setCats] = useState<Category[]>([]);
-  const [hero, setHero] = useState<Hero | null>(null);
-  const [heroVideo, setHeroVideo] = useState<string>("");
-  const [slides, setSlides] = useState<string[]>([]);
-  const [showFeatured, setShowFeatured] = useState(true);
-  const [showSale, setShowSale] = useState(true);
+  const [initial] = useState(readCache);
+  const { data, refetch } = useQuery({
+    queryKey: ["home"],
+    queryFn: fetchHome,
+    initialData: initial,
+    staleTime: 60_000,
+  });
+  // Defer realtime subscriptions until after first paint so they don't slow TTI.
+  const [rtReady, setRtReady] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setRtReady(true), 1500);
+    return () => clearTimeout(id);
+  }, []);
+  useRealtime(rtReady ? "products" : "", () => refetch());
+  useRealtime(rtReady ? "categories" : "", () => refetch());
+  useRealtime(rtReady ? "store_settings" : "", () => refetch());
 
-  const load = () => {
-    // Fire all queries in parallel via a single Promise.all so React batches updates
-    Promise.all([
-      supabase.from("products")
-        .select("id,name,price,sale_price,images,featured")
-        .eq("active", true).eq("featured", true).limit(12),
-      supabase.from("products")
-        .select("id,name,price,sale_price,images")
-        .eq("active", true).not("sale_price", "is", null).limit(8),
-      supabase.from("products")
-        .select("id,name,price,sale_price,images,created_at")
-        .eq("active", true).order("created_at", { ascending: false }).limit(6),
-      supabase.from("categories").select("id,name,slug,image_url"),
-      supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle(),
-    ]).then(([f, s, n, c, ss]) => {
-      setFeatured((f.data ?? []) as ProductCardData[]);
-      setSale((s.data ?? []) as ProductCardData[]);
-      setNewest((n.data ?? []) as ProductCardData[]);
-      setCats((c.data ?? []) as Category[]);
-      const data = ss.data;
-      setHero((data?.hero as Hero) ?? { image: "", title: "", subtitle: "", cta_text: "", cta_link: "", badge: "", show_overlay: false });
-      const d = data as { hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
-      setHeroVideo(d?.hero_video ?? "");
-      if (Array.isArray(d?.carousel_images)) setSlides(d!.carousel_images as string[]);
-      setShowFeatured(d?.show_featured ?? true);
-      setShowSale(d?.show_sale ?? true);
-    });
-  };
-  useEffect(load, []);
-  useRealtime("products", load);
-  useRealtime("categories", load);
-  useRealtime("store_settings", load);
+  const featured = data?.featured ?? [];
+  const sale = data?.sale ?? [];
+  const newest = data?.newest ?? [];
+  const cats = data?.cats ?? [];
+  const hero = data?.hero ?? null;
+  const heroVideo = data?.heroVideo ?? "";
+  const slides = data?.slides ?? [];
+  const showFeatured = data?.showFeatured ?? true;
+  const showSale = data?.showSale ?? true;
 
   return (
     <PublicLayout>
