@@ -7,6 +7,7 @@ import { useT } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRealtime } from "@/hooks/use-realtime";
 import { ChevronRight } from "lucide-react";
+import { optimizeImg, srcSet } from "@/lib/img";
 
 type Search = { category?: string; sort?: string };
 
