@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
@@ -20,27 +21,81 @@ export const Route = createFileRoute("/shop")({
 });
 
 type Cat = { id: string; name: string; slug: string; image_url: string | null; parent_id: string | null };
+type ProductRow = ProductCardData & { category_id: string | null; categories: { slug: string } | { slug: string }[] | null };
+
+const CATS_CACHE = "shop:cats:v1";
+const PROD_CACHE = "shop:prods:v1";
+const TTL = 10 * 60_000;
+
+function readCache<T>(key: string): T | undefined {
+  if (typeof localStorage === "undefined") return undefined;
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return undefined;
+    const { t, d } = JSON.parse(raw) as { t: number; d: T };
+    if (Date.now() - t > TTL) return undefined;
+    return d;
+  } catch { return undefined; }
+}
+function writeCache<T>(key: string, d: T) {
+  try { localStorage.setItem(key, JSON.stringify({ t: Date.now(), d })); } catch { /* ignore */ }
+}
+
+async function fetchCats(): Promise<Cat[]> {
+  const { data } = await supabase
+    .from("categories")
+    .select("id,name,slug,image_url,parent_id")
+    .order("name");
+  const rows = (data ?? []) as Cat[];
+  writeCache(CATS_CACHE, rows);
+  return rows;
+}
+
+async function fetchProducts(sort: string | undefined): Promise<ProductRow[]> {
+  let q = supabase
+    .from("products")
+    .select("id,name,price,sale_price,images,category_id,categories(slug)")
+    .eq("active", true);
+  if (sort === "price_asc") q = q.order("price", { ascending: true });
+  else if (sort === "price_desc") q = q.order("price", { ascending: false });
+  else q = q.order("created_at", { ascending: false });
+  const { data } = await q;
+  const rows = (data ?? []) as unknown as ProductRow[];
+  writeCache(`${PROD_CACHE}:${sort ?? "newest"}`, rows);
+  return rows;
+}
 
 function ShopPage() {
   const { t } = useT();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const [products, setProducts] = useState<ProductCardData[]>([]);
-  const [cats, setCats] = useState<Cat[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const loadCats = () =>
-    supabase
-      .from("categories")
-      .select("id,name,slug,image_url,parent_id")
-      .order("name")
-      .then(({ data }) => setCats((data ?? []) as Cat[]));
+  const [initialCats] = useState(() => readCache<Cat[]>(CATS_CACHE));
+  const catsQ = useQuery({
+    queryKey: ["shop", "cats"],
+    queryFn: fetchCats,
+    initialData: initialCats,
+    staleTime: 5 * 60_000,
+  });
+  const cats = catsQ.data ?? [];
 
-  useEffect(() => {
-    loadCats();
-  }, []);
+  const sortKey = search.sort ?? "newest";
+  const [initialProds] = useState(() => readCache<ProductRow[]>(`${PROD_CACHE}:${sortKey}`));
+  const prodQ = useQuery({
+    queryKey: ["shop", "products", sortKey],
+    queryFn: () => fetchProducts(search.sort),
+    initialData: initialProds,
+    staleTime: 5 * 60_000,
+  });
+  const allProducts = prodQ.data ?? [];
+  const loading = prodQ.isLoading && !initialProds;
 
-  // Derive: current category, its children, breadcrumb
+  // Defer realtime until after first paint.
+  const [rtReady, setRtReady] = useState(false);
+  useEffect(() => { const id = setTimeout(() => setRtReady(true), 1500); return () => clearTimeout(id); }, []);
+  useRealtime(rtReady ? "products" : "", () => prodQ.refetch());
+  useRealtime(rtReady ? "categories" : "", () => catsQ.refetch());
+
   const current = useMemo(
     () => (search.category ? cats.find((c) => c.slug === search.category) ?? null : null),
     [cats, search.category],
@@ -50,52 +105,20 @@ function ShopPage() {
     [cats, current],
   );
   const showSubcategories = !current || children.length > 0;
-
   const parent = useMemo(
     () => (current?.parent_id ? cats.find((c) => c.id === current.parent_id) ?? null : null),
     [cats, current],
   );
 
-  // Fetch products only when viewing a leaf category (or could also show on top-level — we show subcats instead)
-  const fetchProducts = () => {
-    if (showSubcategories) {
-      setProducts([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    let q = supabase
-      .from("products")
-      .select("id,name,price,sale_price,images,category_id,categories(slug)")
-      .eq("active", true);
-
-    if (search.sort === "price_asc") q = q.order("price", { ascending: true });
-    else if (search.sort === "price_desc") q = q.order("price", { ascending: false });
-    else q = q.order("created_at", { ascending: false });
-
-    q.then(({ data }) => {
-      let rows = (data ?? []) as unknown as Array<
-        ProductCardData & { categories: { slug: string } | { slug: string }[] | null }
-      >;
-      if (search.category) {
-        rows = rows.filter((r) => {
-          const c = r.categories;
-          if (!c) return false;
-          return Array.isArray(c) ? c.some((x) => x.slug === search.category) : c.slug === search.category;
-        });
-      }
-      setProducts(rows);
-      setLoading(false);
+  const products = useMemo(() => {
+    if (showSubcategories) return [];
+    if (!search.category) return allProducts;
+    return allProducts.filter((r) => {
+      const c = r.categories;
+      if (!c) return false;
+      return Array.isArray(c) ? c.some((x) => x.slug === search.category) : c.slug === search.category;
     });
-  };
-
-  useEffect(() => {
-    fetchProducts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search.category, search.sort, showSubcategories]);
-
-  useRealtime("products", fetchProducts);
-  useRealtime("categories", loadCats);
+  }, [allProducts, search.category, showSubcategories]);
 
   return (
     <PublicLayout>
