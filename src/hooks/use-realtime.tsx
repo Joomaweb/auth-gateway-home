@@ -15,6 +15,7 @@ export function useRealtime(
   cbRef.current = onChange;
 
   useEffect(() => {
+    if (!table) return; // allow conditional subscriptions (pass "" to skip)
     let timer: ReturnType<typeof setTimeout> | undefined;
     const trigger = () => {
       if (timer) clearTimeout(timer);
