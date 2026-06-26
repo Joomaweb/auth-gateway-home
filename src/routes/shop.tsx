@@ -7,6 +7,7 @@ import { useT } from "@/lib/i18n";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useRealtime } from "@/hooks/use-realtime";
 import { ChevronRight } from "lucide-react";
+import { optimizeImg, srcSet } from "@/lib/img";
 
 type Search = { category?: string; sort?: string };
 
@@ -156,8 +157,12 @@ function ShopPage() {
                   <div className="aspect-square overflow-hidden bg-muted rounded-md">
                     {c.image_url ? (
                       <img
-                        src={c.image_url}
+                        src={optimizeImg(c.image_url, { w: 400 })}
+                        srcSet={srcSet(c.image_url, 400)}
+                        sizes="(max-width: 768px) 50vw, 25vw"
                         alt={c.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                     ) : (
@@ -166,6 +171,7 @@ function ShopPage() {
                       </div>
                     )}
                   </div>
+
                   <h3 className="mt-3 text-center font-medium tracking-wide uppercase text-sm">
                     {c.name}
                   </h3>

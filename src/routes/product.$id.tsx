@@ -8,6 +8,7 @@ import { useT } from "@/lib/i18n";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useRealtime } from "@/hooks/use-realtime";
+import { optimizeImg, srcSet } from "@/lib/img";
 
 export const Route = createFileRoute("/product/$id")({
   component: ProductPage,
@@ -140,17 +141,24 @@ function ProductPage() {
                       muted
                       playsInline
                       loop
+                      preload="metadata"
+                      poster={images[0] ? optimizeImg(images[0], { w: 1200, q: 70 }) : undefined}
                       className="w-full aspect-video bg-black"
                     />
                   ) : (
                     <div className="aspect-[3/4]">
                       <img
-                        src={images[imgIdx]}
+                        src={optimizeImg(images[imgIdx], { w: 900, q: 75 })}
+                        srcSet={srcSet(images[imgIdx], 900, 75)}
+                        sizes="(max-width: 768px) 100vw, 50vw"
                         alt={product.name}
+                        fetchPriority="high"
+                        decoding="async"
                         className="w-full h-full object-cover"
                       />
                     </div>
                   )}
+
                 </div>
 
                 {(images.length > 1 || isUploadedVideo) && (
@@ -169,7 +177,7 @@ function ProductPage() {
                             : "border-transparent",
                         )}
                       >
-                        <img src={src} alt="" className="w-full h-full object-cover" />
+                        <img src={optimizeImg(src, { w: 160, q: 70 })} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       </button>
                     ))}
                     {isUploadedVideo && (
