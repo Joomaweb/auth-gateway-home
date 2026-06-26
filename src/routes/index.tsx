@@ -102,16 +102,21 @@ function HomePage() {
           <video
             src={heroVideo}
             autoPlay muted loop playsInline
-            preload="auto"
+            preload="metadata"
+            poster={hero.image ? optimizeImg(hero.image, { w: 1600, q: 60 }) : undefined}
             className="absolute inset-0 w-full h-full object-cover scale-105"
             style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
           />
         ) : (
-          <img src={hero.image} alt="Hero"
+          <img src={optimizeImg(hero.image, { w: 1920, q: 75 })}
+            srcSet={srcSet(hero.image, 1280, 75)}
+            sizes="100vw"
+            alt="Hero"
             fetchPriority="high" decoding="async"
             className="absolute inset-0 w-full h-full object-cover scale-105"
             style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }} />
         )}
+
         {hero.show_overlay !== false && (
           <>
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/10" />
@@ -151,7 +156,7 @@ function HomePage() {
               {slides.map((src, i) => (
                 <CarouselItem key={i}>
                   <div className="aspect-[16/6] rounded-lg overflow-hidden bg-muted">
-                    <img src={src} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                    <img src={optimizeImg(src, { w: 1600, q: 70 })} srcSet={srcSet(src, 1280, 70)} sizes="100vw" alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </div>
                 </CarouselItem>
               ))}
@@ -174,9 +179,12 @@ function HomePage() {
                   <CarouselItem key={c.id} className="ps-3 basis-3/4 sm:basis-1/2">
                     <Link to="/shop" search={{ category: c.slug }}
                       className="group relative block aspect-[4/3] overflow-hidden rounded-xl bg-muted shadow-soft">
-                      <img src={c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800"}
+                      <img src={optimizeImg(c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800", { w: 600 })}
+                        srcSet={srcSet(c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800", 600)}
+                        sizes="(max-width: 768px) 75vw, 33vw"
                         alt={c.name} loading="lazy" decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent flex items-end p-4">
                         <h3 className="text-white font-display text-xl font-semibold drop-shadow">{c.name}</h3>
                       </div>
@@ -191,9 +199,12 @@ function HomePage() {
             {cats.map((c) => (
               <Link key={c.id} to="/shop" search={{ category: c.slug }}
                 className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
-                <img src={c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800"}
+                <img src={optimizeImg(c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800", { w: 600 })}
+                  srcSet={srcSet(c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800", 600)}
+                  sizes="33vw"
                   alt={c.name} loading="lazy" decoding="async"
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                   <h3 className="text-white font-display text-2xl font-semibold">{c.name}</h3>
                 </div>
