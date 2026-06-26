@@ -9,6 +9,7 @@ import { useT } from "@/lib/i18n";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useRealtime } from "@/hooks/use-realtime";
 import { optimizeImg, srcSet } from "@/lib/img";
+import { run } from "@/lib/api";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -45,11 +46,11 @@ function readCache(): HomeData | undefined {
 
 async function fetchHome(): Promise<HomeData> {
   const [f, s, n, c, ss] = await Promise.all([
-    supabase.from("products").select("id,name,price,sale_price,images,featured").eq("active", true).eq("featured", true).limit(12),
-    supabase.from("products").select("id,name,price,sale_price,images").eq("active", true).not("sale_price", "is", null).limit(8),
-    supabase.from("products").select("id,name,price,sale_price,images,created_at").eq("active", true).order("created_at", { ascending: false }).limit(6),
-    supabase.from("categories").select("id,name,slug,image_url"),
-    supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle(),
+    run({ key: "home:featured", timeoutMs: 7000 }, () => supabase.from("products").select("id,name,price,sale_price,images,featured").eq("active", true).eq("featured", true).limit(12)),
+    run({ key: "home:sale", timeoutMs: 7000 }, () => supabase.from("products").select("id,name,price,sale_price,images").eq("active", true).not("sale_price", "is", null).limit(8)),
+    run({ key: "home:newest", timeoutMs: 7000 }, () => supabase.from("products").select("id,name,price,sale_price,images,created_at").eq("active", true).order("created_at", { ascending: false }).limit(6)),
+    run({ key: "home:cats", timeoutMs: 7000 }, () => supabase.from("categories").select("id,name,slug,image_url")),
+    run({ key: "home:settings", timeoutMs: 7000 }, () => supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle()),
   ]);
   const d = ss.data as { hero?: Hero; hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
   const data: HomeData = {

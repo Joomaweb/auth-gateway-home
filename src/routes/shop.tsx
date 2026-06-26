@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRealtime } from "@/hooks/use-realtime";
 import { ChevronRight } from "lucide-react";
 import { optimizeImg, srcSet } from "@/lib/img";
+import { run } from "@/lib/api";
 
 type Search = { category?: string; sort?: string };
 
@@ -42,24 +43,28 @@ function writeCache<T>(key: string, d: T) {
 }
 
 async function fetchCats(): Promise<Cat[]> {
-  const { data } = await supabase
-    .from("categories")
-    .select("id,name,slug,image_url,parent_id")
-    .order("name");
+  const { data } = await run({ key: "shop:cats", timeoutMs: 7000 }, () =>
+    supabase
+      .from("categories")
+      .select("id,name,slug,image_url,parent_id")
+      .order("name"),
+  );
   const rows = (data ?? []) as Cat[];
   writeCache(CATS_CACHE, rows);
   return rows;
 }
 
 async function fetchProducts(sort: string | undefined): Promise<ProductRow[]> {
-  let q = supabase
-    .from("products")
-    .select("id,name,price,sale_price,images,category_id,categories(slug)")
-    .eq("active", true);
-  if (sort === "price_asc") q = q.order("price", { ascending: true });
-  else if (sort === "price_desc") q = q.order("price", { ascending: false });
-  else q = q.order("created_at", { ascending: false });
-  const { data } = await q;
+  const { data } = await run({ key: `shop:prods:${sort ?? "newest"}`, timeoutMs: 8000 }, () => {
+    let q = supabase
+      .from("products")
+      .select("id,name,price,sale_price,images,category_id,categories(slug)")
+      .eq("active", true);
+    if (sort === "price_asc") q = q.order("price", { ascending: true });
+    else if (sort === "price_desc") q = q.order("price", { ascending: false });
+    else q = q.order("created_at", { ascending: false });
+    return q;
+  });
   const rows = (data ?? []) as unknown as ProductRow[];
   writeCache(`${PROD_CACHE}:${sort ?? "newest"}`, rows);
   return rows;
