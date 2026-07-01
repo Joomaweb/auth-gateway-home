@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Settings, ArrowLeft, Menu, Webhook, Tag, BookOpen, CreditCard, FileText, Palette } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users, MessageSquare, Settings, ArrowLeft, Menu, Webhook, Tag, BookOpen, CreditCard, FileText, Palette, TrendingUp } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
