@@ -9,7 +9,8 @@ import { useT } from "@/lib/i18n";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useRealtime } from "@/hooks/use-realtime";
 import { optimizeImg, srcSet } from "@/lib/img";
-import { run } from "@/lib/api";
+import { invalidateRunCache, run } from "@/lib/api";
+import { getPublicStoreSettings } from "@/lib/store-settings";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -50,9 +51,9 @@ async function fetchHome(): Promise<HomeData> {
     run({ key: "home:sale", timeoutMs: 7000 }, () => supabase.from("products").select("id,name,price,sale_price,images").eq("active", true).not("sale_price", "is", null).limit(8)),
     run({ key: "home:newest", timeoutMs: 7000 }, () => supabase.from("products").select("id,name,price,sale_price,images,created_at").eq("active", true).order("created_at", { ascending: false }).limit(6)),
     run({ key: "home:cats", timeoutMs: 7000 }, () => supabase.from("categories").select("id,name,slug,image_url")),
-    run({ key: "home:settings", timeoutMs: 7000 }, () => supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle()),
+    getPublicStoreSettings(),
   ]);
-  const d = ss.data as { hero?: Hero; hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
+  const d = ss as { hero?: Hero; hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
   const data: HomeData = {
     featured: (f.data ?? []) as ProductCardData[],
     sale: (s.data ?? []) as ProductCardData[],
@@ -71,6 +72,7 @@ async function fetchHome(): Promise<HomeData> {
 function HomePage() {
   const { t } = useT();
   const [initial] = useState(readCache);
+  const [showDeferredMedia, setShowDeferredMedia] = useState(false);
   const { data, refetch } = useQuery({
     queryKey: ["home"],
     queryFn: fetchHome,
@@ -84,9 +86,21 @@ function HomePage() {
     const id = setTimeout(() => setRtReady(true), 1500);
     return () => clearTimeout(id);
   }, []);
+  useEffect(() => {
+    const start = () => setShowDeferredMedia(true);
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(start, { timeout: 900 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(start, 600);
+    return () => clearTimeout(id);
+  }, []);
   useRealtime(rtReady ? "products" : "", () => refetch());
   useRealtime(rtReady ? "categories" : "", () => refetch());
-  useRealtime(rtReady ? "store_settings" : "", () => refetch());
+  useRealtime(rtReady ? "store_settings" : "", () => {
+    invalidateRunCache("store_settings:public");
+    refetch();
+  });
 
   const featured = data?.featured ?? [];
   const sale = data?.sale ?? [];
@@ -156,7 +170,7 @@ function HomePage() {
       )}
 
       {/* Promo carousel */}
-      {slides.length > 0 && (
+      {showDeferredMedia && slides.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-10">
           <Carousel opts={{ loop: true }}>
             <CarouselContent>
@@ -175,7 +189,7 @@ function HomePage() {
       )}
 
       {/* Categories */}
-      {cats.length > 0 && (
+      {showDeferredMedia && cats.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
           <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">{t("home.categories")}</h2>
           {/* Mobile carousel */}
@@ -222,7 +236,7 @@ function HomePage() {
       )}
 
       {/* Newest arrivals */}
-      {newest.length > 0 && (
+      {showDeferredMedia && newest.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
           <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">{t("home.newArrivals")}</h2>
           <Carousel opts={{ align: "start" }}>
@@ -240,7 +254,7 @@ function HomePage() {
       )}
 
       {/* Featured carousel */}
-      {showFeatured && featured.length > 0 && (
+      {showDeferredMedia && showFeatured && featured.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.featured")}</h2>
           <Carousel opts={{ align: "start" }}>
@@ -258,7 +272,7 @@ function HomePage() {
       )}
 
       {/* Sale */}
-      {showSale && sale.length > 0 && (
+      {showDeferredMedia && showSale && sale.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16 border-t">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.sale")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
