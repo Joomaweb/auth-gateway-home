@@ -33,23 +33,24 @@ export function useUnreadMessages() {
       return count ?? 0;
     },
   });
+  const refetchUnread = unreadQuery.refetch;
 
   useEffect(() => {
     if (!user) return;
-    const delay = setTimeout(() => unreadQuery.refetch(), 1200);
+    const delay = setTimeout(() => refetchUnread(), 1200);
     const ch = supabase
       .channel("unread-msgs-" + user.id)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "messages" },
-        () => unreadQuery.refetch(),
+        () => refetchUnread(),
       )
       .subscribe();
     return () => {
       clearTimeout(delay);
       supabase.removeChannel(ch);
     };
-  }, [user, unreadQuery]);
+  }, [user, refetchUnread]);
 
   return unreadQuery.data ?? 0;
 }

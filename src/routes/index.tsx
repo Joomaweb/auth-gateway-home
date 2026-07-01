@@ -72,6 +72,7 @@ async function fetchHome(): Promise<HomeData> {
 function HomePage() {
   const { t } = useT();
   const [initial] = useState(readCache);
+  const [showDeferredMedia, setShowDeferredMedia] = useState(false);
   const { data, refetch } = useQuery({
     queryKey: ["home"],
     queryFn: fetchHome,
@@ -83,6 +84,15 @@ function HomePage() {
   const [rtReady, setRtReady] = useState(false);
   useEffect(() => {
     const id = setTimeout(() => setRtReady(true), 1500);
+    return () => clearTimeout(id);
+  }, []);
+  useEffect(() => {
+    const start = () => setShowDeferredMedia(true);
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(start, { timeout: 900 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(start, 600);
     return () => clearTimeout(id);
   }, []);
   useRealtime(rtReady ? "products" : "", () => refetch());
@@ -160,7 +170,7 @@ function HomePage() {
       )}
 
       {/* Promo carousel */}
-      {slides.length > 0 && (
+      {showDeferredMedia && slides.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-10">
           <Carousel opts={{ loop: true }}>
             <CarouselContent>
@@ -179,7 +189,7 @@ function HomePage() {
       )}
 
       {/* Categories */}
-      {cats.length > 0 && (
+      {showDeferredMedia && cats.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
           <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">{t("home.categories")}</h2>
           {/* Mobile carousel */}
@@ -226,7 +236,7 @@ function HomePage() {
       )}
 
       {/* Newest arrivals */}
-      {newest.length > 0 && (
+      {showDeferredMedia && newest.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
           <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">{t("home.newArrivals")}</h2>
           <Carousel opts={{ align: "start" }}>
@@ -244,7 +254,7 @@ function HomePage() {
       )}
 
       {/* Featured carousel */}
-      {showFeatured && featured.length > 0 && (
+      {showDeferredMedia && showFeatured && featured.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.featured")}</h2>
           <Carousel opts={{ align: "start" }}>
@@ -262,7 +272,7 @@ function HomePage() {
       )}
 
       {/* Sale */}
-      {showSale && sale.length > 0 && (
+      {showDeferredMedia && showSale && sale.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16 border-t">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.sale")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
