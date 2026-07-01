@@ -20,6 +20,7 @@ export function AdminLayout({ children }: { children: ReactNode }) {
     { to: "/admin/categories", label: "קטגוריות", icon: Tag },
     { to: "/admin/orders", label: t("admin.orders"), icon: ShoppingCart },
     { to: "/admin/customers", label: t("admin.customers"), icon: Users },
+    { to: "/admin/reports", label: "דוחות וייצוא", icon: TrendingUp },
     { to: "/admin/messages", label: t("admin.messages"), icon: MessageSquare },
     { to: "/admin/about", label: "אודות", icon: BookOpen },
     { to: "/admin/themes", label: "עיצובים", icon: Palette },
