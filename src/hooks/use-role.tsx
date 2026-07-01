@@ -1,59 +1,35 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/use-auth";
-
-const ROLE_CHECK_TIMEOUT_MS = 10000;
-
-function withRoleTimeout<T>(promise: PromiseLike<T>) {
-  return Promise.race<T>([
-    Promise.resolve(promise),
-    new Promise<T>((_, reject) =>
-      globalThis.setTimeout(
-        () => reject(new Error("בדיקת הרשאת האדמין נכשלה בגלל timeout")),
-        ROLE_CHECK_TIMEOUT_MS,
-      ),
-    ),
-  ]);
-}
+import { run } from "@/lib/api";
 
 export function useIsAdmin() {
   const { user, loading } = useAuth();
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checking, setChecking] = useState(true);
+  const adminQuery = useQuery({
+    queryKey: ["auth", "is-admin", user?.id],
+    enabled: !loading && !!user,
+    staleTime: 5 * 60_000,
+    gcTime: 10 * 60_000,
+    retry: 1,
+    queryFn: async () => {
+      const { data, error } = await run(
+        { key: `auth:is-admin:${user!.id}`, timeoutMs: 4500, attempts: 2, cacheMs: 5 * 60_000 },
+        () => supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user!.id)
+          .eq("role", "admin")
+          .maybeSingle(),
+      );
+      if (error) throw error;
+      return !!data;
+    },
+  });
 
-  useEffect(() => {
-    let cancelled = false;
-    if (loading) return;
-    if (!user) {
-      setIsAdmin(false);
-      setChecking(false);
-      return;
-    }
-    setChecking(true);
-    withRoleTimeout(
-      supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin")
-        .maybeSingle(),
-    )
-      .then(({ data, error }) => {
-        if (cancelled) return;
-        if (error) console.error("Admin role check failed:", error);
-        setIsAdmin(!!data && !error);
-        setChecking(false);
-      })
-      .catch((error) => {
-        if (cancelled) return;
-        console.error("Admin role check failed:", error);
-        setIsAdmin(false);
-        setChecking(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user, loading]);
-
-  return { isAdmin, checking: checking || loading };
+  return {
+    isAdmin: !!adminQuery.data,
+    checking: loading || (!!user && adminQuery.isPending),
+    error: adminQuery.error,
+    retry: () => adminQuery.refetch(),
+  };
 }

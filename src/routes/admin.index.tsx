@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, DollarSign, Users, AlertTriangle } from "lucide-react";
+import { run } from "@/lib/api";
+import { useRealtime } from "@/hooks/use-realtime";
 
 export const Route = createFileRoute("/admin/")({
   component: AdminDashboard,
@@ -11,33 +13,48 @@ export const Route = createFileRoute("/admin/")({
 
 function AdminDashboard() {
   const { t } = useT();
-  const [stats, setStats] = useState({ orders: 0, revenue: 0, customers: 0, lowStock: 0 });
-  const [recent, setRecent] = useState<{ id: string; total: number; status: string; created_at: string }[]>([]);
-
-  useEffect(() => {
-    const load = async () => {
-      const [{ data: orders }, { count: customers }, { data: variants }] = await Promise.all([
-        supabase.from("orders").select("id,total,status,created_at").order("created_at", { ascending: false }),
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
-        supabase.from("product_variants").select("stock"),
+  const dashboardQuery = useQuery({
+    queryKey: ["admin", "dashboard"],
+    staleTime: 15_000,
+    gcTime: 5 * 60_000,
+    retry: 1,
+    queryFn: async () => {
+      const [ordersResult, customersResult, lowStockResult] = await Promise.all([
+        run(
+          { key: "admin:dashboard:orders", timeoutMs: 5000, attempts: 2, cacheMs: 15_000 },
+          () => supabase.from("orders").select("id,total,status,created_at").order("created_at", { ascending: false }),
+        ),
+        run(
+          { key: "admin:dashboard:customers", timeoutMs: 5000, attempts: 2, cacheMs: 15_000 },
+          () => supabase.from("profiles").select("id", { count: "exact", head: true }),
+        ),
+        run(
+          { key: "admin:dashboard:low-stock", timeoutMs: 5000, attempts: 2, cacheMs: 15_000 },
+          () => supabase.from("product_variants").select("id", { count: "exact", head: true }).lte("stock", 3),
+        ),
       ]);
-      const all = orders ?? [];
-      setStats({
-        orders: all.length,
-        revenue: all.filter((o) => o.status !== "cancelled").reduce((n, o) => n + Number(o.total), 0),
-        customers: customers ?? 0,
-        lowStock: (variants ?? []).filter((v) => (v.stock ?? 0) <= 3).length,
-      });
-      setRecent(all.slice(0, 8));
-    };
-    load();
-    const ch = supabase.channel("admin-orders").on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "orders" },
-      () => load(),
-    ).subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, []);
+      if (ordersResult.error) throw ordersResult.error;
+      if (customersResult.error) throw customersResult.error;
+      if (lowStockResult.error) throw lowStockResult.error;
+      const all = ordersResult.data ?? [];
+      return {
+        stats: {
+          orders: all.length,
+          revenue: all.filter((o) => o.status !== "cancelled").reduce((n, o) => n + Number(o.total), 0),
+          customers: customersResult.count ?? 0,
+          lowStock: lowStockResult.count ?? 0,
+        },
+        recent: all.slice(0, 8) as { id: string; total: number; status: string; created_at: string }[],
+      };
+    },
+  });
+
+  useRealtime("orders", () => dashboardQuery.refetch());
+  useRealtime("profiles", () => dashboardQuery.refetch());
+  useRealtime("product_variants", () => dashboardQuery.refetch());
+
+  const stats = dashboardQuery.data?.stats ?? { orders: 0, revenue: 0, customers: 0, lowStock: 0 };
+  const recent = dashboardQuery.data?.recent ?? [];
 
   const cards = [
     { label: t("admin.totalOrders"), value: stats.orders, icon: ShoppingCart },

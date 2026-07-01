@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/lib/supabase";
 import { applyThemeFont, applyThemeVars, getTheme, THEMES, type ThemePreset } from "@/lib/themes";
+import { getPublicStoreSettings, subscribePublicStoreSettings } from "@/lib/store-settings";
 
 type Ctx = { themeId: string; theme: ThemePreset; themes: ThemePreset[] };
 const ThemeCtx = createContext<Ctx>({ themeId: "classic", theme: THEMES[0], themes: THEMES });
@@ -10,21 +10,18 @@ export function ActiveThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    supabase.from("store_settings").select("active_theme").eq("id", 1).maybeSingle()
-      .then(({ data }) => {
+    getPublicStoreSettings()
+      .then((data) => {
         if (!active) return;
         if (data?.active_theme) setThemeId(data.active_theme);
-      });
-
-    const ch = supabase
-      .channel("store_settings_theme")
-      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings", filter: "id=eq.1" }, (payload) => {
-        const row = (payload.new ?? {}) as { active_theme?: string };
-        if (row.active_theme) setThemeId(row.active_theme);
       })
-      .subscribe();
+      .catch(() => {});
 
-    return () => { active = false; supabase.removeChannel(ch); };
+    const unsubscribe = subscribePublicStoreSettings((row) => {
+      if (row.active_theme) setThemeId(row.active_theme);
+    });
+
+    return () => { active = false; unsubscribe(); };
   }, []);
 
   useEffect(() => {

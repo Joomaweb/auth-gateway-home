@@ -15,6 +15,7 @@ type Builder<T> = (signal: AbortSignal) => PromiseLike<T> & {
 };
 
 const inflight = new Map<string, Promise<unknown>>();
+const memory = new Map<string, { expiresAt: number; value: unknown }>();
 
 /** Coalesce concurrent calls sharing the same key into one network request. */
 export function dedupe<T>(key: string, fn: () => Promise<T>): Promise<T> {
@@ -26,6 +27,21 @@ export function dedupe<T>(key: string, fn: () => Promise<T>): Promise<T> {
   });
   inflight.set(key, p);
   return p;
+}
+
+function isErrorResult(value: unknown): boolean {
+  return !!(
+    value &&
+    typeof value === "object" &&
+    "error" in value &&
+    (value as { error?: unknown }).error
+  );
+}
+
+export function invalidateRunCache(keyOrPrefix: string) {
+  for (const key of memory.keys()) {
+    if (key === keyOrPrefix || key.startsWith(keyOrPrefix)) memory.delete(key);
+  }
 }
 
 /** Wrap a builder with an AbortController that fires after `ms`. */
@@ -70,10 +86,23 @@ export type RunOpts = {
   timeoutMs?: number;
   /** Retry count incl. first attempt. Default 3. */
   attempts?: number;
+  /** Optional in-memory response cache after success. Default disabled. */
+  cacheMs?: number;
 };
 
 /** dedupe + timeout + retry. Use for any Supabase/HTTP read where lag matters. */
 export function run<T>(opts: RunOpts, build: Builder<T>): Promise<T> {
-  const { key, timeoutMs = 8000, attempts = 3 } = opts;
-  return dedupe(key, () => retry(() => withTimeout(timeoutMs, build), attempts));
+  const { key, timeoutMs = 8000, attempts = 3, cacheMs = 0 } = opts;
+  if (cacheMs > 0) {
+    const cached = memory.get(key);
+    if (cached && cached.expiresAt > Date.now()) return Promise.resolve(cached.value as T);
+  }
+
+  return dedupe(key, async () => {
+    const value = await retry(() => withTimeout(timeoutMs, build), attempts);
+    if (cacheMs > 0 && !isErrorResult(value)) {
+      memory.set(key, { expiresAt: Date.now() + cacheMs, value });
+    }
+    return value;
+  });
 }

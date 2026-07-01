@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabase } from "@/lib/supabase";
+import { getPublicStoreSettings, subscribePublicStoreSettings } from "@/lib/store-settings";
 
 export type Branding = {
   logo_url: string;
@@ -39,25 +39,22 @@ export function SiteBrandingProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
-    supabase.from("store_settings").select("branding, legal").eq("id", 1).maybeSingle()
-      .then(({ data }) => {
+    getPublicStoreSettings()
+      .then((data) => {
         if (!active || !data) return;
         if (data.branding) setBranding({ ...DEFAULT_BRANDING, ...(data.branding as Branding) });
         if (data.legal) setLegal({ ...DEFAULT_LEGAL, ...(data.legal as Legal) });
-      });
+      })
+      .catch(() => {});
 
-    const ch = supabase
-      .channel("store_settings_branding")
-      .on("postgres_changes", { event: "*", schema: "public", table: "store_settings", filter: "id=eq.1" }, (payload) => {
-        const row = (payload.new ?? {}) as { branding?: Branding; legal?: Legal };
+    const unsubscribe = subscribePublicStoreSettings((row) => {
         if (row.branding) setBranding({ ...DEFAULT_BRANDING, ...row.branding });
         if (row.legal) setLegal({ ...DEFAULT_LEGAL, ...row.legal });
-      })
-      .subscribe();
+    });
 
     return () => {
       active = false;
-      supabase.removeChannel(ch);
+      unsubscribe();
     };
   }, [nonce]);
 

@@ -10,7 +10,7 @@ export const Route = createFileRoute("/admin")({
 
 function AdminGate() {
   const { user, loading } = useAuth();
-  const { isAdmin, checking } = useIsAdmin();
+  const { isAdmin, checking, error, retry } = useIsAdmin();
 
   if (loading || checking) {
     return <div className="min-h-screen flex items-center justify-center text-muted-foreground">טוען...</div>;
@@ -22,6 +22,17 @@ function AdminGate() {
           <h1 className="text-xl font-semibold">נדרשת התחברות</h1>
           <p className="text-sm text-muted-foreground">יש להתחבר עם משתמש אדמין כדי לגשת לפאנל הניהול.</p>
           <Button asChild className="w-full"><Link to="/login">התחבר</Link></Button>
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-6" dir="rtl">
+        <div className="max-w-md w-full border rounded-lg p-6 space-y-4 text-center bg-card">
+          <h1 className="text-xl font-semibold">בעיה זמנית בחיבור</h1>
+          <p className="text-sm text-muted-foreground">בדיקת הרשאת האדמין לא חזרה בזמן. נסה שוב בעוד רגע.</p>
+          <Button onClick={() => retry()} className="w-full">נסה שוב</Button>
         </div>
       </div>
     );

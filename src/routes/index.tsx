@@ -9,7 +9,8 @@ import { useT } from "@/lib/i18n";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useRealtime } from "@/hooks/use-realtime";
 import { optimizeImg, srcSet } from "@/lib/img";
-import { run } from "@/lib/api";
+import { invalidateRunCache, run } from "@/lib/api";
+import { getPublicStoreSettings } from "@/lib/store-settings";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -50,9 +51,9 @@ async function fetchHome(): Promise<HomeData> {
     run({ key: "home:sale", timeoutMs: 7000 }, () => supabase.from("products").select("id,name,price,sale_price,images").eq("active", true).not("sale_price", "is", null).limit(8)),
     run({ key: "home:newest", timeoutMs: 7000 }, () => supabase.from("products").select("id,name,price,sale_price,images,created_at").eq("active", true).order("created_at", { ascending: false }).limit(6)),
     run({ key: "home:cats", timeoutMs: 7000 }, () => supabase.from("categories").select("id,name,slug,image_url")),
-    run({ key: "home:settings", timeoutMs: 7000 }, () => supabase.from("store_settings").select("hero,hero_video,carousel_images,show_featured,show_sale").eq("id", 1).maybeSingle()),
+    getPublicStoreSettings(),
   ]);
-  const d = ss.data as { hero?: Hero; hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
+  const d = ss as { hero?: Hero; hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
   const data: HomeData = {
     featured: (f.data ?? []) as ProductCardData[],
     sale: (s.data ?? []) as ProductCardData[],
@@ -86,7 +87,10 @@ function HomePage() {
   }, []);
   useRealtime(rtReady ? "products" : "", () => refetch());
   useRealtime(rtReady ? "categories" : "", () => refetch());
-  useRealtime(rtReady ? "store_settings" : "", () => refetch());
+  useRealtime(rtReady ? "store_settings" : "", () => {
+    invalidateRunCache("store_settings:public");
+    refetch();
+  });
 
   const featured = data?.featured ?? [];
   const sale = data?.sale ?? [];
