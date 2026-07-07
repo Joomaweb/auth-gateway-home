@@ -86,6 +86,16 @@ function HomePage() {
     initialData: initial,
     staleTime: 5 * 60_000,
   });
+  const featured = data?.featured ?? [];
+  const sale = data?.sale ?? [];
+  const newest = data?.newest ?? [];
+  const cats = data?.cats ?? [];
+  const hero = data?.hero ?? null;
+  const heroVideo = data?.heroVideo ?? "";
+  const slides = data?.slides ?? [];
+  const showFeatured = data?.showFeatured ?? true;
+  const showSale = data?.showSale ?? true;
+  const isDirectHeroVideo = !!heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo);
 
   // Defer realtime subscriptions until after first paint so they don't slow TTI.
   const [rtReady, setRtReady] = useState(false);
@@ -119,17 +129,6 @@ function HomePage() {
     invalidateRunCache("store_settings:public");
     refetch();
   });
-
-  const featured = data?.featured ?? [];
-  const sale = data?.sale ?? [];
-  const newest = data?.newest ?? [];
-  const cats = data?.cats ?? [];
-  const hero = data?.hero ?? null;
-  const heroVideo = data?.heroVideo ?? "";
-  const slides = data?.slides ?? [];
-  const showFeatured = data?.showFeatured ?? true;
-  const showSale = data?.showSale ?? true;
-  const isDirectHeroVideo = !!heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo);
 
   return (
     <PublicLayout>
