@@ -46,14 +46,20 @@ function readCache(): HomeData | undefined {
 }
 
 async function fetchHome(): Promise<HomeData> {
-  const [f, s, n, c, ss] = await Promise.all([
-    run({ key: "home:featured", timeoutMs: 7000 }, () => supabase.from("products").select("id,name,price,sale_price,images,featured").eq("active", true).eq("featured", true).limit(12)),
-    run({ key: "home:sale", timeoutMs: 7000 }, () => supabase.from("products").select("id,name,price,sale_price,images").eq("active", true).not("sale_price", "is", null).limit(8)),
-    run({ key: "home:newest", timeoutMs: 7000 }, () => supabase.from("products").select("id,name,price,sale_price,images,created_at").eq("active", true).order("created_at", { ascending: false }).limit(6)),
-    run({ key: "home:cats", timeoutMs: 7000 }, () => supabase.from("categories").select("id,name,slug,image_url")),
+  const [n, c, ss] = await Promise.all([
+    run({ key: "home:newest", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () => supabase.from("products").select("id,name,price,sale_price,images,created_at").eq("active", true).order("created_at", { ascending: false }).limit(6)),
+    run({ key: "home:cats", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () => supabase.from("categories").select("id,name,slug,image_url")),
     getPublicStoreSettings(),
   ]);
   const d = ss as { hero?: Hero; hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
+  const [f, s] = await Promise.all([
+    d?.show_featured === false
+      ? Promise.resolve({ data: [] })
+      : run({ key: "home:featured", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () => supabase.from("products").select("id,name,price,sale_price,images,featured").eq("active", true).eq("featured", true).limit(12)),
+    d?.show_sale === false
+      ? Promise.resolve({ data: [] })
+      : run({ key: "home:sale", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () => supabase.from("products").select("id,name,price,sale_price,images").eq("active", true).not("sale_price", "is", null).limit(8)),
+  ]);
   const data: HomeData = {
     featured: (f.data ?? []) as ProductCardData[],
     sale: (s.data ?? []) as ProductCardData[],
@@ -73,6 +79,7 @@ function HomePage() {
   const { t } = useT();
   const [initial] = useState(readCache);
   const [showDeferredMedia, setShowDeferredMedia] = useState(false);
+  const [loadHeroVideo, setLoadHeroVideo] = useState(false);
   const { data, refetch } = useQuery({
     queryKey: ["home"],
     queryFn: fetchHome,
@@ -89,12 +96,23 @@ function HomePage() {
   useEffect(() => {
     const start = () => setShowDeferredMedia(true);
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(start, { timeout: 900 });
+      const id = window.requestIdleCallback(start, { timeout: 250 });
       return () => window.cancelIdleCallback(id);
     }
-    const id = setTimeout(start, 600);
+    const id = setTimeout(start, 120);
     return () => clearTimeout(id);
   }, []);
+  useEffect(() => {
+    if (!heroVideo || /youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo)) return;
+    setLoadHeroVideo(false);
+    const start = () => setLoadHeroVideo(true);
+    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(start, { timeout: 1400 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = setTimeout(start, 1000);
+    return () => clearTimeout(id);
+  }, [heroVideo]);
   useRealtime(rtReady ? "products" : "", () => refetch());
   useRealtime(rtReady ? "categories" : "", () => refetch());
   useRealtime(rtReady ? "store_settings" : "", () => {
@@ -111,6 +129,7 @@ function HomePage() {
   const slides = data?.slides ?? [];
   const showFeatured = data?.showFeatured ?? true;
   const showSale = data?.showSale ?? true;
+  const isDirectHeroVideo = !!heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo);
 
   return (
     <PublicLayout>
@@ -118,16 +137,32 @@ function HomePage() {
       {!hero ? (
         <section className="relative h-[78vh] min-h-[560px] bg-muted animate-pulse" />
       ) : (
-      <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? "bg-black" : "bg-muted"}`}>
-        {heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo) ? (
-          <video
-            src={heroVideo}
-            autoPlay muted loop playsInline
-            preload="metadata"
-            poster={hero.image ? optimizeImg(hero.image, { w: 1600, q: 60 }) : undefined}
-            className="absolute inset-0 w-full h-full object-cover scale-105"
-            style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
-          />
+      <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${isDirectHeroVideo ? "bg-black" : "bg-muted"}`}>
+        {isDirectHeroVideo ? (
+          <>
+            {hero.image && (
+              <img
+                src={optimizeImg(hero.image, { w: 1920, q: 72 })}
+                srcSet={srcSet(hero.image, 1280, 72)}
+                sizes="100vw"
+                alt="Hero"
+                fetchPriority="high"
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-cover scale-105"
+                style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
+              />
+            )}
+            {loadHeroVideo && (
+              <video
+                src={heroVideo}
+                autoPlay muted loop playsInline
+                preload="none"
+                poster={hero.image ? optimizeImg(hero.image, { w: 1600, q: 60 }) : undefined}
+                className="absolute inset-0 w-full h-full object-cover scale-105"
+                style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
+              />
+            )}
+          </>
         ) : (
           <img src={optimizeImg(hero.image, { w: 1920, q: 75 })}
             srcSet={srcSet(hero.image, 1280, 75)}
@@ -189,7 +224,7 @@ function HomePage() {
       )}
 
       {/* Categories */}
-      {showDeferredMedia && cats.length > 0 && (
+      {cats.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
           <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">{t("home.categories")}</h2>
           {/* Mobile carousel */}
@@ -236,7 +271,7 @@ function HomePage() {
       )}
 
       {/* Newest arrivals */}
-      {showDeferredMedia && newest.length > 0 && (
+      {newest.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
           <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">{t("home.newArrivals")}</h2>
           <Carousel opts={{ align: "start" }}>
@@ -254,7 +289,7 @@ function HomePage() {
       )}
 
       {/* Featured carousel */}
-      {showDeferredMedia && showFeatured && featured.length > 0 && (
+      {showFeatured && featured.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.featured")}</h2>
           <Carousel opts={{ align: "start" }}>
@@ -272,7 +307,7 @@ function HomePage() {
       )}
 
       {/* Sale */}
-      {showDeferredMedia && showSale && sale.length > 0 && (
+      {showSale && sale.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-16 border-t">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.sale")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">

@@ -6,6 +6,7 @@ import { useUnreadMessages } from "@/hooks/use-unread";
 import { useCart } from "@/lib/cart";
 import { useT } from "@/lib/i18n";
 import { useSiteBranding } from "@/hooks/use-site-branding";
+import { optimizeImg } from "@/lib/img";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -71,8 +72,11 @@ export function Header({ variant = "top-classic" }: { variant?: HeaderVariant })
     <Link to="/" className="flex items-center gap-2">
       {branding.logo_url ? (
         <img
-          src={branding.logo_url}
+          src={optimizeImg(branding.logo_url, { w: 320, q: 80 })}
           alt={siteName}
+          loading="eager"
+          decoding="async"
+          fetchPriority="high"
           style={branding.logo_height ? { height: `${branding.logo_height}px`, width: "auto" } : undefined}
           className={
             branding.logo_height

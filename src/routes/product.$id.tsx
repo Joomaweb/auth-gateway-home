@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useRealtime } from "@/hooks/use-realtime";
 import { optimizeImg, srcSet } from "@/lib/img";
+import { run } from "@/lib/api";
 
 export const Route = createFileRoute("/product/$id")({
   component: ProductPage,
@@ -27,36 +29,55 @@ type Product = {
 };
 type Variant = { id: string; size: string | null; color: string | null; stock: number };
 
+async function fetchProductDetail(id: string): Promise<{ product: Product | null; variants: Variant[] }> {
+  const [productRes, variantsRes] = await Promise.all([
+    run({ key: `product:${id}:detail`, timeoutMs: 5000, attempts: 2, cacheMs: 2 * 60_000 }, () =>
+      supabase
+        .from("products")
+        .select("id,name,description,price,sale_price,images,video_url,video_size,requires_stock_approval")
+        .eq("id", id)
+        .maybeSingle(),
+    ),
+    run({ key: `product:${id}:variants`, timeoutMs: 5000, attempts: 2, cacheMs: 2 * 60_000 }, () =>
+      supabase
+        .from("product_variants")
+        .select("id,size,color,stock")
+        .eq("product_id", id),
+    ),
+  ]);
+  if (productRes.error) throw productRes.error;
+  if (variantsRes.error) throw variantsRes.error;
+  return {
+    product: (productRes.data ?? null) as Product | null,
+    variants: (variantsRes.data ?? []) as Variant[],
+  };
+}
+
 function ProductPage() {
   const { id } = Route.useParams();
   const { t } = useT();
   const navigate = useNavigate();
   const add = useCart((s) => s.add);
-  const [product, setProduct] = useState<Product | null>(null);
-  const [variants, setVariants] = useState<Variant[]>([]);
   const [size, setSize] = useState<string | null>(null);
   const [color, setColor] = useState<string | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
+  const productQ = useQuery({
+    queryKey: ["product", id],
+    queryFn: () => fetchProductDetail(id),
+    staleTime: 5 * 60_000,
+  });
+  const product = productQ.data?.product ?? null;
+  const variants = productQ.data?.variants ?? [];
 
-  const load = () => {
-    supabase.from("products").select("*").eq("id", id).maybeSingle().then(({ data }) => setProduct(data));
-    supabase.from("product_variants").select("*").eq("product_id", id).then(({ data }) =>
-      setVariants((data ?? []) as Variant[]),
-    );
-  };
-  useEffect(load, [id]);
-  useRealtime("products", load, `id=eq.${id}`);
-  useRealtime("product_variants", load, `product_id=eq.${id}`);
-
-  // Auto-show video on entering product (only for uploaded videos, not YT/Vimeo)
   useEffect(() => {
-    if (product?.video_url && !/youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url)) {
-      setShowVideo(true);
-    } else {
-      setShowVideo(false);
-    }
-  }, [product?.video_url]);
+    setShowVideo(false);
+    setImgIdx(0);
+    setSize(null);
+    setColor(null);
+  }, [id]);
+  useRealtime("products", () => productQ.refetch(), `id=eq.${id}`);
+  useRealtime("product_variants", () => productQ.refetch(), `product_id=eq.${id}`);
 
   if (!product) {
     return (
@@ -189,11 +210,11 @@ function ProductPage() {
                         )}
                         aria-label="Play video"
                       >
-                        <video
-                          src={product.video_url!}
-                          muted
-                          playsInline
-                          preload="metadata"
+                        <img
+                          src={optimizeImg(images[0], { w: 160, q: 60 })}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
                           className="absolute inset-0 w-full h-full object-cover opacity-70"
                         />
                         <svg viewBox="0 0 24 24" className="relative h-6 w-6 text-white drop-shadow" fill="currentColor">
