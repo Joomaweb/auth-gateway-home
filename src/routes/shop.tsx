@@ -10,6 +10,7 @@ import { useRealtime } from "@/hooks/use-realtime";
 import { ChevronRight } from "lucide-react";
 import { optimizeImg, srcSet } from "@/lib/img";
 import { run } from "@/lib/api";
+import { Button } from "@/components/ui/button";
 
 type Search = { category?: string; sort?: string };
 
@@ -27,6 +28,7 @@ type ProductRow = ProductCardData & { category_id: string | null; categories: { 
 const CATS_CACHE = "shop:cats:v1";
 const PROD_CACHE = "shop:prods:v1";
 const TTL = 10 * 60_000;
+const PAGE_SIZE = 48;
 
 function readCache<T>(key: string): T | undefined {
   if (typeof localStorage === "undefined") return undefined;
@@ -43,7 +45,7 @@ function writeCache<T>(key: string, d: T) {
 }
 
 async function fetchCats(): Promise<Cat[]> {
-  const { data } = await run({ key: "shop:cats", timeoutMs: 7000 }, () =>
+  const { data } = await run({ key: "shop:cats", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () =>
     supabase
       .from("categories")
       .select("id,name,slug,image_url,parent_id")
@@ -54,19 +56,21 @@ async function fetchCats(): Promise<Cat[]> {
   return rows;
 }
 
-async function fetchProducts(sort: string | undefined): Promise<ProductRow[]> {
-  const { data } = await run({ key: `shop:prods:${sort ?? "newest"}`, timeoutMs: 8000 }, () => {
+async function fetchProducts(sort: string | undefined, categoryId: string | undefined, limit: number): Promise<ProductRow[]> {
+  const cacheKey = `shop:prods:${sort ?? "newest"}:${categoryId ?? "all"}:${limit}`;
+  const { data } = await run({ key: cacheKey, timeoutMs: 6000, attempts: 2, cacheMs: 60_000 }, () => {
     let q = supabase
       .from("products")
       .select("id,name,price,sale_price,images,category_id,categories(slug)")
       .eq("active", true);
+    if (categoryId) q = q.eq("category_id", categoryId);
     if (sort === "price_asc") q = q.order("price", { ascending: true });
     else if (sort === "price_desc") q = q.order("price", { ascending: false });
     else q = q.order("created_at", { ascending: false });
-    return q;
+    return q.limit(limit);
   });
   const rows = (data ?? []) as unknown as ProductRow[];
-  writeCache(`${PROD_CACHE}:${sort ?? "newest"}`, rows);
+  writeCache(`${PROD_CACHE}:${sort ?? "newest"}:${categoryId ?? "all"}:${limit}`, rows);
   return rows;
 }
 
@@ -85,22 +89,6 @@ function ShopPage() {
   const cats = catsQ.data ?? [];
 
   const sortKey = search.sort ?? "newest";
-  const [initialProds] = useState(() => readCache<ProductRow[]>(`${PROD_CACHE}:${sortKey}`));
-  const prodQ = useQuery({
-    queryKey: ["shop", "products", sortKey],
-    queryFn: () => fetchProducts(search.sort),
-    initialData: initialProds,
-    staleTime: 5 * 60_000,
-  });
-  const allProducts = prodQ.data ?? [];
-  const loading = prodQ.isLoading && !initialProds;
-
-  // Defer realtime until after first paint.
-  const [rtReady, setRtReady] = useState(false);
-  useEffect(() => { const id = setTimeout(() => setRtReady(true), 1500); return () => clearTimeout(id); }, []);
-  useRealtime(rtReady ? "products" : "", () => prodQ.refetch());
-  useRealtime(rtReady ? "categories" : "", () => catsQ.refetch());
-
   const current = useMemo(
     () => (search.category ? cats.find((c) => c.slug === search.category) ?? null : null),
     [cats, search.category],
@@ -114,16 +102,29 @@ function ShopPage() {
     () => (current?.parent_id ? cats.find((c) => c.id === current.parent_id) ?? null : null),
     [cats, current],
   );
+  const productCategoryId = current?.id;
+  const [pageSize, setPageSize] = useState(PAGE_SIZE);
+  useEffect(() => setPageSize(PAGE_SIZE), [search.category, sortKey]);
+  const productCacheKey = `${PROD_CACHE}:${sortKey}:${productCategoryId ?? "all"}:${pageSize}`;
+  const prodQ = useQuery({
+    queryKey: ["shop", "products", sortKey, productCategoryId ?? "all", pageSize],
+    queryFn: () => fetchProducts(search.sort, productCategoryId, pageSize),
+    initialData: () => readCache<ProductRow[]>(productCacheKey),
+    staleTime: 5 * 60_000,
+    enabled: !showSubcategories,
+  });
+  const allProducts = prodQ.data ?? [];
+  const loading = prodQ.isLoading && !prodQ.data;
+
+  // Defer realtime until after first paint.
+  const [rtReady, setRtReady] = useState(false);
+  useEffect(() => { const id = setTimeout(() => setRtReady(true), 1500); return () => clearTimeout(id); }, []);
+  useRealtime(rtReady && !showSubcategories ? "products" : "", () => prodQ.refetch());
+  useRealtime(rtReady ? "categories" : "", () => catsQ.refetch());
 
   const products = useMemo(() => {
-    if (showSubcategories) return [];
-    if (!search.category) return allProducts;
-    return allProducts.filter((r) => {
-      const c = r.categories;
-      if (!c) return false;
-      return Array.isArray(c) ? c.some((x) => x.slug === search.category) : c.slug === search.category;
-    });
-  }, [allProducts, search.category, showSubcategories]);
+    return showSubcategories ? [] : allProducts;
+  }, [allProducts, showSubcategories]);
 
   return (
     <PublicLayout>
@@ -212,11 +213,20 @@ function ShopPage() {
         ) : products.length === 0 ? (
           <p className="text-muted-foreground">{t("shop.empty")}</p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-            {products.map((p) => (
-              <ProductCard key={p.id} p={p} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
+              {products.map((p) => (
+                <ProductCard key={p.id} p={p} />
+              ))}
+            </div>
+            {products.length >= pageSize && (
+              <div className="flex justify-center mt-10">
+                <Button variant="outline" onClick={() => setPageSize((n) => n + PAGE_SIZE)} disabled={prodQ.isFetching}>
+                  {prodQ.isFetching ? t("common.loading") : "Load more"}
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </PublicLayout>
