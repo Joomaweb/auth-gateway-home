@@ -57,7 +57,7 @@ function AdminOrderDetail() {
     else { toast.success("Status updated"); setOrder((o) => o ? { ...o, status } : o); }
   };
 
-  const updateShipment = async (patch: Partial<Pick<Order, "shipment_status" | "tracking_number" | "tracking_url">>) => {
+  const updateShipment = async (patch: Partial<{ shipment_status: ShipmentStatus; tracking_number: string | null; tracking_url: string | null }>) => {
     const payload = { ...patch, shipment_updated_at: new Date().toISOString() };
     const { error } = await supabase.from("orders").update(payload).eq("id", id);
     if (error) { toast.error(error.message); return; }
