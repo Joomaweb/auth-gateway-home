@@ -1,5 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 
 type Mode = "sandbox" | "production";
 export type ChargeOutcome =
@@ -12,17 +11,14 @@ function squareApiBase(mode: Mode) {
     : "https://connect.squareupsandbox.com/v2";
 }
 
-function getAdminSupabase() {
-  const key = process.env.MAKO_SUPABASE_SERVICE_ROLE_KEY;
-  if (!key) throw new Error("MAKO_SUPABASE_SERVICE_ROLE_KEY not set");
-  return createClient("https://supabase.mako-chat.com", key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+async function getAdminSupabase() {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return supabaseAdmin;
 }
 
 async function persistOrderUpdate(orderId: string, update: Record<string, unknown>) {
   try {
-    const supabase = getAdminSupabase();
+    const supabase = await getAdminSupabase();
     await supabase.from("orders").update(update).eq("id", orderId);
   } catch (err) {
     console.error("Square: order update failed:", err);

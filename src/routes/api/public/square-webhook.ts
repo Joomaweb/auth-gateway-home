@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createClient } from "@supabase/supabase-js";
 
 // Square sends the signature in this header (HMAC-SHA256 of notificationUrl + body, base64).
 const SIGNATURE_HEADER = "x-square-hmacsha256-signature";
@@ -47,17 +46,6 @@ async function verifySquareSignature(
   return constantTimeEqual(arrayBufferToBase64(signature), receivedSignature);
 }
 
-function getSupabaseAdmin() {
-  const url = "https://supabase.mako-chat.com";
-  const serviceKey = process.env.MAKO_SUPABASE_SERVICE_ROLE_KEY;
-  if (!serviceKey) {
-    throw new Error("MAKO_SUPABASE_SERVICE_ROLE_KEY is not configured");
-  }
-  return createClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
 export const Route = createFileRoute("/api/public/square-webhook")({
   server: {
     handlers: {
@@ -101,7 +89,7 @@ export const Route = createFileRoute("/api/public/square-webhook")({
           return new Response("no reference", { status: 200 });
         }
 
-        const supabase = getSupabaseAdmin();
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const update: Record<string, unknown> = {
           square_payment_id: payment.id,
           square_status: status,
@@ -114,7 +102,7 @@ export const Route = createFileRoute("/api/public/square-webhook")({
           update.status = "cancelled";
         }
 
-        const { error } = await supabase
+        const { error } = await supabaseAdmin
           .from("orders")
           .update(update)
           .eq("id", orderId);
