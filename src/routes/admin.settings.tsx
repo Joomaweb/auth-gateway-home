@@ -30,6 +30,31 @@ type Branding = {
 };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function shippingMethodsFrom(value: unknown): ShippingMethod[] {
+  if (!Array.isArray(value)) return [{ name: "Standard", price: 5.99 }];
+  const methods = value
+    .filter(isRecord)
+    .map((m) => ({ name: String(m.name ?? ""), price: Number(m.price ?? 0) }))
+    .filter((m) => m.name.trim());
+  return methods.length ? methods : [{ name: "Standard", price: 5.99 }];
+}
+
+function shippingZonesFrom(value: unknown): ShippingZone[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(isRecord)
+    .map((z) => ({ name: String(z.name ?? ""), price: Number(z.price ?? 0), eta: String(z.eta ?? "") }))
+    .filter((z) => z.name.trim());
+}
+
+function stringsFrom(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
 const DEFAULT_HERO: Hero = {
   image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600",
   title: "Timeless wardrobe staples.",
@@ -73,12 +98,12 @@ function AdminSettings() {
   useEffect(() => {
     supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
       if (!data) return;
-      setShipping(data.shipping_methods ?? [{ name: "Standard", price: 5.99 }]);
-      setZones(Array.isArray(data.shipping_zones) ? data.shipping_zones : []);
+      setShipping(shippingMethodsFrom(data.shipping_methods));
+      setZones(shippingZonesFrom(data.shipping_zones));
       setFreeThreshold(data.free_shipping_threshold?.toString() ?? "");
       if (data.hero) setHero({ ...DEFAULT_HERO, ...(data.hero as Hero) });
       setHeroVideo(data.hero_video ?? "");
-      if (Array.isArray(data.carousel_images)) setCarousel(data.carousel_images);
+      setCarousel(stringsFrom(data.carousel_images));
       if (data.branding) setBranding({ ...DEFAULT_BRANDING, ...(data.branding as Branding) });
       if (data.company) setCompany({ ...DEFAULT_COMPANY, ...(data.company as Company) });
       setShowFeatured(data.show_featured ?? true);

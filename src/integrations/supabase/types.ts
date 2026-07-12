@@ -128,6 +128,7 @@ export type Database = {
           product_id: string | null
           qty: number
           size: string | null
+          variant: string | null
           variant_id: string | null
         }
         Insert: {
@@ -140,6 +141,7 @@ export type Database = {
           product_id?: string | null
           qty?: number
           size?: string | null
+          variant?: string | null
           variant_id?: string | null
         }
         Update: {
@@ -152,6 +154,7 @@ export type Database = {
           product_id?: string | null
           qty?: number
           size?: string | null
+          variant?: string | null
           variant_id?: string | null
         }
         Relationships: [
@@ -181,7 +184,9 @@ export type Database = {
       orders: {
         Row: {
           created_at: string
+          discount: number
           id: string
+          invoice_number: string | null
           notes: string | null
           paid_at: string | null
           payment_method: string | null
@@ -204,7 +209,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          discount?: number
           id?: string
+          invoice_number?: string | null
           notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
@@ -227,7 +234,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          discount?: number
           id?: string
+          invoice_number?: string | null
           notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
@@ -289,6 +298,7 @@ export type Database = {
         Row: {
           active: boolean
           category_id: string | null
+          compare_at_price: number | null
           created_at: string
           description: string | null
           featured: boolean
@@ -308,6 +318,7 @@ export type Database = {
         Insert: {
           active?: boolean
           category_id?: string | null
+          compare_at_price?: number | null
           created_at?: string
           description?: string | null
           featured?: boolean
@@ -327,6 +338,7 @@ export type Database = {
         Update: {
           active?: boolean
           category_id?: string | null
+          compare_at_price?: number | null
           created_at?: string
           description?: string | null
           featured?: boolean
@@ -385,6 +397,7 @@ export type Database = {
       }
       store_settings: {
         Row: {
+          about: Json
           active_theme: string | null
           branding: Json
           carousel_images: Json
@@ -394,6 +407,8 @@ export type Database = {
           hero_video: string | null
           id: number
           legal: Json
+          payment_methods: Json
+          paypal: Json
           shipping_methods: Json
           shipping_zones: Json
           show_featured: boolean
@@ -402,6 +417,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          about?: Json
           active_theme?: string | null
           branding?: Json
           carousel_images?: Json
@@ -411,6 +427,8 @@ export type Database = {
           hero_video?: string | null
           id: number
           legal?: Json
+          payment_methods?: Json
+          paypal?: Json
           shipping_methods?: Json
           shipping_zones?: Json
           show_featured?: boolean
@@ -419,6 +437,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          about?: Json
           active_theme?: string | null
           branding?: Json
           carousel_images?: Json
@@ -428,6 +447,8 @@ export type Database = {
           hero_video?: string | null
           id?: number
           legal?: Json
+          payment_methods?: Json
+          paypal?: Json
           shipping_methods?: Json
           shipping_zones?: Json
           show_featured?: boolean

@@ -167,7 +167,7 @@ function ProductEdit() {
           description: p.description ?? "",
           price: p.price != null ? String(p.price) : "",
           sale_price: p.sale_price != null ? String(p.sale_price) : "",
-          images: Array.isArray(p.images) ? p.images : [],
+          images: Array.isArray(p.images) ? p.images.filter((u): u is string => typeof u === "string") : [],
           video_url: p.video_url ?? "",
           video_size: (p.video_size ?? "large") as "small" | "medium" | "large" | "full",
           category_id: p.category_id ?? "",
@@ -443,10 +443,10 @@ function ProductEdit() {
 
       const variants = buildVariants();
       if (variants.length) {
-        const rows = variants.map((v) => ({
+          const rows = variants.map((v) => ({
           product_id: productId,
-          size: v.size,
-          color: v.color,
+            size: v.size ?? "",
+            color: v.color ?? "",
           stock: Number(v.stock) || 0,
         }));
         const { error: insErr } = await withTimeout(

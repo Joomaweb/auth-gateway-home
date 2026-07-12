@@ -18,9 +18,23 @@ type Square = { enabled: boolean; application_id: string; location_id: string; m
 
 const DEFAULT_PAYPAL: PayPal = { enabled: false, client_id: "", mode: "sandbox" };
 const DEFAULT_SQUARE: Square = { enabled: false, application_id: "", location_id: "", mode: "sandbox" };
+const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [{ name: "Cash on Delivery", enabled: true }];
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function paymentMethodsFrom(value: unknown): PaymentMethod[] {
+  if (!Array.isArray(value)) return DEFAULT_PAYMENT_METHODS;
+  const methods = value
+    .filter(isRecord)
+    .map((m) => ({ name: String(m.name ?? ""), enabled: Boolean(m.enabled ?? true) }))
+    .filter((m) => m.name.trim());
+  return methods.length ? methods : DEFAULT_PAYMENT_METHODS;
+}
 
 function AdminPayments() {
-  const [payment, setPayment] = useState<PaymentMethod[]>([{ name: "Cash on Delivery", enabled: true }]);
+  const [payment, setPayment] = useState<PaymentMethod[]>(DEFAULT_PAYMENT_METHODS);
   const [paypal, setPaypal] = useState<PayPal>(DEFAULT_PAYPAL);
   const [square, setSquare] = useState<Square>(DEFAULT_SQUARE);
   const [busy, setBusy] = useState(false);
@@ -29,7 +43,7 @@ function AdminPayments() {
     supabase.from("store_settings").select("payment_methods, paypal, square").eq("id", 1).maybeSingle()
       .then(({ data }) => {
         if (!data) return;
-        setPayment(data.payment_methods ?? [{ name: "Cash on Delivery", enabled: true }]);
+        setPayment(paymentMethodsFrom(data.payment_methods));
         if (data.paypal) setPaypal({ ...DEFAULT_PAYPAL, ...(data.paypal as PayPal) });
         if (data.square) setSquare({ ...DEFAULT_SQUARE, ...(data.square as Square) });
       });
