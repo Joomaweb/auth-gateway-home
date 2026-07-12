@@ -136,7 +136,7 @@ function HomePage() {
       {!hero ? (
         <section className="relative h-[78vh] min-h-[560px] bg-muted animate-pulse" />
       ) : (
-      <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${isDirectHeroVideo ? "bg-black" : "bg-muted"}`}>
+      <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${heroVideo ? "bg-black" : "bg-muted"}`}>
         {isDirectHeroVideo ? (
           <>
             {hero.image && (
@@ -162,6 +162,14 @@ function HomePage() {
               />
             )}
           </>
+        ) : heroVideo ? (
+          <iframe
+            src={toEmbedUrl(heroVideo)}
+            title="Hero video"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 w-[177.78vh] min-w-full h-[56.25vw] min-h-full -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 pointer-events-none"
+          />
         ) : (
           <img src={optimizeImg(hero.image, { w: 1920, q: 75 })}
             srcSet={srcSet(hero.image, 1280, 75)}
