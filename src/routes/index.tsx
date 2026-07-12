@@ -32,6 +32,14 @@ type HomeData = {
 };
 
 const CACHE_KEY = "home:v3";
+
+function toEmbedUrl(url: string): string {
+  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]+)/i);
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?autoplay=1&mute=1&loop=1&playlist=${yt[1]}&controls=0&modestbranding=1&playsinline=1&rel=0`;
+  const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (vm) return `https://player.vimeo.com/video/${vm[1]}?autoplay=1&muted=1&loop=1&background=1`;
+  return url;
+}
 const CACHE_TTL = 10 * 60_000; // 10 min
 
 function readCache(): HomeData | undefined {
