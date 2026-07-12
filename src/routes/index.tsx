@@ -32,6 +32,14 @@ type HomeData = {
 };
 
 const CACHE_KEY = "home:v3";
+
+function toEmbedUrl(url: string): string {
+  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]+)/i);
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}?autoplay=1&mute=1&loop=1&playlist=${yt[1]}&controls=0&modestbranding=1&playsinline=1&rel=0`;
+  const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+  if (vm) return `https://player.vimeo.com/video/${vm[1]}?autoplay=1&muted=1&loop=1&background=1`;
+  return url;
+}
 const CACHE_TTL = 10 * 60_000; // 10 min
 
 function readCache(): HomeData | undefined {
@@ -136,7 +144,7 @@ function HomePage() {
       {!hero ? (
         <section className="relative h-[78vh] min-h-[560px] bg-muted animate-pulse" />
       ) : (
-      <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${isDirectHeroVideo ? "bg-black" : "bg-muted"}`}>
+      <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${heroVideo ? "bg-black" : "bg-muted"}`}>
         {isDirectHeroVideo ? (
           <>
             {hero.image && (
@@ -162,6 +170,14 @@ function HomePage() {
               />
             )}
           </>
+        ) : heroVideo ? (
+          <iframe
+            src={toEmbedUrl(heroVideo)}
+            title="Hero video"
+            allow="autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 w-[177.78vh] min-w-full h-[56.25vw] min-h-full -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 pointer-events-none"
+          />
         ) : (
           <img src={optimizeImg(hero.image, { w: 1920, q: 75 })}
             srcSet={srcSet(hero.image, 1280, 75)}
