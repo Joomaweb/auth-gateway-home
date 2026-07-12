@@ -21,6 +21,60 @@ export const Route = createFileRoute("/checkout")({
 
 type PayPalCfg = { enabled: boolean; client_id: string; mode: "sandbox" | "live" };
 type SquareCfg = { enabled: boolean; application_id: string; location_id: string; mode: "sandbox" | "production" };
+type PaymentMethod = { name: string; enabled: boolean };
+type ShippingMethod = { name: string; price: number; eta?: string };
+type AddressForm = { address?: string; city?: string; zip?: string; country?: string };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function paypalFrom(value: unknown): PayPalCfg {
+  if (!isRecord(value)) return { enabled: false, client_id: "", mode: "sandbox" };
+  return {
+    enabled: Boolean(value.enabled),
+    client_id: String(value.client_id ?? ""),
+    mode: value.mode === "live" ? "live" : "sandbox",
+  };
+}
+
+function squareFrom(value: unknown): SquareCfg {
+  if (!isRecord(value)) return { enabled: false, application_id: "", location_id: "", mode: "sandbox" };
+  return {
+    enabled: Boolean(value.enabled),
+    application_id: String(value.application_id ?? ""),
+    location_id: String(value.location_id ?? ""),
+    mode: value.mode === "production" ? "production" : "sandbox",
+  };
+}
+
+function paymentMethodsFrom(value: unknown): PaymentMethod[] {
+  const fallback = [{ name: "Cash on Delivery", enabled: true }];
+  if (!Array.isArray(value)) return fallback;
+  const methods = value
+    .filter(isRecord)
+    .map((m) => ({ name: String(m.name ?? ""), enabled: Boolean(m.enabled ?? true) }))
+    .filter((m) => m.name.trim());
+  return methods.length ? methods : fallback;
+}
+
+function shippingMethodsFrom(zonesValue: unknown, shippingValue: unknown): ShippingMethod[] {
+  const zones = Array.isArray(zonesValue) ? zonesValue.filter(isRecord) : [];
+  if (zones.length > 0) return zones.map((z) => ({ name: String(z.name ?? ""), price: Number(z.price ?? 0), eta: z.eta == null ? undefined : String(z.eta) }));
+  const methods = Array.isArray(shippingValue) ? shippingValue.filter(isRecord) : [];
+  if (methods.length > 0) return methods.map((m) => ({ name: String(m.name ?? ""), price: Number(m.price ?? 0) }));
+  return [{ name: "Standard", price: 5.99 }];
+}
+
+function addressFrom(value: unknown): AddressForm {
+  if (!isRecord(value)) return {};
+  return {
+    address: typeof value.address === "string" ? value.address : "",
+    city: typeof value.city === "string" ? value.city : "",
+    zip: typeof value.zip === "string" ? value.zip : "",
+    country: typeof value.country === "string" ? value.country : "",
+  };
+}
 
 function CheckoutPage() {
   const { t } = useT();
@@ -31,8 +85,8 @@ function CheckoutPage() {
   const subtotal = items.reduce((n, i) => n + i.qty * i.price, 0);
 
   const [settings, setSettings] = useState<{
-    shipping_methods: { name: string; price: number; eta?: string }[];
-    payment_methods: { name: string; enabled: boolean }[];
+    shipping_methods: ShippingMethod[];
+    payment_methods: PaymentMethod[];
     free_shipping_threshold: number | null;
     paypal: PayPalCfg;
     square: SquareCfg;
@@ -59,9 +113,9 @@ function CheckoutPage() {
   useEffect(() => {
     supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
       if (data) {
-        const paypal: PayPalCfg = data.paypal ?? { enabled: false, client_id: "", mode: "sandbox" };
-        const square: SquareCfg = data.square ?? { enabled: false, application_id: "", location_id: "", mode: "sandbox" };
-        const baseMethods = (data.payment_methods ?? [{ name: "Cash on Delivery", enabled: true }]) as { name: string; enabled: boolean }[];
+        const paypal = paypalFrom(data.paypal);
+        const square = squareFrom(data.square);
+        const baseMethods = paymentMethodsFrom(data.payment_methods);
         let methods = baseMethods;
         if (square.enabled && square.application_id && square.location_id) {
           methods = [{ name: "Square", enabled: true }, ...methods.filter((m) => m.name !== "Square")];
@@ -69,10 +123,7 @@ function CheckoutPage() {
         if (paypal.enabled && paypal.client_id) {
           methods = [{ name: "PayPal", enabled: true }, ...methods.filter((m) => m.name !== "PayPal")];
         }
-        const zones = Array.isArray(data.shipping_zones) ? data.shipping_zones : [];
-        const shippingMethods = zones.length > 0
-          ? zones.map((z: { name: string; price: number; eta?: string }) => ({ name: z.name, price: Number(z.price), eta: z.eta }))
-          : (data.shipping_methods ?? [{ name: "Standard", price: 5.99 }]);
+        const shippingMethods = shippingMethodsFrom(data.shipping_zones, data.shipping_methods);
         setSettings({
           shipping_methods: shippingMethods,
           payment_methods: methods,
@@ -87,14 +138,15 @@ function CheckoutPage() {
     if (user) {
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
         if (data) {
+          const address = addressFrom(data.address);
           setForm((f) => ({
             ...f,
             full_name: data.full_name ?? "",
             phone: data.phone ?? "",
-            address: data.address?.address ?? "",
-            city: data.address?.city ?? "",
-            zip: data.address?.zip ?? "",
-            country: data.address?.country ?? "",
+            address: address.address ?? "",
+            city: address.city ?? "",
+            zip: address.zip ?? "",
+            country: address.country ?? "",
           }));
         }
       });

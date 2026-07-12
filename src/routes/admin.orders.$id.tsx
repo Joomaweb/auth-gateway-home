@@ -17,7 +17,7 @@ type ShipmentStatus = typeof shipmentStatuses[number];
 type Order = {
   id: string;
   status: string;
-  shipment_status: ShipmentStatus | null;
+  shipment_status: string | null;
   tracking_number: string | null;
   tracking_url: string | null;
   shipment_updated_at: string | null;
@@ -42,7 +42,7 @@ function AdminOrderDetail() {
 
   useEffect(() => {
     supabase.from("orders").select("*").eq("id", id).maybeSingle().then(async ({ data }) => {
-      setOrder(data);
+      setOrder(data as Order | null);
       if (data?.user_id) {
         const { data: p } = await supabase.from("profiles").select("email").eq("id", data.user_id).maybeSingle();
         setEmail(p?.email ?? null);
@@ -58,7 +58,7 @@ function AdminOrderDetail() {
   };
 
   const updateShipment = async (patch: Partial<Pick<Order, "shipment_status" | "tracking_number" | "tracking_url">>) => {
-    const payload: Record<string, unknown> = { ...patch, shipment_updated_at: new Date().toISOString() };
+    const payload = { ...patch, shipment_updated_at: new Date().toISOString() };
     const { error } = await supabase.from("orders").update(payload).eq("id", id);
     if (error) { toast.error(error.message); return; }
     toast.success(t("shipment.notified"));

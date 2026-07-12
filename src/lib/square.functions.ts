@@ -1,4 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { Database } from "@/integrations/supabase/types";
+
+type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
 
 type Mode = "sandbox" | "production";
 export type ChargeOutcome =
@@ -16,7 +19,7 @@ async function getAdminSupabase() {
   return supabaseAdmin;
 }
 
-async function persistOrderUpdate(orderId: string, update: Record<string, unknown>) {
+async function persistOrderUpdate(orderId: string, update: OrderUpdate) {
   try {
     const supabase = await getAdminSupabase();
     await supabase.from("orders").update(update).eq("id", orderId);

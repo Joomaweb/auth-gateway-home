@@ -13,6 +13,22 @@ export const Route = createFileRoute("/profile")({
   component: ProfilePage,
 });
 
+type AddressForm = { address?: string; city?: string; zip?: string; country?: string };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function addressFrom(value: unknown): AddressForm {
+  if (!isRecord(value)) return {};
+  return {
+    address: typeof value.address === "string" ? value.address : "",
+    city: typeof value.city === "string" ? value.city : "",
+    zip: typeof value.zip === "string" ? value.zip : "",
+    country: typeof value.country === "string" ? value.country : "",
+  };
+}
+
 function ProfilePage() {
   const { user, loading } = useAuth();
   const { t } = useT();
@@ -35,13 +51,14 @@ function ProfilePage() {
     if (!user) return;
     supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
       if (data) {
+        const address = addressFrom(data.address);
         setForm({
           full_name: data.full_name ?? "",
           phone: data.phone ?? "",
-          address: data.address?.address ?? "",
-          city: data.address?.city ?? "",
-          zip: data.address?.zip ?? "",
-          country: data.address?.country ?? "",
+          address: address.address ?? "",
+          city: address.city ?? "",
+          zip: address.zip ?? "",
+          country: address.country ?? "",
         });
       }
     });

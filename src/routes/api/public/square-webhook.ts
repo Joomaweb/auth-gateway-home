@@ -1,4 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { Database } from "@/integrations/supabase/types";
+
+type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
 
 // Square sends the signature in this header (HMAC-SHA256 of notificationUrl + body, base64).
 const SIGNATURE_HEADER = "x-square-hmacsha256-signature";
@@ -90,7 +93,7 @@ export const Route = createFileRoute("/api/public/square-webhook")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const update: Record<string, unknown> = {
+        const update: OrderUpdate = {
           square_payment_id: payment.id,
           square_status: status,
         };
