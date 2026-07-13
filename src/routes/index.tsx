@@ -52,7 +52,9 @@ const CACHE_KEY = "home:v3";
 
 function toEmbedUrl(url: string): string {
   const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]+)/i);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}?autoplay=1&mute=1&loop=1&playlist=${yt[1]}&controls=0&modestbranding=1&playsinline=1&rel=0`;
+  if (yt) {
+    return `https://www.youtube.com/embed/${yt[1]}?autoplay=1&mute=1&loop=1&playlist=${yt[1]}&controls=0&modestbranding=1&playsinline=1&rel=0`;
+  }
   const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
   if (vm) return `https://player.vimeo.com/video/${vm[1]}?autoplay=1&muted=1&loop=1&background=1`;
   return url;
@@ -193,67 +195,83 @@ function HomePage() {
       {!hero ? (
         <section className="relative h-[78vh] min-h-[560px] bg-muted animate-pulse" />
       ) : (
-      <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${heroVideo ? "bg-black" : "bg-muted"}`}>
-        {isDirectHeroVideo ? (
-          <video
-            src={heroVideo}
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="auto"
-            className="absolute inset-0 w-full h-full object-cover scale-105"
-            style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
-          />
-        ) : heroVideo ? (
-          <iframe
-            src={toEmbedUrl(heroVideo)}
-            title="Hero video"
-            allow="autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-            className="absolute inset-0 w-[177.78vh] min-w-full h-[56.25vw] min-h-full -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 pointer-events-none"
-          />
-        ) : (
-          <img src={optimizeImg(hero.image, { w: 1920, q: 75 })}
-            srcSet={srcSet(hero.image, 1280, 75)}
-            sizes="100vw"
-            alt="Hero"
-            fetchPriority="high" decoding="async"
-            className="absolute inset-0 w-full h-full object-cover scale-105"
-            style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }} />
-        )}
+        <section
+          className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${heroVideo ? "bg-black" : "bg-muted"}`}
+        >
+          {isDirectHeroVideo ? (
+            <video
+              src={heroVideo}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+              className="absolute inset-0 w-full h-full object-cover scale-105"
+              style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
+            />
+          ) : heroVideo ? (
+            <iframe
+              src={toEmbedUrl(heroVideo)}
+              title="Hero video"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+              className="absolute inset-0 w-[177.78vh] min-w-full h-[56.25vw] min-h-full -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 pointer-events-none"
+            />
+          ) : (
+            <img
+              src={optimizeImg(hero.image, { w: 1920, q: 75 })}
+              srcSet={srcSet(hero.image, 1280, 75)}
+              sizes="100vw"
+              alt="Hero"
+              fetchPriority="high"
+              decoding="async"
+              className="absolute inset-0 w-full h-full object-cover scale-105"
+              style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
+            />
+          )}
 
-        {hero.show_overlay !== false && (
-          <>
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/10" />
-            <div className="absolute inset-0 opacity-[0.07] mix-blend-overlay" style={{ backgroundImage: "linear-gradient(oklch(0.18 0.005 60) 1px, transparent 1px), linear-gradient(90deg, oklch(0.18 0.005 60) 1px, transparent 1px)", backgroundSize: "32px 32px" }} />
-            <div className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-gradient-gold opacity-30 blur-3xl animate-float-slow" />
-            <div className="relative z-10 text-center px-4 max-w-3xl animate-fade-up">
-              {hero.badge?.trim() && (
-                <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.4em] uppercase text-gold font-semibold mb-5 px-3 py-1 rounded-full glass-panel">
-                  <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" /> {hero.badge}
-                </span>
-              )}
-              {hero.title?.trim() && (
-                <h1 className="font-display text-5xl md:text-7xl font-semibold tracking-tight text-gradient-gold">{hero.title}</h1>
-              )}
-              {(hero.title?.trim() || hero.subtitle?.trim()) && (
-                <div className="hairline-gold w-40 mx-auto my-5" />
-              )}
-              {hero.subtitle?.trim() && (
-                <p className="text-lg text-foreground/75 max-w-xl mx-auto">{hero.subtitle}</p>
-              )}
-              {hero.cta_text?.trim() && (
-                <Button asChild size="lg" className="mt-8 ring-gold-soft bg-gradient-gold text-gold-foreground hover:opacity-90">
-                  <a href={hero.cta_link}>{hero.cta_text}</a>
-                </Button>
-              )}
+          {hero.show_overlay !== false && (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-background/10" />
+              <div
+                className="absolute inset-0 opacity-[0.07] mix-blend-overlay"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(oklch(0.18 0.005 60) 1px, transparent 1px), linear-gradient(90deg, oklch(0.18 0.005 60) 1px, transparent 1px)",
+                  backgroundSize: "32px 32px",
+                }}
+              />
+              <div className="absolute -top-32 -right-24 w-[420px] h-[420px] rounded-full bg-gradient-gold opacity-30 blur-3xl animate-float-slow" />
+              <div className="relative z-10 text-center px-4 max-w-3xl animate-fade-up">
+                {hero.badge?.trim() && (
+                  <span className="inline-flex items-center gap-2 text-[10px] tracking-[0.4em] uppercase text-gold font-semibold mb-5 px-3 py-1 rounded-full glass-panel">
+                    <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" /> {hero.badge}
+                  </span>
+                )}
+                {hero.title?.trim() && (
+                  <h1 className="font-display text-5xl md:text-7xl font-semibold tracking-tight text-gradient-gold">
+                    {hero.title}
+                  </h1>
+                )}
+                {(hero.title?.trim() || hero.subtitle?.trim()) && <div className="hairline-gold w-40 mx-auto my-5" />}
+                {hero.subtitle?.trim() && <p className="text-lg text-foreground/75 max-w-xl mx-auto">{hero.subtitle}</p>}
+                {hero.cta_text?.trim() && (
+                  <Button
+                    asChild
+                    size="lg"
+                    className="mt-8 ring-gold-soft bg-gradient-gold text-gold-foreground hover:opacity-90"
+                  >
+                    <a href={hero.cta_link}>{hero.cta_text}</a>
+                  </Button>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+      )}
             </div>
           </>
         )}
-      </section>
-      )}
-
       {/* Promo carousel */}
       {showDeferredMedia && slides.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-10">
