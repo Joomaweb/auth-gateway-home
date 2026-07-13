@@ -18,6 +18,17 @@ import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/lib/supabase";
 import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
 
+function getBackendOrigin() {
+  try {
+    const url = import.meta.env.VITE_SUPABASE_URL || import.meta.env.VITE_SUPABASE_PROJECT_URL;
+    return url ? new URL(url).origin : null;
+  } catch {
+    return null;
+  }
+}
+
+const backendOrigin = getBackendOrigin();
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -74,6 +85,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
+      ...(backendOrigin
+        ? [
+            { rel: "preconnect", href: backendOrigin },
+            { rel: "dns-prefetch", href: `//${new URL(backendOrigin).host}` },
+          ]
+        : []),
+      { rel: "preconnect", href: "https://www.youtube.com" },
+      { rel: "preconnect", href: "https://www.youtube-nocookie.com" },
+      { rel: "preconnect", href: "https://player.vimeo.com" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
     ],

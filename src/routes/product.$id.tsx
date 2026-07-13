@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { PublicLayout } from "@/components/layout/PublicLayout";
@@ -12,6 +12,8 @@ import { useRealtime } from "@/hooks/use-realtime";
 import { optimizeImg, srcSet } from "@/lib/img";
 import { invalidateRunCache, run } from "@/lib/api";
 import { subscribeAppDataChanges } from "@/lib/realtime-sync";
+import { getVideoMimeType, isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
+import { useMediaPreload } from "@/hooks/use-media-preload";
 
 export const Route = createFileRoute("/product/$id")({
   component: ProductPage,
@@ -63,6 +65,8 @@ function ProductPage() {
   const [color, setColor] = useState<string | null>(null);
   const [imgIdx, setImgIdx] = useState(0);
   const [showVideo, setShowVideo] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const productQ = useQuery({
     queryKey: ["product", id],
     queryFn: () => fetchProductDetail(id),
@@ -72,13 +76,35 @@ function ProductPage() {
   });
   const product = productQ.data?.product ?? null;
   const variants = productQ.data?.variants ?? [];
+  const productVideoUrl = product?.video_url?.trim() ?? "";
+  const productPoster = product?.images?.[0]
+    ? optimizeImg(product.images[0], { w: 1200, q: 70 })
+    : "";
+
+  useMediaPreload(productVideoUrl, productPoster);
 
   useEffect(() => {
     setShowVideo(false);
+    setVideoReady(false);
     setImgIdx(0);
     setSize(null);
     setColor(null);
   }, [id]);
+  useEffect(() => {
+    if (productVideoUrl) setShowVideo(true);
+  }, [productVideoUrl]);
+  useEffect(() => {
+    setVideoReady(false);
+  }, [productVideoUrl]);
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !isDirectVideoUrl(productVideoUrl)) return;
+
+    video.load();
+    const playPromise = video.play();
+    if (playPromise) playPromise.catch(() => undefined);
+    if (video.readyState >= 2) setVideoReady(true);
+  }, [productVideoUrl]);
   useEffect(() => subscribeAppDataChanges(() => {
     invalidateRunCache(`product:${id}:`);
     productQ.refetch();
@@ -112,6 +138,9 @@ function ProductPage() {
   const images = product.images?.length
     ? product.images
     : ["https://images.unsplash.com/photo-1503341504253-dff4815485f1?w=900"];
+  const hasVideo = !!productVideoUrl;
+  const isUploadedVideo = isDirectVideoUrl(productVideoUrl);
+  const isEmbeddedVideo = hasVideo && !isUploadedVideo;
 
   const handleAdd = () => {
     if (sizes.length && !size) {
@@ -148,9 +177,6 @@ function ProductPage() {
       <div className="max-w-7xl mx-auto px-4 py-10 grid gap-10 lg:grid-cols-2">
         <div>
           {(() => {
-            const isUploadedVideo =
-              !!product.video_url &&
-              !/youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url);
             const sizeMap: Record<string, string> = {
               small: "400px",
               medium: "600px",
@@ -164,20 +190,38 @@ function ProductPage() {
                 <div
                   className="rounded-lg overflow-hidden bg-muted mx-auto"
                   style={{
-                    maxWidth: showVideo && isUploadedVideo ? maxW : undefined,
+                    maxWidth: showVideo && hasVideo ? maxW : undefined,
+                    backgroundImage: showVideo && productPoster ? `url(${productPoster})` : undefined,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
                   }}
                 >
                   {showVideo && isUploadedVideo ? (
                     <video
-                      src={product.video_url!}
+                      ref={videoRef}
+                      src={productVideoUrl}
                       controls
                       autoPlay
                       muted
                       playsInline
                       loop
-                      preload="metadata"
-                      poster={images[0] ? optimizeImg(images[0], { w: 1200, q: 70 }) : undefined}
-                      className="w-full aspect-video bg-black"
+                      preload="auto"
+                      poster={productPoster || undefined}
+                      onLoadedData={() => setVideoReady(true)}
+                      onCanPlay={() => setVideoReady(true)}
+                      onPlaying={() => setVideoReady(true)}
+                      className={`w-full aspect-video bg-muted transition-opacity duration-200 ${videoReady || !productPoster ? "opacity-100" : "opacity-0"}`}
+                    >
+                      <source src={productVideoUrl} type={getVideoMimeType(productVideoUrl)} />
+                    </video>
+                  ) : showVideo && isEmbeddedVideo ? (
+                    <iframe
+                      src={toEmbedUrl(productVideoUrl)}
+                      title={`${product.name} video`}
+                      allow="autoplay; encrypted-media; picture-in-picture"
+                      allowFullScreen
+                      loading="eager"
+                      className="w-full aspect-video bg-muted"
                     />
                   ) : (
                     <div className="aspect-[3/4]">
@@ -195,7 +239,7 @@ function ProductPage() {
 
                 </div>
 
-                {(images.length > 1 || isUploadedVideo) && (
+                {(images.length > 1 || hasVideo) && (
                   <div className="flex gap-2 mt-3 flex-wrap">
                     {images.map((src, i) => (
                       <button
@@ -214,7 +258,7 @@ function ProductPage() {
                         <img src={optimizeImg(src, { w: 160, q: 70 })} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                       </button>
                     ))}
-                    {isUploadedVideo && (
+                    {hasVideo && (
                       <button
                         onClick={() => setShowVideo(true)}
                         className={cn(

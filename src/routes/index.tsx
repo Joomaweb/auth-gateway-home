@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { PublicLayout } from "@/components/layout/PublicLayout";
@@ -18,6 +18,8 @@ import { optimizeImg, srcSet } from "@/lib/img";
 import { run } from "@/lib/api";
 import { getPublicStoreSettings } from "@/lib/store-settings";
 import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
+import { isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
+import { useMediaPreload } from "@/hooks/use-media-preload";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -36,11 +38,14 @@ type Hero = {
   show_overlay?: boolean;
 };
 
-type HomeData = {
+type HomeCollectionsData = {
   featured: ProductCardData[];
   sale: ProductCardData[];
   newest: ProductCardData[];
   cats: Category[];
+};
+
+type HomeSettingsData = {
   hero: Hero;
   heroVideo: string;
   slides: string[];
@@ -48,21 +53,11 @@ type HomeData = {
   showSale: boolean;
 };
 
-const CACHE_KEY = "home:v3";
-
-function toEmbedUrl(url: string): string {
-  const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]+)/i);
-  if (yt) {
-    return `https://www.youtube.com/embed/${yt[1]}?autoplay=1&mute=1&loop=1&playlist=${yt[1]}&controls=0&modestbranding=1&playsinline=1&rel=0`;
-  }
-  const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
-  if (vm) return `https://player.vimeo.com/video/${vm[1]}?autoplay=1&muted=1&loop=1&background=1`;
-  return url;
-}
-const CACHE_TTL = 10 * 60_000; // 10 min
-
-async function fetchHome(): Promise<HomeData> {
-  const [n, c, ss] = await Promise.all([
+async function fetchHomeCollections(
+  showFeatured: boolean,
+  showSale: boolean,
+): Promise<HomeCollectionsData> {
+  const [n, c] = await Promise.all([
     run({ key: "home:newest", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () =>
       supabase
         .from("products")
@@ -74,17 +69,10 @@ async function fetchHome(): Promise<HomeData> {
     run({ key: "home:cats", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () =>
       supabase.from("categories").select("id,name,slug,image_url"),
     ),
-    getPublicStoreSettings(),
   ]);
-  const d = ss as {
-    hero?: Hero;
-    hero_video?: string;
-    carousel_images?: string[];
-    show_featured?: boolean;
-    show_sale?: boolean;
-  } | null;
+
   const [f, s] = await Promise.all([
-    d?.show_featured === false
+    !showFeatured
       ? Promise.resolve({ data: [] })
       : run({ key: "home:featured", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () =>
           supabase
@@ -94,7 +82,7 @@ async function fetchHome(): Promise<HomeData> {
             .eq("featured", true)
             .limit(12),
         ),
-    d?.show_sale === false
+    !showSale
       ? Promise.resolve({ data: [] })
       : run({ key: "home:sale", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () =>
           supabase
@@ -105,11 +93,24 @@ async function fetchHome(): Promise<HomeData> {
             .limit(8),
         ),
   ]);
-  const data: HomeData = {
+
+  return {
     featured: (f.data ?? []) as ProductCardData[],
     sale: (s.data ?? []) as ProductCardData[],
     newest: (n.data ?? []) as ProductCardData[],
     cats: (c.data ?? []) as Category[],
+  };
+}
+
+async function fetchHomeSettings(): Promise<HomeSettingsData> {
+  const d = (await getPublicStoreSettings()) as {
+    hero?: Hero;
+    hero_video?: string;
+    carousel_images?: string[];
+    show_featured?: boolean;
+    show_sale?: boolean;
+  } | null;
+  return {
     hero: (d?.hero as Hero) ?? {
       image: "",
       title: "",
@@ -124,34 +125,41 @@ async function fetchHome(): Promise<HomeData> {
     showFeatured: d?.show_featured ?? true,
     showSale: d?.show_sale ?? true,
   };
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d: data }));
-  } catch {
-    /* ignore quota */
-  }
-  return data;
 }
 
 function HomePage() {
   const { t } = useT();
   const [showDeferredMedia, setShowDeferredMedia] = useState(false);
-  const { data, refetch } = useQuery({
-    queryKey: ["home"],
-    queryFn: fetchHome,
+  const [heroVideoReady, setHeroVideoReady] = useState(false);
+  const heroVideoRef = useRef<HTMLVideoElement | null>(null);
+  const settingsQ = useQuery({
+    queryKey: ["home", "settings"],
+    queryFn: fetchHomeSettings,
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnReconnect: true,
   });
-  const featured = data?.featured ?? [];
-  const sale = data?.sale ?? [];
-  const newest = data?.newest ?? [];
-  const cats = data?.cats ?? [];
-  const hero = data?.hero ?? null;
-  const heroVideo = data?.heroVideo ?? "";
-  const slides = data?.slides ?? [];
-  const showFeatured = data?.showFeatured ?? true;
-  const showSale = data?.showSale ?? true;
-  const isDirectHeroVideo = !!heroVideo && !/youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo);
+  const showFeatured = settingsQ.data?.showFeatured ?? true;
+  const showSale = settingsQ.data?.showSale ?? true;
+  const collectionsQ = useQuery({
+    queryKey: ["home", "collections", showFeatured, showSale],
+    queryFn: () => fetchHomeCollections(showFeatured, showSale),
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
+  });
+  const featured = collectionsQ.data?.featured ?? [];
+  const sale = collectionsQ.data?.sale ?? [];
+  const newest = collectionsQ.data?.newest ?? [];
+  const cats = collectionsQ.data?.cats ?? [];
+  const hero = settingsQ.data?.hero ?? null;
+  const heroVideo = settingsQ.data?.heroVideo?.trim() ?? "";
+  const slides = settingsQ.data?.slides ?? [];
+  const isDirectHeroVideo = isDirectVideoUrl(heroVideo);
+  const heroPoster = hero?.image ? optimizeImg(hero.image, { w: 1920, q: 65 }) : "";
+  const heroPosition = `${hero?.pos_x ?? 50}% ${hero?.pos_y ?? 50}%`;
+
+  useMediaPreload(heroVideo, heroPoster);
 
   // Defer realtime subscriptions until after first paint so they don't slow TTI.
   const [rtReady, setRtReady] = useState(false);
@@ -163,10 +171,23 @@ function HomePage() {
     () =>
       subscribeAppDataChanges(() => {
         clearAppDataCaches();
-        refetch();
+        settingsQ.refetch();
+        collectionsQ.refetch();
       }),
-    [refetch],
+    [collectionsQ, settingsQ],
   );
+  useEffect(() => {
+    setHeroVideoReady(false);
+  }, [heroVideo]);
+  useEffect(() => {
+    const video = heroVideoRef.current;
+    if (!video || !isDirectHeroVideo) return;
+
+    video.load();
+    const playPromise = video.play();
+    if (playPromise) playPromise.catch(() => undefined);
+    if (video.readyState >= 2) setHeroVideoReady(true);
+  }, [heroVideo, isDirectHeroVideo]);
   useEffect(() => {
     const start = () => setShowDeferredMedia(true);
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
@@ -178,15 +199,16 @@ function HomePage() {
   }, []);
   useRealtime(rtReady ? "products" : "", () => {
     clearAppDataCaches();
-    refetch();
+    collectionsQ.refetch();
   });
   useRealtime(rtReady ? "categories" : "", () => {
     clearAppDataCaches();
-    refetch();
+    collectionsQ.refetch();
   });
   useRealtime(rtReady ? "store_settings" : "", () => {
     clearAppDataCaches();
-    refetch();
+    settingsQ.refetch();
+    collectionsQ.refetch();
   });
 
   return (
@@ -196,18 +218,32 @@ function HomePage() {
         <section className="relative h-[78vh] min-h-[560px] bg-muted animate-pulse" />
       ) : (
         <section
-          className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${heroVideo ? "bg-black" : "bg-muted"}`}
+          className="relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden bg-muted"
+          style={
+            heroVideo && heroPoster
+              ? {
+                  backgroundImage: `url(${heroPoster})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: heroPosition,
+                }
+              : undefined
+          }
         >
           {isDirectHeroVideo ? (
             <video
+              ref={heroVideoRef}
               src={heroVideo}
               autoPlay
               muted
               loop
               playsInline
               preload="auto"
-              className="absolute inset-0 w-full h-full object-cover scale-105"
-              style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
+              poster={heroPoster || undefined}
+              onLoadedData={() => setHeroVideoReady(true)}
+              onCanPlay={() => setHeroVideoReady(true)}
+              onPlaying={() => setHeroVideoReady(true)}
+              className={`absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-200 ${heroVideoReady || !heroPoster ? "opacity-100" : "opacity-0"}`}
+              style={{ objectPosition: heroPosition }}
             />
           ) : heroVideo ? (
             <iframe
@@ -215,6 +251,7 @@ function HomePage() {
               title="Hero video"
               allow="autoplay; encrypted-media; picture-in-picture"
               allowFullScreen
+              loading="eager"
               className="absolute inset-0 w-[177.78vh] min-w-full h-[56.25vw] min-h-full -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 pointer-events-none"
             />
           ) : (
@@ -226,7 +263,7 @@ function HomePage() {
               fetchPriority="high"
               decoding="async"
               className="absolute inset-0 w-full h-full object-cover scale-105"
-              style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
+              style={{ objectPosition: heroPosition }}
             />
           )}
 
