@@ -253,8 +253,12 @@ function HomePage() {
                     {hero.title}
                   </h1>
                 )}
-                {(hero.title?.trim() || hero.subtitle?.trim()) && <div className="hairline-gold w-40 mx-auto my-5" />}
-                {hero.subtitle?.trim() && <p className="text-lg text-foreground/75 max-w-xl mx-auto">{hero.subtitle}</p>}
+                {(hero.title?.trim() || hero.subtitle?.trim()) && (
+                  <div className="hairline-gold w-40 mx-auto my-5" />
+                )}
+                {hero.subtitle?.trim() && (
+                  <p className="text-lg text-foreground/75 max-w-xl mx-auto">{hero.subtitle}</p>
+                )}
                 {hero.cta_text?.trim() && (
                   <Button
                     asChild
@@ -278,7 +282,15 @@ function HomePage() {
               {slides.map((src, i) => (
                 <CarouselItem key={i}>
                   <div className="aspect-[16/6] rounded-lg overflow-hidden bg-muted">
-                    <img src={optimizeImg(src, { w: 1600, q: 70 })} srcSet={srcSet(src, 1280, 70)} sizes="100vw" alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                    <img
+                      src={optimizeImg(src, { w: 1600, q: 70 })}
+                      srcSet={srcSet(src, 1280, 70)}
+                      sizes="100vw"
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                 </CarouselItem>
               ))}
@@ -292,23 +304,42 @@ function HomePage() {
       {/* Categories */}
       {cats.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
-          <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">{t("home.categories")}</h2>
+          <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">
+            {t("home.categories")}
+          </h2>
           {/* Mobile carousel */}
           <div className="md:hidden">
             <Carousel opts={{ align: "start" }}>
               <CarouselContent className="-ms-3">
                 {cats.map((c) => (
                   <CarouselItem key={c.id} className="ps-3 basis-3/4 sm:basis-1/2">
-                    <Link to="/shop" search={{ category: c.slug }}
-                      className="group relative block aspect-[4/3] overflow-hidden rounded-xl bg-muted shadow-soft">
-                      <img src={optimizeImg(c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800", { w: 600 })}
-                        srcSet={srcSet(c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800", 600)}
+                    <Link
+                      to="/shop"
+                      search={{ category: c.slug }}
+                      className="group relative block aspect-[4/3] overflow-hidden rounded-xl bg-muted shadow-soft"
+                    >
+                      <img
+                        src={optimizeImg(
+                          c.image_url ??
+                            "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800",
+                          { w: 600 },
+                        )}
+                        srcSet={srcSet(
+                          c.image_url ??
+                            "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800",
+                          600,
+                        )}
                         sizes="(max-width: 768px) 75vw, 33vw"
-                        alt={c.name} loading="lazy" decoding="async"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                        alt={c.name}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
 
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent flex items-end p-4">
-                        <h3 className="text-white font-display text-xl font-semibold drop-shadow">{c.name}</h3>
+                        <h3 className="text-white font-display text-xl font-semibold drop-shadow">
+                          {c.name}
+                        </h3>
                       </div>
                     </Link>
                   </CarouselItem>
@@ -319,13 +350,27 @@ function HomePage() {
           {/* Desktop grid */}
           <div className="hidden md:grid gap-4 grid-cols-3">
             {cats.map((c) => (
-              <Link key={c.id} to="/shop" search={{ category: c.slug }}
-                className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-muted">
-                <img src={optimizeImg(c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800", { w: 600 })}
-                  srcSet={srcSet(c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800", 600)}
+              <Link
+                key={c.id}
+                to="/shop"
+                search={{ category: c.slug }}
+                className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-muted"
+              >
+                <img
+                  src={optimizeImg(
+                    c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800",
+                    { w: 600 },
+                  )}
+                  srcSet={srcSet(
+                    c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800",
+                    600,
+                  )}
                   sizes="33vw"
-                  alt={c.name} loading="lazy" decoding="async"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                  alt={c.name}
+                  loading="lazy"
+                  decoding="async"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
 
                 <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                   <h3 className="text-white font-display text-2xl font-semibold">{c.name}</h3>
@@ -339,11 +384,16 @@ function HomePage() {
       {/* Newest arrivals */}
       {newest.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-12 md:py-16">
-          <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">{t("home.newArrivals")}</h2>
+          <h2 className="font-display text-2xl md:text-3xl font-semibold mb-6 md:mb-8">
+            {t("home.newArrivals")}
+          </h2>
           <Carousel opts={{ align: "start" }}>
             <CarouselContent className="-ms-3 md:-ms-4">
               {newest.map((p) => (
-                <CarouselItem key={p.id} className="ps-3 md:ps-4 basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5">
+                <CarouselItem
+                  key={p.id}
+                  className="ps-3 md:ps-4 basis-1/2 sm:basis-1/3 md:basis-1/4 lg:basis-1/5"
+                >
                   <ProductCard p={p} />
                 </CarouselItem>
               ))}
@@ -377,7 +427,9 @@ function HomePage() {
         <section className="max-w-7xl mx-auto px-4 py-16 border-t">
           <h2 className="font-display text-3xl font-semibold mb-8">{t("home.sale")}</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-8">
-            {sale.map((p) => <ProductCard key={p.id} p={p} />)}
+            {sale.map((p) => (
+              <ProductCard key={p.id} p={p} />
+            ))}
           </div>
         </section>
       )}
