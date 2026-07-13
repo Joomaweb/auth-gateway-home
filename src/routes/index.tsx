@@ -36,6 +36,14 @@ type Hero = {
   badge: string;
   pos_x?: number;
   pos_y?: number;
+  pos_x_mobile?: number;
+  pos_y_mobile?: number;
+  fit?: "cover" | "contain";
+  fit_mobile?: "cover" | "contain";
+  height_desktop?: number; // vh
+  height_mobile?: number; // vh
+  scale?: number; // 1 - 2
+  scale_mobile?: number;
   show_overlay?: boolean;
 };
 
