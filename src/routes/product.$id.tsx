@@ -10,7 +10,8 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useRealtime } from "@/hooks/use-realtime";
 import { optimizeImg, srcSet } from "@/lib/img";
-import { run } from "@/lib/api";
+import { invalidateRunCache, run } from "@/lib/api";
+import { subscribeAppDataChanges } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/product/$id")({
   component: ProductPage,
@@ -65,7 +66,9 @@ function ProductPage() {
   const productQ = useQuery({
     queryKey: ["product", id],
     queryFn: () => fetchProductDetail(id),
-    staleTime: 5 * 60_000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
   });
   const product = productQ.data?.product ?? null;
   const variants = productQ.data?.variants ?? [];
@@ -76,8 +79,18 @@ function ProductPage() {
     setSize(null);
     setColor(null);
   }, [id]);
-  useRealtime("products", () => productQ.refetch(), `id=eq.${id}`);
-  useRealtime("product_variants", () => productQ.refetch(), `product_id=eq.${id}`);
+  useEffect(() => subscribeAppDataChanges(() => {
+    invalidateRunCache(`product:${id}:`);
+    productQ.refetch();
+  }), [id, productQ]);
+  useRealtime("products", () => {
+    invalidateRunCache(`product:${id}:`);
+    productQ.refetch();
+  }, `id=eq.${id}`);
+  useRealtime("product_variants", () => {
+    invalidateRunCache(`product:${id}:`);
+    productQ.refetch();
+  }, `product_id=eq.${id}`);
 
   if (!product) {
     return (

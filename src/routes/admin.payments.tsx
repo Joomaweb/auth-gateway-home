@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/payments")({
   component: AdminPayments,
@@ -60,7 +61,10 @@ function AdminPayments() {
     });
     setBusy(false);
     if (error) toast.error(error.message);
-    else toast.success("Saved");
+    else {
+      signalAppDataChanged("store_settings");
+      toast.success("Saved");
+    }
   };
 
   return (

@@ -13,6 +13,7 @@ import { AlertCircle, Plus, Upload, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 const SIZE_RE = /^[A-Za-z0-9\u0590-\u05FF \-/.]{1,12}$/;
 const COLOR_RE = /^[A-Za-z\u0590-\u05FF][A-Za-z\u0590-\u05FF \-]{0,24}$/;
@@ -456,6 +457,7 @@ function ProductEdit() {
         if (insErr) throw insErr;
       }
 
+      signalAppDataChanged("products");
       toast.success("המוצר נשמר בהצלחה");
       navigate({ to: "/admin/products" });
     } catch (err) {

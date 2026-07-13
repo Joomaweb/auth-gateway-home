@@ -5,6 +5,7 @@ import { useT } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/orders/")({
   component: AdminOrders,
@@ -47,7 +48,7 @@ function AdminOrders() {
         ? "אין הרשאה למחוק. ודא שאתה מחובר כאדמין."
         : "שגיאה במחיקה: " + error.message;
       toast.error(msg);
-    } else { toast.success("ההזמנה נמחקה"); load(); }
+    } else { signalAppDataChanged("orders"); toast.success("ההזמנה נמחקה"); load(); }
   };
 
   return (

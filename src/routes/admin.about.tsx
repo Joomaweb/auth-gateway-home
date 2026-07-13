@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Save, Plus, Trash2, BookOpen } from "lucide-react";
 import { toast } from "sonner";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/about")({
   component: AdminAbout,
@@ -57,6 +58,7 @@ function AdminAbout() {
     const { error } = await supabase.from("store_settings").upsert({ id: 1, about: a });
     setBusy(false);
     if (error) return toast.error(mapErr(error));
+    signalAppDataChanged("store_settings");
     toast.success("נשמר — האתר התעדכן בזמן אמת");
     setSavedAt(new Date().toLocaleTimeString("he-IL"));
   };

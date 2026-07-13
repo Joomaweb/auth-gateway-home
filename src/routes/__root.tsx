@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   Outlet,
   createRootRouteWithContext,
@@ -14,6 +15,8 @@ import { I18nProvider } from "@/lib/i18n";
 import { SiteBrandingProvider } from "@/hooks/use-site-branding";
 import { ActiveThemeProvider } from "@/hooks/use-active-theme";
 import { Toaster } from "@/components/ui/sonner";
+import { supabase } from "@/lib/supabase";
+import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
 
 function NotFoundComponent() {
   return (
@@ -96,6 +99,7 @@ function RootComponent() {
         <SiteBrandingProvider>
           <ActiveThemeProvider>
             <AuthProvider>
+              <RealtimeCacheBridge />
               <Outlet />
               <Toaster richColors position="top-center" />
             </AuthProvider>
@@ -104,4 +108,37 @@ function RootComponent() {
       </I18nProvider>
     </QueryClientProvider>
   );
+}
+
+function RealtimeCacheBridge() {
+  const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const refresh = () => {
+      clearAppDataCaches();
+      queryClient.invalidateQueries({ refetchType: "active" });
+    };
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(refresh, 200);
+    };
+
+    const unsubscribeSignals = subscribeAppDataChanges(refresh);
+    const channel = supabase
+      .channel("global-store-data-sync")
+      .on("postgres_changes" as never, { event: "*", schema: "public", table: "products" } as never, schedule)
+      .on("postgres_changes" as never, { event: "*", schema: "public", table: "categories" } as never, schedule)
+      .on("postgres_changes" as never, { event: "*", schema: "public", table: "product_variants" } as never, schedule)
+      .on("postgres_changes" as never, { event: "*", schema: "public", table: "store_settings" } as never, schedule)
+      .subscribe();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      unsubscribeSignals();
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return null;
 }

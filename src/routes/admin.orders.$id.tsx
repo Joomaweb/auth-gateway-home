@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/orders/$id")({
   component: AdminOrderDetail,
@@ -54,13 +55,14 @@ function AdminOrderDetail() {
   const updateStatus = async (status: string) => {
     const { error } = await supabase.from("orders").update({ status }).eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Status updated"); setOrder((o) => o ? { ...o, status } : o); }
+    else { signalAppDataChanged("orders"); toast.success("Status updated"); setOrder((o) => o ? { ...o, status } : o); }
   };
 
   const updateShipment = async (patch: Partial<{ shipment_status: ShipmentStatus; tracking_number: string | null; tracking_url: string | null }>) => {
     const payload = { ...patch, shipment_updated_at: new Date().toISOString() };
     const { error } = await supabase.from("orders").update(payload).eq("id", id);
     if (error) { toast.error(error.message); return; }
+    signalAppDataChanged("orders");
     toast.success(t("shipment.notified"));
     setOrder((o) => o ? { ...o, ...patch, shipment_updated_at: payload.shipment_updated_at as string } : o);
   };
@@ -69,6 +71,7 @@ function AdminOrderDetail() {
     if (!confirm("Delete order?")) return;
     await supabase.from("order_items").delete().eq("order_id", id);
     await supabase.from("orders").delete().eq("id", id);
+    signalAppDataChanged("orders");
     toast.success("Deleted");
     navigate({ to: "/admin/orders" });
   };

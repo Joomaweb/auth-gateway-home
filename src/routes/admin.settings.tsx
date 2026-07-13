@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/settings")({
   component: AdminSettings,
@@ -167,7 +168,10 @@ function AdminSettings() {
     });
     setBusy(false);
     if (error) toast.error(error.message);
-    else toast.success("Saved");
+    else {
+      signalAppDataChanged("store_settings");
+      toast.success("Saved");
+    }
   };
 
   return (

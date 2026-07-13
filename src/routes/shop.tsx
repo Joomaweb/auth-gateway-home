@@ -11,6 +11,7 @@ import { ChevronRight } from "lucide-react";
 import { optimizeImg, srcSet } from "@/lib/img";
 import { invalidateRunCache, run } from "@/lib/api";
 import { Button } from "@/components/ui/button";
+import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
 
 type Search = { category?: string; sort?: string };
 
@@ -84,7 +85,9 @@ function ShopPage() {
     queryKey: ["shop", "cats"],
     queryFn: fetchCats,
     initialData: initialCats,
-    staleTime: 5 * 60_000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
   });
   const cats = catsQ.data ?? [];
 
@@ -110,7 +113,9 @@ function ShopPage() {
     queryKey: ["shop", "products", sortKey, productCategoryId ?? "all", pageSize],
     queryFn: () => fetchProducts(search.sort, productCategoryId, pageSize),
     initialData: () => readCache<ProductRow[]>(productCacheKey),
-    staleTime: 5 * 60_000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
     enabled: !showSubcategories,
   });
   const allProducts = prodQ.data ?? [];
@@ -119,12 +124,17 @@ function ShopPage() {
   // Defer realtime until after first paint.
   const [rtReady, setRtReady] = useState(false);
   useEffect(() => { const id = setTimeout(() => setRtReady(true), 1500); return () => clearTimeout(id); }, []);
+  useEffect(() => subscribeAppDataChanges(() => {
+    clearAppDataCaches();
+    catsQ.refetch();
+    if (!showSubcategories) prodQ.refetch();
+  }), [catsQ, prodQ, showSubcategories]);
   useRealtime(rtReady && !showSubcategories ? "products" : "", () => {
-    invalidateRunCache("shop:prods:");
+    clearAppDataCaches();
     prodQ.refetch();
   });
   useRealtime(rtReady ? "categories" : "", () => {
-    invalidateRunCache("shop:cats");
+    clearAppDataCaches();
     catsQ.refetch();
   });
 

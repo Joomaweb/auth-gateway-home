@@ -19,7 +19,7 @@ export function useRealtime(
     let timer: ReturnType<typeof setTimeout> | undefined;
     const trigger = () => {
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => cbRef.current(), 800);
+      timer = setTimeout(() => cbRef.current(), 200);
     };
     const channelName = `rt-${table}-${filter ?? "all"}-${Math.random().toString(36).slice(2, 8)}`;
     const ch = supabase

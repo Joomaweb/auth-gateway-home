@@ -11,6 +11,7 @@ import { useRealtime } from "@/hooks/use-realtime";
 import { optimizeImg, srcSet } from "@/lib/img";
 import { invalidateRunCache, run } from "@/lib/api";
 import { getPublicStoreSettings } from "@/lib/store-settings";
+import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -92,7 +93,9 @@ function HomePage() {
     queryKey: ["home"],
     queryFn: fetchHome,
     initialData: initial,
-    staleTime: 5 * 60_000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
   });
   const featured = data?.featured ?? [];
   const sale = data?.sale ?? [];
@@ -111,6 +114,10 @@ function HomePage() {
     const id = setTimeout(() => setRtReady(true), 1500);
     return () => clearTimeout(id);
   }, []);
+  useEffect(() => subscribeAppDataChanges(() => {
+    clearAppDataCaches();
+    refetch();
+  }), [refetch]);
   useEffect(() => {
     const start = () => setShowDeferredMedia(true);
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
@@ -132,19 +139,15 @@ function HomePage() {
     return () => clearTimeout(id);
   }, [heroVideo]);
   useRealtime(rtReady ? "products" : "", () => {
-    invalidateRunCache("home:");
-    try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+    clearAppDataCaches();
     refetch();
   });
   useRealtime(rtReady ? "categories" : "", () => {
-    invalidateRunCache("home:");
-    try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+    clearAppDataCaches();
     refetch();
   });
   useRealtime(rtReady ? "store_settings" : "", () => {
-    invalidateRunCache("store_settings:public");
-    invalidateRunCache("home:");
-    try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+    clearAppDataCaches();
     refetch();
   });
 
