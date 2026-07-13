@@ -21,6 +21,8 @@ import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync
 import { isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
 import { useMediaPreload } from "@/hooks/use-media-preload";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useCachedMedia } from "@/hooks/use-cached-media";
+import { warmMediaCache, pruneMediaCache } from "@/lib/media-cache";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeSettingsQueryOptions()),
@@ -189,6 +191,20 @@ function HomePage() {
 
   useMediaPreload(heroVideo, heroPoster);
 
+  // Persistent local cache: serve hero video & poster from the browser's
+  // Cache Storage on repeat visits (0ms), while keeping cloud as source of truth.
+  const cachedHeroVideo = useCachedMedia(isDirectHeroVideo ? heroVideo : "");
+  const cachedHeroPoster = useCachedMedia(heroPoster);
+  const heroVideoSrc = cachedHeroVideo || heroVideo;
+  const heroPosterSrc = cachedHeroPoster || heroPoster;
+
+  // Warm cache for carousel slides + prune deleted assets on every settings load.
+  useEffect(() => {
+    const keep = [heroVideo, hero?.image, ...slides].filter(Boolean) as string[];
+    warmMediaCache(keep);
+    void pruneMediaCache(keep);
+  }, [heroVideo, hero?.image, slides]);
+
   // Defer realtime subscriptions until after first paint so they don't slow TTI.
   const [rtReady, setRtReady] = useState(false);
   useEffect(() => {
@@ -263,13 +279,13 @@ function HomePage() {
           {isDirectHeroVideo ? (
             <video
               ref={heroVideoRef}
-              src={heroVideo}
+              src={heroVideoSrc}
               autoPlay
               muted
               loop
               playsInline
               preload="auto"
-              poster={heroPoster || undefined}
+              poster={heroPosterSrc || undefined}
               onLoadedData={() => setHeroVideoReady(true)}
               onCanPlay={() => setHeroVideoReady(true)}
               onPlaying={() => setHeroVideoReady(true)}
@@ -292,8 +308,8 @@ function HomePage() {
             />
           ) : (
             <img
-              src={optimizeImg(hero.image, { w: 1920, q: 75 })}
-              srcSet={srcSet(hero.image, 1280, 75)}
+              src={heroPosterSrc || optimizeImg(hero.image, { w: 1920, q: 75 })}
+              srcSet={heroPosterSrc ? undefined : srcSet(hero.image, 1280, 75)}
               sizes="100vw"
               alt="Hero"
               fetchPriority="high"
