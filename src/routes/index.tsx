@@ -182,7 +182,7 @@ function HomePage() {
   const heroFit = isMobile ? (hero?.fit_mobile ?? hero?.fit ?? "cover") : (hero?.fit ?? "cover");
   const heroHeightVh = isMobile ? (hero?.height_mobile ?? 78) : (hero?.height_desktop ?? 78);
   const heroScale = isMobile ? (hero?.scale_mobile ?? hero?.scale ?? 1.05) : (hero?.scale ?? 1.05);
-  const heroSectionStyle: React.CSSProperties = {
+  const heroSectionStyle: CSSProperties = {
     height: `${heroHeightVh}vh`,
     minHeight: isMobile ? 380 : 560,
   };
