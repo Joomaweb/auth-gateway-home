@@ -18,7 +18,25 @@ export const Route = createFileRoute("/admin/settings")({
 
 type ShippingMethod = { name: string; price: number };
 type ShippingZone = { name: string; price: number; eta: string };
-type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number; show_overlay?: boolean };
+type Hero = {
+  image: string;
+  title: string;
+  subtitle: string;
+  cta_text: string;
+  cta_link: string;
+  badge: string;
+  pos_x?: number;
+  pos_y?: number;
+  pos_x_mobile?: number;
+  pos_y_mobile?: number;
+  fit?: "cover" | "contain";
+  fit_mobile?: "cover" | "contain";
+  height_desktop?: number;
+  height_mobile?: number;
+  scale?: number;
+  scale_mobile?: number;
+  show_overlay?: boolean;
+};
 type Branding = {
   logo_url: string;
   favicon_url: string;
@@ -66,6 +84,14 @@ const DEFAULT_HERO: Hero = {
   badge: "Atelier · 2026",
   pos_x: 50,
   pos_y: 50,
+  pos_x_mobile: 50,
+  pos_y_mobile: 50,
+  fit: "cover",
+  fit_mobile: "cover",
+  height_desktop: 78,
+  height_mobile: 78,
+  scale: 1.05,
+  scale_mobile: 1.05,
   show_overlay: true,
 };
 const DEFAULT_BRANDING: Branding = {
@@ -371,31 +397,97 @@ function AdminSettings() {
             </div>
           </div>
 
-          {/* Position controls (apply to image OR video) */}
-          <div className="grid grid-cols-2 gap-4 pt-2">
-            <div className="space-y-1">
-              <Label className="flex justify-between text-xs">
-                <span>מיקום אופקי (X)</span>
-                <span className="text-muted-foreground">{hero.pos_x ?? 50}%</span>
-              </Label>
-              <input type="range" min={0} max={100} value={hero.pos_x ?? 50}
-                onChange={(e) => setHero({ ...hero, pos_x: Number(e.target.value) })}
-                className="w-full accent-primary" />
+          {/* Desktop layout controls */}
+          <div className="rounded-lg border p-4 space-y-3 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-sm">🖥️ תצוגה למחשב (Desktop)</h4>
+              <button type="button"
+                onClick={() => setHero({ ...hero, pos_x: 50, pos_y: 50, scale: 1.05, height_desktop: 78, fit: "cover" })}
+                className="text-xs text-muted-foreground hover:text-foreground underline">איפוס</button>
             </div>
-            <div className="space-y-1">
-              <Label className="flex justify-between text-xs">
-                <span>מיקום אנכי (Y)</span>
-                <span className="text-muted-foreground">{hero.pos_y ?? 50}%</span>
-              </Label>
-              <input type="range" min={0} max={100} value={hero.pos_y ?? 50}
-                onChange={(e) => setHero({ ...hero, pos_y: Number(e.target.value) })}
-                className="w-full accent-primary" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="flex justify-between text-xs"><span>מיקום אופקי X</span><span className="text-muted-foreground">{hero.pos_x ?? 50}%</span></Label>
+                <input type="range" min={0} max={100} value={hero.pos_x ?? 50}
+                  onChange={(e) => setHero({ ...hero, pos_x: Number(e.target.value) })} className="w-full accent-primary" />
+              </div>
+              <div className="space-y-1">
+                <Label className="flex justify-between text-xs"><span>מיקום אנכי Y</span><span className="text-muted-foreground">{hero.pos_y ?? 50}%</span></Label>
+                <input type="range" min={0} max={100} value={hero.pos_y ?? 50}
+                  onChange={(e) => setHero({ ...hero, pos_y: Number(e.target.value) })} className="w-full accent-primary" />
+              </div>
+              <div className="space-y-1">
+                <Label className="flex justify-between text-xs"><span>גובה הבאנר</span><span className="text-muted-foreground">{hero.height_desktop ?? 78}vh</span></Label>
+                <input type="range" min={40} max={100} value={hero.height_desktop ?? 78}
+                  onChange={(e) => setHero({ ...hero, height_desktop: Number(e.target.value) })} className="w-full accent-primary" />
+              </div>
+              <div className="space-y-1">
+                <Label className="flex justify-between text-xs"><span>זום / מתיחה</span><span className="text-muted-foreground">{(hero.scale ?? 1.05).toFixed(2)}x</span></Label>
+                <input type="range" min={1} max={2} step={0.05} value={hero.scale ?? 1.05}
+                  onChange={(e) => setHero({ ...hero, scale: Number(e.target.value) })} className="w-full accent-primary" />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label className="text-xs">מילוי המסגרת</Label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setHero({ ...hero, fit: "cover" })}
+                    className={`flex-1 text-xs px-3 py-2 rounded border ${(hero.fit ?? "cover") === "cover" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}>
+                    Cover (חיתוך למילוי מלא)
+                  </button>
+                  <button type="button" onClick={() => setHero({ ...hero, fit: "contain" })}
+                    className={`flex-1 text-xs px-3 py-2 rounded border ${hero.fit === "contain" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}>
+                    Contain (הסרטון כולו נראה)
+                  </button>
+                </div>
+              </div>
             </div>
-            <button type="button" onClick={() => setHero({ ...hero, pos_x: 50, pos_y: 50 })}
-              className="col-span-2 text-xs text-muted-foreground hover:text-foreground underline justify-self-start">
-              איפוס למרכז
-            </button>
           </div>
+
+          {/* Mobile layout controls */}
+          <div className="rounded-lg border p-4 space-y-3 bg-muted/20">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-sm">📱 תצוגה למובייל (Mobile)</h4>
+              <button type="button"
+                onClick={() => setHero({ ...hero, pos_x_mobile: 50, pos_y_mobile: 50, scale_mobile: 1.05, height_mobile: 70, fit_mobile: "cover" })}
+                className="text-xs text-muted-foreground hover:text-foreground underline">איפוס</button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <Label className="flex justify-between text-xs"><span>מיקום אופקי X</span><span className="text-muted-foreground">{hero.pos_x_mobile ?? 50}%</span></Label>
+                <input type="range" min={0} max={100} value={hero.pos_x_mobile ?? 50}
+                  onChange={(e) => setHero({ ...hero, pos_x_mobile: Number(e.target.value) })} className="w-full accent-primary" />
+              </div>
+              <div className="space-y-1">
+                <Label className="flex justify-between text-xs"><span>מיקום אנכי Y</span><span className="text-muted-foreground">{hero.pos_y_mobile ?? 50}%</span></Label>
+                <input type="range" min={0} max={100} value={hero.pos_y_mobile ?? 50}
+                  onChange={(e) => setHero({ ...hero, pos_y_mobile: Number(e.target.value) })} className="w-full accent-primary" />
+              </div>
+              <div className="space-y-1">
+                <Label className="flex justify-between text-xs"><span>גובה הבאנר</span><span className="text-muted-foreground">{hero.height_mobile ?? 70}vh</span></Label>
+                <input type="range" min={40} max={100} value={hero.height_mobile ?? 70}
+                  onChange={(e) => setHero({ ...hero, height_mobile: Number(e.target.value) })} className="w-full accent-primary" />
+              </div>
+              <div className="space-y-1">
+                <Label className="flex justify-between text-xs"><span>זום / מתיחה</span><span className="text-muted-foreground">{(hero.scale_mobile ?? 1.05).toFixed(2)}x</span></Label>
+                <input type="range" min={1} max={2} step={0.05} value={hero.scale_mobile ?? 1.05}
+                  onChange={(e) => setHero({ ...hero, scale_mobile: Number(e.target.value) })} className="w-full accent-primary" />
+              </div>
+              <div className="space-y-1 col-span-2">
+                <Label className="text-xs">מילוי המסגרת</Label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setHero({ ...hero, fit_mobile: "cover" })}
+                    className={`flex-1 text-xs px-3 py-2 rounded border ${(hero.fit_mobile ?? "cover") === "cover" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}>
+                    Cover (חיתוך למילוי מלא)
+                  </button>
+                  <button type="button" onClick={() => setHero({ ...hero, fit_mobile: "contain" })}
+                    className={`flex-1 text-xs px-3 py-2 rounded border ${hero.fit_mobile === "contain" ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted"}`}>
+                    Contain (הסרטון כולו נראה)
+                  </button>
+                </div>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">בסרטונים אנכיים במובייל השתמש ב־Contain כדי לראות את הסרטון במלואו בלי חיתוך.</p>
+          </div>
+
 
           <label className="flex items-center justify-between gap-3 p-3 rounded border bg-muted/30">
             <div>

@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { PublicLayout } from "@/components/layout/PublicLayout";
@@ -20,6 +20,7 @@ import { getPublicStoreSettings } from "@/lib/store-settings";
 import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
 import { isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
 import { useMediaPreload } from "@/hooks/use-media-preload";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeSettingsQueryOptions()),
@@ -36,6 +37,14 @@ type Hero = {
   badge: string;
   pos_x?: number;
   pos_y?: number;
+  pos_x_mobile?: number;
+  pos_y_mobile?: number;
+  fit?: "cover" | "contain";
+  fit_mobile?: "cover" | "contain";
+  height_desktop?: number; // vh
+  height_mobile?: number; // vh
+  scale?: number; // 1 - 2
+  scale_mobile?: number;
   show_overlay?: boolean;
 };
 
@@ -164,9 +173,19 @@ function HomePage() {
   const hero = settingsQ.data?.hero ?? null;
   const heroVideo = settingsQ.data?.heroVideo?.trim() ?? "";
   const slides = settingsQ.data?.slides ?? [];
+  const isMobile = useIsMobile();
   const isDirectHeroVideo = isDirectVideoUrl(heroVideo);
   const heroPoster = hero?.image ? optimizeImg(hero.image, { w: 1920, q: 65 }) : "";
-  const heroPosition = `${hero?.pos_x ?? 50}% ${hero?.pos_y ?? 50}%`;
+  const heroPosX = isMobile ? (hero?.pos_x_mobile ?? hero?.pos_x ?? 50) : (hero?.pos_x ?? 50);
+  const heroPosY = isMobile ? (hero?.pos_y_mobile ?? hero?.pos_y ?? 50) : (hero?.pos_y ?? 50);
+  const heroPosition = `${heroPosX}% ${heroPosY}%`;
+  const heroFit = isMobile ? (hero?.fit_mobile ?? hero?.fit ?? "cover") : (hero?.fit ?? "cover");
+  const heroHeightVh = isMobile ? (hero?.height_mobile ?? 78) : (hero?.height_desktop ?? 78);
+  const heroScale = isMobile ? (hero?.scale_mobile ?? hero?.scale ?? 1.05) : (hero?.scale ?? 1.05);
+  const heroSectionStyle: CSSProperties = {
+    height: `${heroHeightVh}vh`,
+    minHeight: isMobile ? 380 : 560,
+  };
 
   useMediaPreload(heroVideo, heroPoster);
 
@@ -227,16 +246,19 @@ function HomePage() {
         <section className="relative h-[78vh] min-h-[560px] bg-muted animate-pulse" />
       ) : (
         <section
-          className="relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden bg-muted"
-          style={
-            heroVideo && heroPoster
+          className="relative flex items-center justify-center overflow-hidden bg-muted"
+          style={{
+            ...heroSectionStyle,
+            ...(heroVideo && heroPoster
               ? {
                   backgroundImage: `url(${heroPoster})`,
-                  backgroundSize: "cover",
+                  backgroundSize: heroFit,
                   backgroundPosition: heroPosition,
+                  backgroundRepeat: "no-repeat",
+                  backgroundColor: "hsl(var(--muted))",
                 }
-              : undefined
-          }
+              : {}),
+          }}
         >
           {isDirectHeroVideo ? (
             <video
@@ -251,8 +273,12 @@ function HomePage() {
               onLoadedData={() => setHeroVideoReady(true)}
               onCanPlay={() => setHeroVideoReady(true)}
               onPlaying={() => setHeroVideoReady(true)}
-              className={`absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-200 ${heroVideoReady || !heroPoster ? "opacity-100" : "opacity-0"}`}
-              style={{ objectPosition: heroPosition }}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-200 ${heroVideoReady || !heroPoster ? "opacity-100" : "opacity-0"}`}
+              style={{
+                objectFit: heroFit,
+                objectPosition: heroPosition,
+                transform: `scale(${heroScale})`,
+              }}
             />
           ) : heroVideo ? (
             <iframe
@@ -262,6 +288,7 @@ function HomePage() {
               allowFullScreen
               loading="eager"
               className="absolute inset-0 w-[177.78vh] min-w-full h-[56.25vw] min-h-full -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 pointer-events-none"
+              style={{ transform: `translate(-50%, -50%) scale(${heroScale})` }}
             />
           ) : (
             <img
@@ -271,8 +298,12 @@ function HomePage() {
               alt="Hero"
               fetchPriority="high"
               decoding="async"
-              className="absolute inset-0 w-full h-full object-cover scale-105"
-              style={{ objectPosition: heroPosition }}
+              className="absolute inset-0 w-full h-full"
+              style={{
+                objectFit: heroFit,
+                objectPosition: heroPosition,
+                transform: `scale(${heroScale})`,
+              }}
             />
           )}
 
