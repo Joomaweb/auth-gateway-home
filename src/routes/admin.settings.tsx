@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
+import { useRealtime } from "@/hooks/use-realtime";
 import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/settings")({
@@ -96,7 +97,7 @@ function AdminSettings() {
   const [busy, setBusy] = useState(false);
   const [uploadingVid, setUploadingVid] = useState(false);
 
-  useEffect(() => {
+  const loadSettings = () => {
     supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
       if (!data) return;
       setShipping(shippingMethodsFrom(data.shipping_methods));
@@ -110,7 +111,12 @@ function AdminSettings() {
       setShowFeatured(data.show_featured ?? true);
       setShowSale(data.show_sale ?? true);
     });
+  };
+
+  useEffect(() => {
+    loadSettings();
   }, []);
+  useRealtime("store_settings", loadSettings, "id=eq.1");
 
   const uploadTo = async (file: File, onDone: (url: string) => void) => {
     if (!user) { toast.error("Not signed in"); return; }

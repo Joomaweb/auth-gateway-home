@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { useRealtime } from "@/hooks/use-realtime";
 import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/legal")({
@@ -18,11 +19,16 @@ function AdminLegal() {
   const [legal, setLegal] = useState<Legal>(DEFAULT_LEGAL);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
+  const loadLegal = () => {
     supabase.from("store_settings").select("legal").eq("id", 1).maybeSingle().then(({ data }) => {
       if (data?.legal) setLegal({ ...DEFAULT_LEGAL, ...(data.legal as Legal) });
     });
+  };
+
+  useEffect(() => {
+    loadLegal();
   }, []);
+  useRealtime("store_settings", loadLegal, "id=eq.1");
 
   const save = async (e: FormEvent) => {
     e.preventDefault();

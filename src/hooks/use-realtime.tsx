@@ -3,7 +3,7 @@ import { supabase } from "@/lib/supabase";
 
 /**
  * Subscribe to Postgres changes on a Supabase table and call onChange on any
- * INSERT / UPDATE / DELETE. Cleans up on unmount. Debounced 800ms to coalesce
+ * INSERT / UPDATE / DELETE. Cleans up on unmount. Debounced 200ms to coalesce
  * bursts (e.g. bulk product edits) into a single reload.
  */
 export function useRealtime(
