@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRealtime } from "@/hooks/use-realtime";
 import { ChevronRight } from "lucide-react";
 import { optimizeImg, srcSet } from "@/lib/img";
-import { run } from "@/lib/api";
+import { invalidateRunCache, run } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 type Search = { category?: string; sort?: string };
@@ -119,8 +119,14 @@ function ShopPage() {
   // Defer realtime until after first paint.
   const [rtReady, setRtReady] = useState(false);
   useEffect(() => { const id = setTimeout(() => setRtReady(true), 1500); return () => clearTimeout(id); }, []);
-  useRealtime(rtReady && !showSubcategories ? "products" : "", () => prodQ.refetch());
-  useRealtime(rtReady ? "categories" : "", () => catsQ.refetch());
+  useRealtime(rtReady && !showSubcategories ? "products" : "", () => {
+    invalidateRunCache("shop:prods:");
+    prodQ.refetch();
+  });
+  useRealtime(rtReady ? "categories" : "", () => {
+    invalidateRunCache("shop:cats");
+    catsQ.refetch();
+  });
 
   const products = useMemo(() => {
     return showSubcategories ? [] : allProducts;

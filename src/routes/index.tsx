@@ -131,10 +131,20 @@ function HomePage() {
     const id = setTimeout(start, 1000);
     return () => clearTimeout(id);
   }, [heroVideo]);
-  useRealtime(rtReady ? "products" : "", () => refetch());
-  useRealtime(rtReady ? "categories" : "", () => refetch());
+  useRealtime(rtReady ? "products" : "", () => {
+    invalidateRunCache("home:");
+    try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+    refetch();
+  });
+  useRealtime(rtReady ? "categories" : "", () => {
+    invalidateRunCache("home:");
+    try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+    refetch();
+  });
   useRealtime(rtReady ? "store_settings" : "", () => {
     invalidateRunCache("store_settings:public");
+    invalidateRunCache("home:");
+    try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
     refetch();
   });
 
