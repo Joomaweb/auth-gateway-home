@@ -358,11 +358,13 @@ function HomePage() {
               >
                 <img
                   src={optimizeImg(
-                    c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800",
+                    c.image_url ??
+                      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800",
                     { w: 600 },
                   )}
                   srcSet={srcSet(
-                    c.image_url ?? "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800",
+                    c.image_url ??
+                      "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=800",
                     600,
                   )}
                   sizes="33vw"
