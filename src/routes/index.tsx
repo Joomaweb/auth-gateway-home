@@ -246,16 +246,19 @@ function HomePage() {
         <section className="relative h-[78vh] min-h-[560px] bg-muted animate-pulse" />
       ) : (
         <section
-          className="relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden bg-muted"
-          style={
-            heroVideo && heroPoster
+          className="relative flex items-center justify-center overflow-hidden bg-muted"
+          style={{
+            ...heroSectionStyle,
+            ...(heroVideo && heroPoster
               ? {
                   backgroundImage: `url(${heroPoster})`,
-                  backgroundSize: "cover",
+                  backgroundSize: heroFit,
                   backgroundPosition: heroPosition,
+                  backgroundRepeat: "no-repeat",
+                  backgroundColor: "hsl(var(--muted))",
                 }
-              : undefined
-          }
+              : {}),
+          }}
         >
           {isDirectHeroVideo ? (
             <video
@@ -270,8 +273,12 @@ function HomePage() {
               onLoadedData={() => setHeroVideoReady(true)}
               onCanPlay={() => setHeroVideoReady(true)}
               onPlaying={() => setHeroVideoReady(true)}
-              className={`absolute inset-0 w-full h-full object-cover scale-105 transition-opacity duration-200 ${heroVideoReady || !heroPoster ? "opacity-100" : "opacity-0"}`}
-              style={{ objectPosition: heroPosition }}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-200 ${heroVideoReady || !heroPoster ? "opacity-100" : "opacity-0"}`}
+              style={{
+                objectFit: heroFit,
+                objectPosition: heroPosition,
+                transform: `scale(${heroScale})`,
+              }}
             />
           ) : heroVideo ? (
             <iframe
@@ -281,6 +288,7 @@ function HomePage() {
               allowFullScreen
               loading="eager"
               className="absolute inset-0 w-[177.78vh] min-w-full h-[56.25vw] min-h-full -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2 pointer-events-none"
+              style={{ transform: `translate(-50%, -50%) scale(${heroScale})` }}
             />
           ) : (
             <img
@@ -290,8 +298,12 @@ function HomePage() {
               alt="Hero"
               fetchPriority="high"
               decoding="async"
-              className="absolute inset-0 w-full h-full object-cover scale-105"
-              style={{ objectPosition: heroPosition }}
+              className="absolute inset-0 w-full h-full"
+              style={{
+                objectFit: heroFit,
+                objectPosition: heroPosition,
+                transform: `scale(${heroScale})`,
+              }}
             />
           )}
 
