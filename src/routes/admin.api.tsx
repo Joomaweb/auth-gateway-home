@@ -4,7 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Check, KeyRound, Radio, ShieldCheck, Smartphone, Play, Square, Trash2, Activity } from "lucide-react";
+import {
+  Activity,
+  Check,
+  Copy,
+  KeyRound,
+  Play,
+  Radio,
+  ShieldCheck,
+  Smartphone,
+  Square,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
@@ -14,11 +25,11 @@ export const Route = createFileRoute("/admin/api")({
   component: AdminApi,
 });
 
-const SUPABASE_URL =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? "";
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? "";
 const SUPABASE_ANON_KEY =
-  ((import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
-    (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)) ?? "";
+  (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
+  "";
 
 function CopyBlock({ value, label }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -71,12 +82,43 @@ type LogEntry = {
   text: string;
 };
 
+const REALTIME_TABLES = [
+  { table: "products", label: "מוצרים" },
+  { table: "product_variants", label: "וריאנטים ומלאי" },
+  { table: "categories", label: "קטגוריות" },
+  { table: "store_settings", label: "הגדרות / מדיה / תשלומים" },
+  { table: "orders", label: "הזמנות" },
+  { table: "order_items", label: "פריטי הזמנה" },
+  { table: "profiles", label: "לקוחות" },
+  { table: "conversations", label: "שיחות" },
+  { table: "messages", label: "הודעות צ'אט" },
+] as const;
+
+type RealtimeTable = (typeof REALTIME_TABLES)[number]["table"];
+type RealtimeStatus = "idle" | "connecting" | "live" | "error";
+type RealtimePayload = {
+  eventType?: string;
+  new?: { id?: unknown } | null;
+  old?: { id?: unknown } | null;
+};
+type AuthSession = { access_token?: string | null } | null;
+
 function RealtimeTester() {
-  const [orderStatus, setOrderStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
-  const [msgStatus, setMsgStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
+  const [statuses, setStatuses] = useState<Record<RealtimeTable, RealtimeStatus>>(() =>
+    REALTIME_TABLES.reduce(
+      (acc, { table }) => ({ ...acc, [table]: "idle" }),
+      {} as Record<RealtimeTable, RealtimeStatus>,
+    ),
+  );
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const channelsRef = useRef<{ orders?: any; messages?: any }>({});
+  const channelsRef = useRef<Partial<Record<RealtimeTable, ReturnType<typeof supabase.channel>>>>(
+    {},
+  );
   const idRef = useRef(0);
+
+  const setTableStatus = (table: RealtimeTable, status: RealtimeStatus) => {
+    setStatuses((prev) => ({ ...prev, [table]: status }));
+  };
 
   const log = (level: LogEntry["level"], text: string) => {
     idRef.current += 1;
@@ -89,63 +131,59 @@ function RealtimeTester() {
     setLogs((prev) => [entry, ...prev].slice(0, 80));
   };
 
-  const subscribe = (
-    table: "orders" | "messages",
-    setStatus: typeof setOrderStatus,
-  ) => {
+  const subscribe = (table: RealtimeTable) => {
     if (channelsRef.current[table]) {
       log("info", `כבר מחובר ל-${table}`);
       return;
     }
-    setStatus("connecting");
+    setTableStatus(table, "connecting");
     log("info", `מתחבר ל-Realtime · ${table}…`);
     const channel = supabase
       .channel(`rt-${table}-${Date.now()}`)
-      .on(
-        "postgres_changes" as any,
-        { event: "*", schema: "public", table },
-        (payload: any) => {
-          const row = payload.new ?? payload.old ?? {};
-          log(
-            "success",
-            `${table} · ${payload.eventType} · ${row.id ? "#" + String(row.id).slice(0, 8) : ""}`,
-          );
-        },
-      )
+      .on("postgres_changes" as never, { event: "*", schema: "public", table }, ((
+        payload: RealtimePayload,
+      ) => {
+        const row = payload.new ?? payload.old ?? {};
+        log(
+          "success",
+          `${table} · ${payload.eventType} · ${row.id ? "#" + String(row.id).slice(0, 8) : ""}`,
+        );
+      }) as never)
       .subscribe((status: string, err?: Error) => {
         if (status === "SUBSCRIBED") {
-          setStatus("live");
+          setTableStatus(table, "live");
           log("success", `מחובר בהצלחה ל-${table} ✓`);
           toast.success(`Realtime · ${table} פעיל`);
         } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          setStatus("error");
+          setTableStatus(table, "error");
           log("error", `שגיאת חיבור ל-${table}: ${err?.message || status}`);
           toast.error(`כשל בחיבור ל-${table}`);
         } else if (status === "CLOSED") {
-          setStatus("idle");
+          setTableStatus(table, "idle");
           log("info", `החיבור ל-${table} נסגר`);
         }
       });
     channelsRef.current[table] = channel;
   };
 
-  const unsubscribe = (table: "orders" | "messages", setStatus: typeof setOrderStatus) => {
+  const unsubscribe = (table: RealtimeTable) => {
     const ch = channelsRef.current[table];
     if (ch) {
       supabase.removeChannel(ch);
       channelsRef.current[table] = undefined;
-      setStatus("idle");
+      setTableStatus(table, "idle");
       log("info", `נותק מ-${table}`);
     }
   };
 
   useEffect(() => {
+    const channels = channelsRef.current;
     return () => {
-      Object.values(channelsRef.current).forEach((c) => c && supabase.removeChannel(c));
+      Object.values(channels).forEach((c) => c && supabase.removeChannel(c));
     };
   }, []);
 
-  const StatusDot = ({ s }: { s: typeof orderStatus }) => {
+  const StatusDot = ({ s }: { s: RealtimeStatus }) => {
     const map = {
       idle: "bg-muted-foreground/40",
       connecting: "bg-amber-500 animate-pulse",
@@ -165,12 +203,10 @@ function RealtimeTester() {
     table,
     label,
     status,
-    setStatus,
   }: {
-    table: "orders" | "messages";
+    table: RealtimeTable;
     label: string;
-    status: typeof orderStatus;
-    setStatus: typeof setOrderStatus;
+    status: RealtimeStatus;
   }) => (
     <div className="flex items-center justify-between gap-3 p-3 rounded-md border bg-muted/30">
       <div className="flex items-center gap-3">
@@ -185,11 +221,11 @@ function RealtimeTester() {
       <div className="flex items-center gap-3">
         <StatusDot s={status} />
         {status === "live" || status === "connecting" ? (
-          <Button size="sm" variant="outline" onClick={() => unsubscribe(table, setStatus)}>
+          <Button size="sm" variant="outline" onClick={() => unsubscribe(table)}>
             <Square className="h-3.5 w-3.5 me-1.5" /> נתק
           </Button>
         ) : (
-          <Button size="sm" onClick={() => subscribe(table, setStatus)}>
+          <Button size="sm" onClick={() => subscribe(table)}>
             <Play className="h-3.5 w-3.5 me-1.5" /> חבר
           </Button>
         )}
@@ -208,7 +244,7 @@ function RealtimeTester() {
             <div>
               <CardTitle className="text-lg">בדיקת Realtime חיה</CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Subscribe להזמנות והודעות — לוגים בזמן אמת
+                Subscribe לכל טבלאות החנות הקריטיות — לוגים בזמן אמת
               </p>
             </div>
           </div>
@@ -219,8 +255,9 @@ function RealtimeTester() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-2.5 md:grid-cols-2">
-          <Row table="orders" label="הזמנות" status={orderStatus} setStatus={setOrderStatus} />
-          <Row table="messages" label="הודעות צ'אט" status={msgStatus} setStatus={setMsgStatus} />
+          {REALTIME_TABLES.map(({ table, label }) => (
+            <Row key={table} table={table} label={label} status={statuses[table]} />
+          ))}
         </div>
 
         <div
@@ -240,8 +277,8 @@ function RealtimeTester() {
                     l.level === "success"
                       ? "text-emerald-400"
                       : l.level === "error"
-                      ? "text-rose-400"
-                      : "text-amber-300"
+                        ? "text-rose-400"
+                        : "text-amber-300"
                   }
                 >
                   {l.level === "success" ? "✓" : l.level === "error" ? "✗" : "•"}
@@ -255,8 +292,8 @@ function RealtimeTester() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          טיפ: פתחו טאב נוסף, צרו הזמנה או שלחו הודעה — האירוע יופיע כאן מיידית.
-          אם יש שגיאה, ודאו ש-Realtime מופעל לטבלה ב-Supabase ושלמשתמש שלכם תפקיד <code>admin</code>.
+          טיפ: פתחו טאב נוסף, צרו הזמנה או שלחו הודעה — האירוע יופיע כאן מיידית. אם יש שגיאה, ודאו
+          ש-Realtime מופעל לטבלה ב-Supabase ושלמשתמש שלכם תפקיד <code>admin</code>.
         </p>
       </CardContent>
     </Card>
@@ -264,7 +301,7 @@ function RealtimeTester() {
 }
 
 function AdminApi() {
-  const { user, session } = useAuth() as ReturnType<typeof useAuth> & { session: any };
+  const { user, session } = useAuth() as ReturnType<typeof useAuth> & { session?: AuthSession };
   const accessToken = session?.access_token ?? "";
 
   const reactNativeSnippet = `// React Native / Expo
@@ -375,9 +412,9 @@ curl '${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc' \\
           )}
           <p className="text-xs text-muted-foreground leading-relaxed">
             ה-Anon Key פומבי ובטוח לשמור באפליקציה. ההרשאות נשלטות על ידי{" "}
-            <span className="text-gold font-medium">RLS + user_roles</span>: לאחר התחברות עם משתמש שהוא{" "}
-            <code className="text-foreground">admin</code> ב-<code>user_roles</code>, יש גישה מלאה לכל
-            הטבלאות.
+            <span className="text-gold font-medium">RLS + user_roles</span>: לאחר התחברות עם משתמש
+            שהוא <code className="text-foreground">admin</code> ב-<code>user_roles</code>, יש גישה
+            מלאה לכל הטבלאות.
           </p>
         </CardContent>
       </Card>
@@ -439,8 +476,8 @@ curl '${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc' \\
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            כדי להעניק לאפליקציה הצידית של המוכר/הסוכן גישת אדמין מלאה, הרץ את הפקודה הבאה ב-SQL Editor של
-            Supabase לאחר שהמשתמש נרשם:
+            כדי להעניק לאפליקציה הצידית של המוכר/הסוכן גישת אדמין מלאה, הרץ את הפקודה הבאה ב-SQL
+            Editor של Supabase לאחר שהמשתמש נרשם:
           </p>
           <CopyBlock
             value={`INSERT INTO public.user_roles (user_id, role)

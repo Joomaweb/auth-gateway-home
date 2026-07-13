@@ -6,6 +6,7 @@ import { useActiveTheme } from "@/hooks/use-active-theme";
 import { Button } from "@/components/ui/button";
 import { Check, Palette } from "lucide-react";
 import { toast } from "sonner";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/themes")({
   component: AdminThemes,
@@ -68,7 +69,10 @@ function AdminThemes() {
     const { error } = await supabase.from("store_settings").upsert({ id: 1, active_theme: id });
     setBusy(null);
     if (error) toast.error(error.message);
-    else toast.success("העיצוב הוחל בזמן אמת בכל האתר");
+    else {
+      signalAppDataChanged("store_settings");
+      toast.success("העיצוב הוחל בזמן אמת בכל האתר");
+    }
   };
 
   return (

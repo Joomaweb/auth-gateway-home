@@ -3,14 +3,10 @@ import { supabase } from "@/lib/supabase";
 
 /**
  * Subscribe to Postgres changes on a Supabase table and call onChange on any
- * INSERT / UPDATE / DELETE. Cleans up on unmount. Debounced 800ms to coalesce
+ * INSERT / UPDATE / DELETE. Cleans up on unmount. Debounced 200ms to coalesce
  * bursts (e.g. bulk product edits) into a single reload.
  */
-export function useRealtime(
-  table: string,
-  onChange: () => void,
-  filter?: string,
-) {
+export function useRealtime(table: string, onChange: () => void, filter?: string) {
   const cbRef = useRef(onChange);
   cbRef.current = onChange;
 
@@ -19,7 +15,7 @@ export function useRealtime(
     let timer: ReturnType<typeof setTimeout> | undefined;
     const trigger = () => {
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => cbRef.current(), 800);
+      timer = setTimeout(() => cbRef.current(), 200);
     };
     const channelName = `rt-${table}-${filter ?? "all"}-${Math.random().toString(36).slice(2, 8)}`;
     const ch = supabase

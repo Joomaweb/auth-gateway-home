@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase";
 import { invalidateRunCache, run } from "@/lib/api";
+import { subscribeAppDataChanges } from "@/lib/realtime-sync";
 
 export type PublicStoreSettings = {
   branding?: unknown;
@@ -28,6 +29,7 @@ type Listener = (settings: PublicStoreSettings) => void;
 
 const listeners = new Set<Listener>();
 let channel: ReturnType<typeof supabase.channel> | null = null;
+let unsubscribeSignals: (() => void) | null = null;
 
 export function subscribePublicStoreSettings(listener: Listener) {
   listeners.add(listener);
@@ -40,6 +42,13 @@ export function subscribePublicStoreSettings(listener: Listener) {
         listeners.forEach((fn) => fn(row));
       })
       .subscribe();
+    unsubscribeSignals = subscribeAppDataChanges((detail) => {
+      if (detail.area !== "all" && detail.area !== "store_settings" && detail.area !== "storage") return;
+      invalidateRunCache(SETTINGS_KEY);
+      getPublicStoreSettings()
+        .then((settings) => listeners.forEach((fn) => fn(settings)))
+        .catch(() => {});
+    });
   }
 
   return () => {
@@ -47,6 +56,8 @@ export function subscribePublicStoreSettings(listener: Listener) {
     if (listeners.size === 0 && channel) {
       supabase.removeChannel(channel);
       channel = null;
+      unsubscribeSignals?.();
+      unsubscribeSignals = null;
     }
   };
 }

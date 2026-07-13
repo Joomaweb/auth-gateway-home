@@ -14,6 +14,7 @@ import { PayPalCheckout } from "@/components/checkout/PayPalCheckout";
 import { SquareCheckout } from "@/components/checkout/SquareCheckout";
 import { useServerFn } from "@tanstack/react-start";
 import { chargeSquarePayment } from "@/lib/square.functions";
+import { useRealtime } from "@/hooks/use-realtime";
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
@@ -108,33 +109,48 @@ function CheckoutPage() {
   const [payment, setPayment] = useState<string>("");
   const [busy, setBusy] = useState(false);
 
+  const applyStoreSettings = (data: any) => {
+    if (!data) return;
+    const paypal = paypalFrom(data.paypal);
+    const square = squareFrom(data.square);
+    const baseMethods = paymentMethodsFrom(data.payment_methods);
+    let methods = baseMethods;
+    if (square.enabled && square.application_id && square.location_id) {
+      methods = [{ name: "Square", enabled: true }, ...methods.filter((m) => m.name !== "Square")];
+    }
+    if (paypal.enabled && paypal.client_id) {
+      methods = [{ name: "PayPal", enabled: true }, ...methods.filter((m) => m.name !== "PayPal")];
+    }
+    const shippingMethods = shippingMethodsFrom(data.shipping_zones, data.shipping_methods);
+    setSettings({
+      shipping_methods: shippingMethods,
+      payment_methods: methods,
+      free_shipping_threshold: data.free_shipping_threshold,
+      paypal,
+      square,
+    });
+    setPayment((current) => {
+      if (current && methods.some((m) => m.enabled && m.name === current)) return current;
+      return methods.find((m) => m.enabled)?.name ?? "";
+    });
+  };
+
+  const loadStoreSettings = () => {
+    supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => applyStoreSettings(data));
+  };
+
+  const loadNeedsApproval = () => {
+    if (items.length === 0) { setNeedsApproval(false); return; }
+    const ids = [...new Set(items.map((i) => i.productId))];
+    supabase.from("products").select("id,requires_stock_approval").in("id", ids).then(({ data }) => {
+      setNeedsApproval(!!data?.some((p: { requires_stock_approval?: boolean }) => p.requires_stock_approval));
+    });
+  };
+
   // Guest checkout: no redirect to /login. Account is created inline at order time.
 
   useEffect(() => {
-    supabase.from("store_settings").select("*").eq("id", 1).maybeSingle().then(({ data }) => {
-      if (data) {
-        const paypal = paypalFrom(data.paypal);
-        const square = squareFrom(data.square);
-        const baseMethods = paymentMethodsFrom(data.payment_methods);
-        let methods = baseMethods;
-        if (square.enabled && square.application_id && square.location_id) {
-          methods = [{ name: "Square", enabled: true }, ...methods.filter((m) => m.name !== "Square")];
-        }
-        if (paypal.enabled && paypal.client_id) {
-          methods = [{ name: "PayPal", enabled: true }, ...methods.filter((m) => m.name !== "PayPal")];
-        }
-        const shippingMethods = shippingMethodsFrom(data.shipping_zones, data.shipping_methods);
-        setSettings({
-          shipping_methods: shippingMethods,
-          payment_methods: methods,
-          free_shipping_threshold: data.free_shipping_threshold,
-          paypal,
-          square,
-        });
-        const enabled = methods.find((m) => m.enabled);
-        if (enabled) setPayment(enabled.name);
-      }
-    });
+    loadStoreSettings();
     if (user) {
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle().then(({ data }) => {
         if (data) {
@@ -155,12 +171,10 @@ function CheckoutPage() {
 
   // Check if any product in cart requires stock approval
   useEffect(() => {
-    if (items.length === 0) { setNeedsApproval(false); return; }
-    const ids = [...new Set(items.map((i) => i.productId))];
-    supabase.from("products").select("id,requires_stock_approval").in("id", ids).then(({ data }) => {
-      setNeedsApproval(!!data?.some((p: { requires_stock_approval?: boolean }) => p.requires_stock_approval));
-    });
+    loadNeedsApproval();
   }, [items]);
+  useRealtime("store_settings", loadStoreSettings, "id=eq.1");
+  useRealtime(items.length ? "products" : "", loadNeedsApproval);
 
 
   const shippingMethod = settings?.shipping_methods?.[shippingIdx];

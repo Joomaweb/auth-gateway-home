@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useRealtime } from "@/hooks/use-realtime";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/payments")({
   component: AdminPayments,
@@ -39,7 +41,7 @@ function AdminPayments() {
   const [square, setSquare] = useState<Square>(DEFAULT_SQUARE);
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
+  const loadPaymentSettings = () => {
     supabase.from("store_settings").select("payment_methods, paypal, square").eq("id", 1).maybeSingle()
       .then(({ data }) => {
         if (!data) return;
@@ -47,7 +49,12 @@ function AdminPayments() {
         if (data.paypal) setPaypal({ ...DEFAULT_PAYPAL, ...(data.paypal as PayPal) });
         if (data.square) setSquare({ ...DEFAULT_SQUARE, ...(data.square as Square) });
       });
+  };
+
+  useEffect(() => {
+    loadPaymentSettings();
   }, []);
+  useRealtime("store_settings", loadPaymentSettings, "id=eq.1");
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
@@ -60,7 +67,10 @@ function AdminPayments() {
     });
     setBusy(false);
     if (error) toast.error(error.message);
-    else toast.success("Saved");
+    else {
+      signalAppDataChanged("store_settings");
+      toast.success("Saved");
+    }
   };
 
   return (

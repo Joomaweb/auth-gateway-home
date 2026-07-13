@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, DollarSign, Users, AlertTriangle } from "lucide-react";
-import { run } from "@/lib/api";
+import { invalidateRunCache, run } from "@/lib/api";
 import { useRealtime } from "@/hooks/use-realtime";
 
 export const Route = createFileRoute("/admin/")({
@@ -49,9 +49,13 @@ function AdminDashboard() {
     },
   });
 
-  useRealtime("orders", () => dashboardQuery.refetch());
-  useRealtime("profiles", () => dashboardQuery.refetch());
-  useRealtime("product_variants", () => dashboardQuery.refetch());
+  const refreshDashboard = () => {
+    invalidateRunCache("admin:dashboard:");
+    dashboardQuery.refetch();
+  };
+  useRealtime("orders", refreshDashboard);
+  useRealtime("profiles", refreshDashboard);
+  useRealtime("product_variants", refreshDashboard);
 
   const stats = dashboardQuery.data?.stats ?? { orders: 0, revenue: 0, customers: 0, lowStock: 0 };
   const recent = dashboardQuery.data?.recent ?? [];

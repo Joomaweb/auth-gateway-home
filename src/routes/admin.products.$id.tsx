@@ -11,8 +11,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { AlertCircle, Plus, Upload, X } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useRealtime } from "@/hooks/use-realtime";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 const SIZE_RE = /^[A-Za-z0-9\u0590-\u05FF \-/.]{1,12}$/;
 const COLOR_RE = /^[A-Za-z\u0590-\u05FF][A-Za-z\u0590-\u05FF \-]{0,24}$/;
@@ -38,6 +40,19 @@ export const Route = createFileRoute("/admin/products/$id")({
 });
 
 type Variant = { id?: string; size: string | null; color: string | null; stock: number };
+type ProductAdminRow = {
+  name?: string | null;
+  description?: string | null;
+  price?: number | string | null;
+  sale_price?: number | string | null;
+  images?: unknown;
+  video_url?: string | null;
+  video_size?: string | null;
+  category_id?: string | null;
+  featured?: boolean | null;
+  active?: boolean | null;
+  requires_stock_approval?: boolean | null;
+};
 
 const SIZE_PRESETS = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "One Size"];
 const SIZE_NUMERIC = ["36", "38", "40", "42", "44", "46"];
@@ -125,6 +140,46 @@ function ProductEdit() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
+  const applyProductRows = (p: ProductAdminRow, variantsData: Variant[]) => {
+    setForm({
+      name: p.name ?? "",
+      description: p.description ?? "",
+      price: p.price != null ? String(p.price) : "",
+      sale_price: p.sale_price != null ? String(p.sale_price) : "",
+      images: Array.isArray(p.images) ? p.images.filter((u: unknown): u is string => typeof u === "string") : [],
+      video_url: p.video_url ?? "",
+      video_size: (p.video_size ?? "large") as "small" | "medium" | "large" | "full",
+      category_id: p.category_id ?? "",
+      featured: !!p.featured,
+      active: p.active ?? true,
+      requires_stock_approval: !!p.requires_stock_approval,
+    });
+
+    const sset = new Set<string>();
+    const cset = new Set<string>();
+    const map: Record<string, number> = {};
+    variantsData.forEach((x) => {
+      const s = x.size ?? "";
+      const c = x.color ?? "";
+      if (s) sset.add(s);
+      if (c) cset.add(c);
+      map[`${s}|${c}`] = x.stock ?? 0;
+    });
+    setSizes([...sset]);
+    setColors([...cset]);
+    setStockMap(map);
+  };
+
+  const loadCurrentProduct = async () => {
+    if (isNew) return;
+    const [pRes, vRes] = await Promise.all([
+      supabase.from("products").select("*").eq("id", id).maybeSingle(),
+      supabase.from("product_variants").select("*").eq("product_id", id),
+    ]);
+    if (pRes.error || !pRes.data) return;
+    applyProductRows(pRes.data, (vRes.data ?? []) as Variant[]);
+  };
+
   // Load categories + (if editing) the product itself
   useEffect(() => {
     let cancelled = false;
@@ -161,36 +216,8 @@ function ProductEdit() {
           setLoading(false);
           return;
         }
-        const p = pRes.data;
-        setForm({
-          name: p.name ?? "",
-          description: p.description ?? "",
-          price: p.price != null ? String(p.price) : "",
-          sale_price: p.sale_price != null ? String(p.sale_price) : "",
-          images: Array.isArray(p.images) ? p.images.filter((u): u is string => typeof u === "string") : [],
-          video_url: p.video_url ?? "",
-          video_size: (p.video_size ?? "large") as "small" | "medium" | "large" | "full",
-          category_id: p.category_id ?? "",
-          featured: !!p.featured,
-          active: p.active ?? true,
-          requires_stock_approval: !!p.requires_stock_approval,
-        });
-
         if (vRes.error) console.error("variants load:", vRes.error);
-        const vs = (vRes.data ?? []) as Variant[];
-        const sset = new Set<string>();
-        const cset = new Set<string>();
-        const map: Record<string, number> = {};
-        vs.forEach((x) => {
-          const s = x.size ?? "";
-          const c = x.color ?? "";
-          if (s) sset.add(s);
-          if (c) cset.add(c);
-          map[`${s}|${c}`] = x.stock ?? 0;
-        });
-        setSizes([...sset]);
-        setColors([...cset]);
-        setStockMap(map);
+        applyProductRows(pRes.data, (vRes.data ?? []) as Variant[]);
       } catch (err) {
         console.error("Product load failed:", err);
         if (!cancelled) setLoadError(err instanceof Error ? err.message : "Failed to load product");
@@ -202,6 +229,8 @@ function ProductEdit() {
       cancelled = true;
     };
   }, [id, isNew]);
+  useRealtime(isNew ? "" : "products", loadCurrentProduct, `id=eq.${id}`);
+  useRealtime(isNew ? "" : "product_variants", loadCurrentProduct, `product_id=eq.${id}`);
 
   const uploadImage = async (file: File) => {
     if (!user) {
@@ -456,6 +485,7 @@ function ProductEdit() {
         if (insErr) throw insErr;
       }
 
+      signalAppDataChanged("products");
       toast.success("המוצר נשמר בהצלחה");
       navigate({ to: "/admin/products" });
     } catch (err) {

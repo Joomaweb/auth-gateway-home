@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useRealtime } from "@/hooks/use-realtime";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 function productActionErrorMessage(err: unknown, action: string) {
   const supabaseError = err as { message?: string; details?: string; hint?: string; code?: string };
@@ -54,7 +55,7 @@ function AdminProducts() {
       toast.error(productActionErrorMessage(error, "במחיקה"));
     } else if (!data?.id) {
       toast.error("המוצר לא נמחק: לא נמצא מוצר כזה או שאין הרשאה למחוק אותו.");
-    } else { toast.success("המוצר נמחק"); load(); }
+    } else { signalAppDataChanged("products"); toast.success("המוצר נמחק"); load(); }
   };
 
   return (

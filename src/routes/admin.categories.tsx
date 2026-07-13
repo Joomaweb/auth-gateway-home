@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Trash2, Upload, Save, X, Tag, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/categories")({
   component: AdminCategories,
@@ -100,6 +101,7 @@ function AdminCategories() {
     });
     setBusy(null);
     if (error) return toast.error(mapErr(error));
+    signalAppDataChanged("categories");
     toast.success("הקטגוריה נוספה");
     setDraft({ name: "", slug: "", image_url: "", parent_id: NONE });
   };
@@ -114,6 +116,7 @@ function AdminCategories() {
       .single();
     setBusy(null);
     if (error) return toast.error(mapErr(error));
+    signalAppDataChanged("categories");
     toast.success("נשמר");
   };
 
@@ -127,6 +130,7 @@ function AdminCategories() {
     const { error } = await supabase.from("categories").delete().eq("id", c.id);
     setBusy(null);
     if (error) return toast.error(mapErr(error));
+    signalAppDataChanged("categories");
     toast.success("נמחק");
   };
 

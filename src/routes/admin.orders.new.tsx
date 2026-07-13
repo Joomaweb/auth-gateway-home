@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useT } from "@/lib/i18n";
+import { signalAppDataChanged } from "@/lib/realtime-sync";
 
 export const Route = createFileRoute("/admin/orders/new")({
   component: NewOrder,
@@ -76,6 +77,7 @@ function NewOrder() {
       return;
     }
     setBusy(false);
+    signalAppDataChanged("orders");
     toast.success("ההזמנה נוצרה");
     navigate({ to: "/admin/orders/$id", params: { id: order.id } });
   };
