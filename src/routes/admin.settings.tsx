@@ -84,6 +84,14 @@ const DEFAULT_HERO: Hero = {
   badge: "Atelier · 2026",
   pos_x: 50,
   pos_y: 50,
+  pos_x_mobile: 50,
+  pos_y_mobile: 50,
+  fit: "cover",
+  fit_mobile: "cover",
+  height_desktop: 78,
+  height_mobile: 78,
+  scale: 1.05,
+  scale_mobile: 1.05,
   show_overlay: true,
 };
 const DEFAULT_BRANDING: Branding = {
