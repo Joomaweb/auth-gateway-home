@@ -6,7 +6,13 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
 import { Button } from "@/components/ui/button";
 import { useT } from "@/lib/i18n";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { useRealtime } from "@/hooks/use-realtime";
 import { optimizeImg, srcSet } from "@/lib/img";
 import { run } from "@/lib/api";
@@ -18,7 +24,17 @@ export const Route = createFileRoute("/")({
 });
 
 type Category = { id: string; name: string; slug: string; image_url: string | null };
-type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number; show_overlay?: boolean };
+type Hero = {
+  image: string;
+  title: string;
+  subtitle: string;
+  cta_text: string;
+  cta_link: string;
+  badge: string;
+  pos_x?: number;
+  pos_y?: number;
+  show_overlay?: boolean;
+};
 
 type HomeData = {
   featured: ProductCardData[];
@@ -43,55 +59,83 @@ function toEmbedUrl(url: string): string {
 }
 const CACHE_TTL = 10 * 60_000; // 10 min
 
-function readCache(): HomeData | undefined {
-  if (typeof localStorage === "undefined") return undefined;
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return undefined;
-    const { t, d } = JSON.parse(raw) as { t: number; d: HomeData };
-    if (Date.now() - t > CACHE_TTL) return undefined;
-    return d;
-  } catch { return undefined; }
-}
-
 async function fetchHome(): Promise<HomeData> {
   const [n, c, ss] = await Promise.all([
-    run({ key: "home:newest", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () => supabase.from("products").select("id,name,price,sale_price,images,created_at").eq("active", true).order("created_at", { ascending: false }).limit(6)),
-    run({ key: "home:cats", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () => supabase.from("categories").select("id,name,slug,image_url")),
+    run({ key: "home:newest", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () =>
+      supabase
+        .from("products")
+        .select("id,name,price,sale_price,images,created_at")
+        .eq("active", true)
+        .order("created_at", { ascending: false })
+        .limit(6),
+    ),
+    run({ key: "home:cats", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () =>
+      supabase.from("categories").select("id,name,slug,image_url"),
+    ),
     getPublicStoreSettings(),
   ]);
-  const d = ss as { hero?: Hero; hero_video?: string; carousel_images?: string[]; show_featured?: boolean; show_sale?: boolean } | null;
+  const d = ss as {
+    hero?: Hero;
+    hero_video?: string;
+    carousel_images?: string[];
+    show_featured?: boolean;
+    show_sale?: boolean;
+  } | null;
   const [f, s] = await Promise.all([
     d?.show_featured === false
       ? Promise.resolve({ data: [] })
-      : run({ key: "home:featured", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () => supabase.from("products").select("id,name,price,sale_price,images,featured").eq("active", true).eq("featured", true).limit(12)),
+      : run({ key: "home:featured", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () =>
+          supabase
+            .from("products")
+            .select("id,name,price,sale_price,images,featured")
+            .eq("active", true)
+            .eq("featured", true)
+            .limit(12),
+        ),
     d?.show_sale === false
       ? Promise.resolve({ data: [] })
-      : run({ key: "home:sale", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () => supabase.from("products").select("id,name,price,sale_price,images").eq("active", true).not("sale_price", "is", null).limit(8)),
+      : run({ key: "home:sale", timeoutMs: 5000, attempts: 2, cacheMs: 60_000 }, () =>
+          supabase
+            .from("products")
+            .select("id,name,price,sale_price,images")
+            .eq("active", true)
+            .not("sale_price", "is", null)
+            .limit(8),
+        ),
   ]);
   const data: HomeData = {
     featured: (f.data ?? []) as ProductCardData[],
     sale: (s.data ?? []) as ProductCardData[],
     newest: (n.data ?? []) as ProductCardData[],
     cats: (c.data ?? []) as Category[],
-    hero: (d?.hero as Hero) ?? { image: "", title: "", subtitle: "", cta_text: "", cta_link: "", badge: "", show_overlay: false },
+    hero: (d?.hero as Hero) ?? {
+      image: "",
+      title: "",
+      subtitle: "",
+      cta_text: "",
+      cta_link: "",
+      badge: "",
+      show_overlay: false,
+    },
     heroVideo: d?.hero_video ?? "",
     slides: Array.isArray(d?.carousel_images) ? (d!.carousel_images as string[]) : [],
     showFeatured: d?.show_featured ?? true,
     showSale: d?.show_sale ?? true,
   };
-  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d: data })); } catch { /* ignore quota */ }
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d: data }));
+  } catch {
+    /* ignore quota */
+  }
   return data;
 }
 
 function HomePage() {
   const { t } = useT();
-  const [initial] = useState(readCache);
   const [showDeferredMedia, setShowDeferredMedia] = useState(false);
   const { data, refetch } = useQuery({
     queryKey: ["home"],
     queryFn: fetchHome,
-    initialData: initial,
     staleTime: 0,
     refetchOnMount: "always",
     refetchOnReconnect: true,
@@ -113,10 +157,14 @@ function HomePage() {
     const id = setTimeout(() => setRtReady(true), 1500);
     return () => clearTimeout(id);
   }, []);
-  useEffect(() => subscribeAppDataChanges(() => {
-    clearAppDataCaches();
-    refetch();
-  }), [refetch]);
+  useEffect(
+    () =>
+      subscribeAppDataChanges(() => {
+        clearAppDataCaches();
+        refetch();
+      }),
+    [refetch],
+  );
   useEffect(() => {
     const start = () => setShowDeferredMedia(true);
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
