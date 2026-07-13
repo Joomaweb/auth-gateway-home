@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { ProductCard, type ProductCardData } from "@/components/product/ProductCard";
@@ -22,6 +22,7 @@ import { isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
 import { useMediaPreload } from "@/hooks/use-media-preload";
 
 export const Route = createFileRoute("/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(homeSettingsQueryOptions()),
   component: HomePage,
 });
 
@@ -102,6 +103,26 @@ async function fetchHomeCollections(
   };
 }
 
+function homeSettingsQueryOptions() {
+  return queryOptions({
+    queryKey: ["home", "settings"],
+    queryFn: fetchHomeSettings,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
+  });
+}
+
+function homeCollectionsQueryOptions(showFeatured: boolean, showSale: boolean) {
+  return queryOptions({
+    queryKey: ["home", "collections", showFeatured, showSale],
+    queryFn: () => fetchHomeCollections(showFeatured, showSale),
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnReconnect: true,
+  });
+}
+
 async function fetchHomeSettings(): Promise<HomeSettingsData> {
   const d = (await getPublicStoreSettings()) as {
     hero?: Hero;
@@ -132,22 +153,10 @@ function HomePage() {
   const [showDeferredMedia, setShowDeferredMedia] = useState(false);
   const [heroVideoReady, setHeroVideoReady] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement | null>(null);
-  const settingsQ = useQuery({
-    queryKey: ["home", "settings"],
-    queryFn: fetchHomeSettings,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnReconnect: true,
-  });
+  const settingsQ = useQuery(homeSettingsQueryOptions());
   const showFeatured = settingsQ.data?.showFeatured ?? true;
   const showSale = settingsQ.data?.showSale ?? true;
-  const collectionsQ = useQuery({
-    queryKey: ["home", "collections", showFeatured, showSale],
-    queryFn: () => fetchHomeCollections(showFeatured, showSale),
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnReconnect: true,
-  });
+  const collectionsQ = useQuery(homeCollectionsQueryOptions(showFeatured, showSale));
   const featured = collectionsQ.data?.featured ?? [];
   const sale = collectionsQ.data?.sale ?? [];
   const newest = collectionsQ.data?.newest ?? [];
