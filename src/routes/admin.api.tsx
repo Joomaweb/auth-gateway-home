@@ -4,7 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Copy, Check, KeyRound, Radio, ShieldCheck, Smartphone, Play, Square, Trash2, Activity } from "lucide-react";
+import {
+  Activity,
+  Check,
+  Copy,
+  KeyRound,
+  Play,
+  Radio,
+  ShieldCheck,
+  Smartphone,
+  Square,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { supabase } from "@/lib/supabase";
@@ -85,13 +96,22 @@ const REALTIME_TABLES = [
 
 type RealtimeTable = (typeof REALTIME_TABLES)[number]["table"];
 type RealtimeStatus = "idle" | "connecting" | "live" | "error";
+type RealtimePayload = {
+  eventType?: string;
+  new?: { id?: unknown } | null;
+  old?: { id?: unknown } | null;
+};
+type AuthSession = { access_token?: string | null } | null;
 
 function RealtimeTester() {
   const [statuses, setStatuses] = useState<Record<RealtimeTable, RealtimeStatus>>(() =>
-    REALTIME_TABLES.reduce((acc, { table }) => ({ ...acc, [table]: "idle" }), {} as Record<RealtimeTable, RealtimeStatus>),
+    REALTIME_TABLES.reduce(
+      (acc, { table }) => ({ ...acc, [table]: "idle" }),
+      {} as Record<RealtimeTable, RealtimeStatus>,
+    ),
   );
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const channelsRef = useRef<Partial<Record<RealtimeTable, any>>>({});
+  const channelsRef = useRef<Partial<Record<RealtimeTable, ReturnType<typeof supabase.channel>>>>({});
   const idRef = useRef(0);
 
   const setTableStatus = (table: RealtimeTable, status: RealtimeStatus) => {
@@ -119,15 +139,15 @@ function RealtimeTester() {
     const channel = supabase
       .channel(`rt-${table}-${Date.now()}`)
       .on(
-        "postgres_changes" as any,
+        "postgres_changes" as never,
         { event: "*", schema: "public", table },
-        (payload: any) => {
+        ((payload: RealtimePayload) => {
           const row = payload.new ?? payload.old ?? {};
           log(
             "success",
             `${table} · ${payload.eventType} · ${row.id ? "#" + String(row.id).slice(0, 8) : ""}`,
           );
-        },
+        }) as never,
       )
       .subscribe((status: string, err?: Error) => {
         if (status === "SUBSCRIBED") {
@@ -280,7 +300,7 @@ function RealtimeTester() {
 }
 
 function AdminApi() {
-  const { user, session } = useAuth() as ReturnType<typeof useAuth> & { session: any };
+  const { user, session } = useAuth() as ReturnType<typeof useAuth> & { session?: AuthSession };
   const accessToken = session?.access_token ?? "";
 
   const reactNativeSnippet = `// React Native / Expo
