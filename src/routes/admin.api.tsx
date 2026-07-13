@@ -413,8 +413,8 @@ curl '${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc' \\
           <p className="text-xs text-muted-foreground leading-relaxed">
             ה-Anon Key פומבי ובטוח לשמור באפליקציה. ההרשאות נשלטות על ידי{" "}
             <span className="text-gold font-medium">RLS + user_roles</span>: לאחר התחברות עם משתמש
-            שהוא <code className="text-foreground">admin</code> ב-<code>user_roles</code>, יש גישה מלאה
-            לכל הטבלאות.
+            שהוא <code className="text-foreground">admin</code> ב-<code>user_roles</code>, יש גישה
+            מלאה לכל הטבלאות.
           </p>
         </CardContent>
       </Card>
