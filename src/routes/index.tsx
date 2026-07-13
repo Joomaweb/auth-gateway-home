@@ -20,6 +20,7 @@ import { getPublicStoreSettings } from "@/lib/store-settings";
 import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
 import { isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
 import { useMediaPreload } from "@/hooks/use-media-preload";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Route = createFileRoute("/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(homeSettingsQueryOptions()),
