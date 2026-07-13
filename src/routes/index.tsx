@@ -173,9 +173,19 @@ function HomePage() {
   const hero = settingsQ.data?.hero ?? null;
   const heroVideo = settingsQ.data?.heroVideo?.trim() ?? "";
   const slides = settingsQ.data?.slides ?? [];
+  const isMobile = useIsMobile();
   const isDirectHeroVideo = isDirectVideoUrl(heroVideo);
   const heroPoster = hero?.image ? optimizeImg(hero.image, { w: 1920, q: 65 }) : "";
-  const heroPosition = `${hero?.pos_x ?? 50}% ${hero?.pos_y ?? 50}%`;
+  const heroPosX = isMobile ? (hero?.pos_x_mobile ?? hero?.pos_x ?? 50) : (hero?.pos_x ?? 50);
+  const heroPosY = isMobile ? (hero?.pos_y_mobile ?? hero?.pos_y ?? 50) : (hero?.pos_y ?? 50);
+  const heroPosition = `${heroPosX}% ${heroPosY}%`;
+  const heroFit = isMobile ? (hero?.fit_mobile ?? hero?.fit ?? "cover") : (hero?.fit ?? "cover");
+  const heroHeightVh = isMobile ? (hero?.height_mobile ?? 78) : (hero?.height_desktop ?? 78);
+  const heroScale = isMobile ? (hero?.scale_mobile ?? hero?.scale ?? 1.05) : (hero?.scale ?? 1.05);
+  const heroSectionStyle: React.CSSProperties = {
+    height: `${heroHeightVh}vh`,
+    minHeight: isMobile ? 380 : 560,
+  };
 
   useMediaPreload(heroVideo, heroPoster);
 
