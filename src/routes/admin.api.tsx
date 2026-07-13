@@ -105,10 +105,15 @@ type AuthSession = { access_token?: string | null } | null;
 
 function RealtimeTester() {
   const [statuses, setStatuses] = useState<Record<RealtimeTable, RealtimeStatus>>(() =>
-    REALTIME_TABLES.reduce((acc, { table }) => ({ ...acc, [table]: "idle" }), {} as Record<RealtimeTable, RealtimeStatus>),
+    REALTIME_TABLES.reduce(
+      (acc, { table }) => ({ ...acc, [table]: "idle" }),
+      {} as Record<RealtimeTable, RealtimeStatus>,
+    ),
   );
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const channelsRef = useRef<Partial<Record<RealtimeTable, ReturnType<typeof supabase.channel>>>>({});
+  const channelsRef = useRef<Partial<Record<RealtimeTable, ReturnType<typeof supabase.channel>>>>(
+    {},
+  );
   const idRef = useRef(0);
 
   const setTableStatus = (table: RealtimeTable, status: RealtimeStatus) => {
@@ -138,12 +143,12 @@ function RealtimeTester() {
       .on("postgres_changes" as never, { event: "*", schema: "public", table }, ((
         payload: RealtimePayload,
       ) => {
-          const row = payload.new ?? payload.old ?? {};
-          log(
-            "success",
-            `${table} · ${payload.eventType} · ${row.id ? "#" + String(row.id).slice(0, 8) : ""}`,
-          );
-        }) as never)
+        const row = payload.new ?? payload.old ?? {};
+        log(
+          "success",
+          `${table} · ${payload.eventType} · ${row.id ? "#" + String(row.id).slice(0, 8) : ""}`,
+        );
+      }) as never)
       .subscribe((status: string, err?: Error) => {
         if (status === "SUBSCRIBED") {
           setTableStatus(table, "live");
@@ -407,8 +412,9 @@ curl '${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc' \\
           )}
           <p className="text-xs text-muted-foreground leading-relaxed">
             ה-Anon Key פומבי ובטוח לשמור באפליקציה. ההרשאות נשלטות על ידי{" "}
-            <span className="text-gold font-medium">RLS + user_roles</span>: לאחר התחברות עם משתמש שהוא <code className="text-foreground">admin</code> ב-<code>user_roles</code>, יש גישה
-            מלאה לכל הטבלאות.
+            <span className="text-gold font-medium">RLS + user_roles</span>: לאחר התחברות עם משתמש שהוא{" "}
+            <code className="text-foreground">admin</code> ב-<code>user_roles</code>, יש גישה מלאה לכל
+            הטבלאות.
           </p>
         </CardContent>
       </Card>
