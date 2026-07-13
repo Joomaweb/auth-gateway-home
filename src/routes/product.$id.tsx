@@ -32,20 +32,21 @@ type Product = {
 };
 type Variant = { id: string; size: string | null; color: string | null; stock: number };
 
-async function fetchProductDetail(id: string): Promise<{ product: Product | null; variants: Variant[] }> {
+async function fetchProductDetail(
+  id: string,
+): Promise<{ product: Product | null; variants: Variant[] }> {
   const [productRes, variantsRes] = await Promise.all([
     run({ key: `product:${id}:detail`, timeoutMs: 5000, attempts: 2, cacheMs: 2 * 60_000 }, () =>
       supabase
         .from("products")
-        .select("id,name,description,price,sale_price,images,video_url,video_size,requires_stock_approval")
+        .select(
+          "id,name,description,price,sale_price,images,video_url,video_size,requires_stock_approval",
+        )
         .eq("id", id)
         .maybeSingle(),
     ),
     run({ key: `product:${id}:variants`, timeoutMs: 5000, attempts: 2, cacheMs: 2 * 60_000 }, () =>
-      supabase
-        .from("product_variants")
-        .select("id,size,color,stock")
-        .eq("product_id", id),
+      supabase.from("product_variants").select("id,size,color,stock").eq("product_id", id),
     ),
   ]);
   if (productRes.error) throw productRes.error;
@@ -105,18 +106,30 @@ function ProductPage() {
     if (playPromise) playPromise.catch(() => undefined);
     if (video.readyState >= 2) setVideoReady(true);
   }, [productVideoUrl]);
-  useEffect(() => subscribeAppDataChanges(() => {
-    invalidateRunCache(`product:${id}:`);
-    productQ.refetch();
-  }), [id, productQ]);
-  useRealtime("products", () => {
-    invalidateRunCache(`product:${id}:`);
-    productQ.refetch();
-  }, `id=eq.${id}`);
-  useRealtime("product_variants", () => {
-    invalidateRunCache(`product:${id}:`);
-    productQ.refetch();
-  }, `product_id=eq.${id}`);
+  useEffect(
+    () =>
+      subscribeAppDataChanges(() => {
+        invalidateRunCache(`product:${id}:`);
+        productQ.refetch();
+      }),
+    [id, productQ],
+  );
+  useRealtime(
+    "products",
+    () => {
+      invalidateRunCache(`product:${id}:`);
+      productQ.refetch();
+    },
+    `id=eq.${id}`,
+  );
+  useRealtime(
+    "product_variants",
+    () => {
+      invalidateRunCache(`product:${id}:`);
+      productQ.refetch();
+    },
+    `product_id=eq.${id}`,
+  );
 
   if (!product) {
     return (
@@ -191,7 +204,8 @@ function ProductPage() {
                   className="rounded-lg overflow-hidden bg-muted mx-auto"
                   style={{
                     maxWidth: showVideo && hasVideo ? maxW : undefined,
-                    backgroundImage: showVideo && productPoster ? `url(${productPoster})` : undefined,
+                    backgroundImage:
+                      showVideo && productPoster ? `url(${productPoster})` : undefined,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
                   }}
@@ -236,7 +250,6 @@ function ProductPage() {
                       />
                     </div>
                   )}
-
                 </div>
 
                 {(images.length > 1 || hasVideo) && (
@@ -250,12 +263,16 @@ function ProductPage() {
                         }}
                         className={cn(
                           "w-16 h-20 rounded overflow-hidden bg-muted border-2",
-                          !showVideo && i === imgIdx
-                            ? "border-primary"
-                            : "border-transparent",
+                          !showVideo && i === imgIdx ? "border-primary" : "border-transparent",
                         )}
                       >
-                        <img src={optimizeImg(src, { w: 160, q: 70 })} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                        <img
+                          src={optimizeImg(src, { w: 160, q: 70 })}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover"
+                        />
                       </button>
                     ))}
                     {hasVideo && (
@@ -274,7 +291,11 @@ function ProductPage() {
                           decoding="async"
                           className="absolute inset-0 w-full h-full object-cover opacity-70"
                         />
-                        <svg viewBox="0 0 24 24" className="relative h-6 w-6 text-white drop-shadow" fill="currentColor">
+                        <svg
+                          viewBox="0 0 24 24"
+                          className="relative h-6 w-6 text-white drop-shadow"
+                          fill="currentColor"
+                        >
                           <path d="M8 5v14l11-7z" />
                         </svg>
                       </button>
@@ -291,7 +312,9 @@ function ProductPage() {
           <div className="mt-3 text-2xl">
             {product.sale_price ? (
               <>
-                <span className="text-destructive font-semibold">${product.sale_price.toFixed(2)}</span>
+                <span className="text-destructive font-semibold">
+                  ${product.sale_price.toFixed(2)}
+                </span>
                 <span className="text-muted-foreground line-through text-base ms-3">
                   ${product.price.toFixed(2)}
                 </span>
@@ -306,14 +329,20 @@ function ProductPage() {
           )}
 
           {product.video_url && /youtube\.com|youtu\.be|vimeo\.com/i.test(product.video_url) && (
-            <a href={product.video_url} target="_blank" rel="noreferrer" className="mt-4 inline-block text-sm underline text-primary">
+            <a
+              href={product.video_url}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-block text-sm underline text-primary"
+            >
               Watch product video ↗
             </a>
           )}
 
           {product.requires_stock_approval && (
             <div className="mt-4 border border-amber-500/40 bg-amber-500/10 rounded-lg p-3 text-sm">
-              <strong>Note:</strong> This item is subject to stock approval — your order will only be processed after confirmation.
+              <strong>Note:</strong> This item is subject to stock approval — your order will only
+              be processed after confirmation.
             </div>
           )}
 
@@ -366,7 +395,12 @@ function ProductPage() {
           <Button size="lg" className="mt-6 w-full" onClick={handleAdd}>
             {t("product.addToCart")}
           </Button>
-          <Button size="lg" variant="outline" className="mt-2 w-full" onClick={() => navigate({ to: "/cart" })}>
+          <Button
+            size="lg"
+            variant="outline"
+            className="mt-2 w-full"
+            onClick={() => navigate({ to: "/cart" })}
+          >
             {t("nav.cart")}
           </Button>
         </div>
