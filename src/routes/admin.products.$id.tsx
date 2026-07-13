@@ -40,6 +40,19 @@ export const Route = createFileRoute("/admin/products/$id")({
 });
 
 type Variant = { id?: string; size: string | null; color: string | null; stock: number };
+type ProductAdminRow = {
+  name?: string | null;
+  description?: string | null;
+  price?: number | string | null;
+  sale_price?: number | string | null;
+  images?: unknown;
+  video_url?: string | null;
+  video_size?: string | null;
+  category_id?: string | null;
+  featured?: boolean | null;
+  active?: boolean | null;
+  requires_stock_approval?: boolean | null;
+};
 
 const SIZE_PRESETS = ["XS", "S", "M", "L", "XL", "XXL", "3XL", "One Size"];
 const SIZE_NUMERIC = ["36", "38", "40", "42", "44", "46"];
@@ -127,7 +140,7 @@ function ProductEdit() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
-  const applyProductRows = (p: any, variantsData: Variant[]) => {
+  const applyProductRows = (p: ProductAdminRow, variantsData: Variant[]) => {
     setForm({
       name: p.name ?? "",
       description: p.description ?? "",

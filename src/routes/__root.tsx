@@ -47,12 +47,17 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
         <div className="mt-6 flex gap-2 justify-center">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground"
           >
             Retry
           </button>
-          <a href="/" className="rounded-md border px-4 py-2 text-sm">Home</a>
+          <a href="/" className="rounded-md border px-4 py-2 text-sm">
+            Home
+          </a>
         </div>
       </div>
     </div>
@@ -82,7 +87,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" dir="ltr">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+      </head>
       <body>
         {children}
         <Scripts />
@@ -127,14 +134,38 @@ function RealtimeCacheBridge() {
     const unsubscribeSignals = subscribeAppDataChanges(refresh);
     const channel = supabase
       .channel("global-store-data-sync")
-      .on("postgres_changes" as never, { event: "*", schema: "public", table: "products" } as never, schedule)
-      .on("postgres_changes" as never, { event: "*", schema: "public", table: "categories" } as never, schedule)
-      .on("postgres_changes" as never, { event: "*", schema: "public", table: "product_variants" } as never, schedule)
-      .on("postgres_changes" as never, { event: "*", schema: "public", table: "store_settings" } as never, schedule)
+      .on(
+        "postgres_changes" as never,
+        { event: "*", schema: "public", table: "products" } as never,
+        schedule,
+      )
+      .on(
+        "postgres_changes" as never,
+        { event: "*", schema: "public", table: "categories" } as never,
+        schedule,
+      )
+      .on(
+        "postgres_changes" as never,
+        { event: "*", schema: "public", table: "product_variants" } as never,
+        schedule,
+      )
+      .on(
+        "postgres_changes" as never,
+        { event: "*", schema: "public", table: "store_settings" } as never,
+        schedule,
+      )
       .on("postgres_changes" as never, { event: "*", schema: "public", table: "orders" } as never, schedule)
-      .on("postgres_changes" as never, { event: "*", schema: "public", table: "order_items" } as never, schedule)
+      .on(
+        "postgres_changes" as never,
+        { event: "*", schema: "public", table: "order_items" } as never,
+        schedule,
+      )
       .on("postgres_changes" as never, { event: "*", schema: "public", table: "profiles" } as never, schedule)
-      .on("postgres_changes" as never, { event: "*", schema: "public", table: "conversations" } as never, schedule)
+      .on(
+        "postgres_changes" as never,
+        { event: "*", schema: "public", table: "conversations" } as never,
+        schedule,
+      )
       .on("postgres_changes" as never, { event: "*", schema: "public", table: "messages" } as never, schedule)
       .subscribe();
 

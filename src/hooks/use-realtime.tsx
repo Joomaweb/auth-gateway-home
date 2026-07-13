@@ -6,11 +6,7 @@ import { supabase } from "@/lib/supabase";
  * INSERT / UPDATE / DELETE. Cleans up on unmount. Debounced 200ms to coalesce
  * bursts (e.g. bulk product edits) into a single reload.
  */
-export function useRealtime(
-  table: string,
-  onChange: () => void,
-  filter?: string,
-) {
+export function useRealtime(table: string, onChange: () => void, filter?: string) {
   const cbRef = useRef(onChange);
   cbRef.current = onChange;
 
