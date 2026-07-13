@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRealtime } from "@/hooks/use-realtime";
 import { ChevronRight } from "lucide-react";
 import { optimizeImg, srcSet } from "@/lib/img";
-import { run } from "@/lib/api";
+import { invalidateRunCache, run } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 
 type Search = { category?: string; sort?: string };
