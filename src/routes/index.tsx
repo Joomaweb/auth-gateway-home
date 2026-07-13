@@ -269,9 +269,7 @@ function HomePage() {
           )}
         </section>
       )}
-            </div>
-          </>
-        )}
+
       {/* Promo carousel */}
       {showDeferredMedia && slides.length > 0 && (
         <section className="max-w-7xl mx-auto px-4 py-10">
