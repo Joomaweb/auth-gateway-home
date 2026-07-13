@@ -88,7 +88,6 @@ function HomePage() {
   const { t } = useT();
   const [initial] = useState(readCache);
   const [showDeferredMedia, setShowDeferredMedia] = useState(false);
-  const [loadHeroVideo, setLoadHeroVideo] = useState(false);
   const { data, refetch } = useQuery({
     queryKey: ["home"],
     queryFn: fetchHome,
@@ -127,17 +126,6 @@ function HomePage() {
     const id = setTimeout(start, 120);
     return () => clearTimeout(id);
   }, []);
-  useEffect(() => {
-    if (!heroVideo || /youtube\.com|youtu\.be|vimeo\.com/i.test(heroVideo)) return;
-    setLoadHeroVideo(false);
-    const start = () => setLoadHeroVideo(true);
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      const id = window.requestIdleCallback(start, { timeout: 1400 });
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = setTimeout(start, 1000);
-    return () => clearTimeout(id);
-  }, [heroVideo]);
   useRealtime(rtReady ? "products" : "", () => {
     clearAppDataCaches();
     refetch();
@@ -159,30 +147,16 @@ function HomePage() {
       ) : (
       <section className={`relative h-[78vh] min-h-[560px] flex items-center justify-center overflow-hidden ${heroVideo ? "bg-black" : "bg-muted"}`}>
         {isDirectHeroVideo ? (
-          <>
-            {hero.image && (
-              <img
-                src={optimizeImg(hero.image, { w: 1920, q: 72 })}
-                srcSet={srcSet(hero.image, 1280, 72)}
-                sizes="100vw"
-                alt="Hero"
-                fetchPriority="high"
-                decoding="async"
-                className="absolute inset-0 w-full h-full object-cover scale-105"
-                style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
-              />
-            )}
-            {loadHeroVideo && (
-              <video
-                src={heroVideo}
-                autoPlay muted loop playsInline
-                preload="none"
-                poster={hero.image ? optimizeImg(hero.image, { w: 1600, q: 60 }) : undefined}
-                className="absolute inset-0 w-full h-full object-cover scale-105"
-                style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
-              />
-            )}
-          </>
+          <video
+            src={heroVideo}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="absolute inset-0 w-full h-full object-cover scale-105"
+            style={{ objectPosition: `${hero.pos_x ?? 50}% ${hero.pos_y ?? 50}%` }}
+          />
         ) : heroVideo ? (
           <iframe
             src={toEmbedUrl(heroVideo)}
