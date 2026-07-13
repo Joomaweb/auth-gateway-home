@@ -25,11 +25,11 @@ export const Route = createFileRoute("/admin/api")({
   component: AdminApi,
 });
 
-const SUPABASE_URL =
-  (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? "";
+const SUPABASE_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? "";
 const SUPABASE_ANON_KEY =
-  ((import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
-    (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined)) ?? "";
+  (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
+  (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) ??
+  "";
 
 function CopyBlock({ value, label }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -105,10 +105,7 @@ type AuthSession = { access_token?: string | null } | null;
 
 function RealtimeTester() {
   const [statuses, setStatuses] = useState<Record<RealtimeTable, RealtimeStatus>>(() =>
-    REALTIME_TABLES.reduce(
-      (acc, { table }) => ({ ...acc, [table]: "idle" }),
-      {} as Record<RealtimeTable, RealtimeStatus>,
-    ),
+    REALTIME_TABLES.reduce((acc, { table }) => ({ ...acc, [table]: "idle" }), {} as Record<RealtimeTable, RealtimeStatus>),
   );
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const channelsRef = useRef<Partial<Record<RealtimeTable, ReturnType<typeof supabase.channel>>>>({});
@@ -138,17 +135,15 @@ function RealtimeTester() {
     log("info", `מתחבר ל-Realtime · ${table}…`);
     const channel = supabase
       .channel(`rt-${table}-${Date.now()}`)
-      .on(
-        "postgres_changes" as never,
-        { event: "*", schema: "public", table },
-        ((payload: RealtimePayload) => {
+      .on("postgres_changes" as never, { event: "*", schema: "public", table }, ((
+        payload: RealtimePayload,
+      ) => {
           const row = payload.new ?? payload.old ?? {};
           log(
             "success",
             `${table} · ${payload.eventType} · ${row.id ? "#" + String(row.id).slice(0, 8) : ""}`,
           );
-        }) as never,
-      )
+        }) as never)
       .subscribe((status: string, err?: Error) => {
         if (status === "SUBSCRIBED") {
           setTableStatus(table, "live");
@@ -177,8 +172,9 @@ function RealtimeTester() {
   };
 
   useEffect(() => {
+    const channels = channelsRef.current;
     return () => {
-      Object.values(channelsRef.current).forEach((c) => c && supabase.removeChannel(c));
+      Object.values(channels).forEach((c) => c && supabase.removeChannel(c));
     };
   }, []);
 
@@ -276,8 +272,8 @@ function RealtimeTester() {
                     l.level === "success"
                       ? "text-emerald-400"
                       : l.level === "error"
-                      ? "text-rose-400"
-                      : "text-amber-300"
+                        ? "text-rose-400"
+                        : "text-amber-300"
                   }
                 >
                   {l.level === "success" ? "✓" : l.level === "error" ? "✗" : "•"}
@@ -291,8 +287,8 @@ function RealtimeTester() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          טיפ: פתחו טאב נוסף, צרו הזמנה או שלחו הודעה — האירוע יופיע כאן מיידית.
-          אם יש שגיאה, ודאו ש-Realtime מופעל לטבלה ב-Supabase ושלמשתמש שלכם תפקיד <code>admin</code>.
+          טיפ: פתחו טאב נוסף, צרו הזמנה או שלחו הודעה — האירוע יופיע כאן מיידית. אם יש שגיאה, ודאו
+          ש-Realtime מופעל לטבלה ב-Supabase ושלמשתמש שלכם תפקיד <code>admin</code>.
         </p>
       </CardContent>
     </Card>
@@ -411,9 +407,8 @@ curl '${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc' \\
           )}
           <p className="text-xs text-muted-foreground leading-relaxed">
             ה-Anon Key פומבי ובטוח לשמור באפליקציה. ההרשאות נשלטות על ידי{" "}
-            <span className="text-gold font-medium">RLS + user_roles</span>: לאחר התחברות עם משתמש שהוא{" "}
-            <code className="text-foreground">admin</code> ב-<code>user_roles</code>, יש גישה מלאה לכל
-            הטבלאות.
+            <span className="text-gold font-medium">RLS + user_roles</span>: לאחר התחברות עם משתמש שהוא <code className="text-foreground">admin</code> ב-<code>user_roles</code>, יש גישה
+            מלאה לכל הטבלאות.
           </p>
         </CardContent>
       </Card>
@@ -475,8 +470,8 @@ curl '${SUPABASE_URL}/rest/v1/orders?select=*&order=created_at.desc' \\
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            כדי להעניק לאפליקציה הצידית של המוכר/הסוכן גישת אדמין מלאה, הרץ את הפקודה הבאה ב-SQL Editor של
-            Supabase לאחר שהמשתמש נרשם:
+            כדי להעניק לאפליקציה הצידית של המוכר/הסוכן גישת אדמין מלאה, הרץ את הפקודה הבאה ב-SQL
+            Editor של Supabase לאחר שהמשתמש נרשם:
           </p>
           <CopyBlock
             value={`INSERT INTO public.user_roles (user_id, role)

@@ -154,19 +154,31 @@ function RealtimeCacheBridge() {
         { event: "*", schema: "public", table: "store_settings" } as never,
         schedule,
       )
-      .on("postgres_changes" as never, { event: "*", schema: "public", table: "orders" } as never, schedule)
+      .on(
+        "postgres_changes" as never,
+        { event: "*", schema: "public", table: "orders" } as never,
+        schedule,
+      )
       .on(
         "postgres_changes" as never,
         { event: "*", schema: "public", table: "order_items" } as never,
         schedule,
       )
-      .on("postgres_changes" as never, { event: "*", schema: "public", table: "profiles" } as never, schedule)
+      .on(
+        "postgres_changes" as never,
+        { event: "*", schema: "public", table: "profiles" } as never,
+        schedule,
+      )
       .on(
         "postgres_changes" as never,
         { event: "*", schema: "public", table: "conversations" } as never,
         schedule,
       )
-      .on("postgres_changes" as never, { event: "*", schema: "public", table: "messages" } as never, schedule)
+      .on(
+        "postgres_changes" as never,
+        { event: "*", schema: "public", table: "messages" } as never,
+        schedule,
+      )
       .subscribe();
 
     return () => {
