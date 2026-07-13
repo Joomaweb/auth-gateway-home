@@ -71,12 +71,32 @@ type LogEntry = {
   text: string;
 };
 
+const REALTIME_TABLES = [
+  { table: "products", label: "מוצרים" },
+  { table: "product_variants", label: "וריאנטים ומלאי" },
+  { table: "categories", label: "קטגוריות" },
+  { table: "store_settings", label: "הגדרות / מדיה / תשלומים" },
+  { table: "orders", label: "הזמנות" },
+  { table: "order_items", label: "פריטי הזמנה" },
+  { table: "profiles", label: "לקוחות" },
+  { table: "conversations", label: "שיחות" },
+  { table: "messages", label: "הודעות צ'אט" },
+] as const;
+
+type RealtimeTable = (typeof REALTIME_TABLES)[number]["table"];
+type RealtimeStatus = "idle" | "connecting" | "live" | "error";
+
 function RealtimeTester() {
-  const [orderStatus, setOrderStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
-  const [msgStatus, setMsgStatus] = useState<"idle" | "connecting" | "live" | "error">("idle");
+  const [statuses, setStatuses] = useState<Record<RealtimeTable, RealtimeStatus>>(() =>
+    REALTIME_TABLES.reduce((acc, { table }) => ({ ...acc, [table]: "idle" }), {} as Record<RealtimeTable, RealtimeStatus>),
+  );
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const channelsRef = useRef<{ orders?: any; messages?: any }>({});
+  const channelsRef = useRef<Partial<Record<RealtimeTable, any>>>({});
   const idRef = useRef(0);
+
+  const setTableStatus = (table: RealtimeTable, status: RealtimeStatus) => {
+    setStatuses((prev) => ({ ...prev, [table]: status }));
+  };
 
   const log = (level: LogEntry["level"], text: string) => {
     idRef.current += 1;
@@ -89,15 +109,12 @@ function RealtimeTester() {
     setLogs((prev) => [entry, ...prev].slice(0, 80));
   };
 
-  const subscribe = (
-    table: "orders" | "messages",
-    setStatus: typeof setOrderStatus,
-  ) => {
+  const subscribe = (table: RealtimeTable) => {
     if (channelsRef.current[table]) {
       log("info", `כבר מחובר ל-${table}`);
       return;
     }
-    setStatus("connecting");
+    setTableStatus(table, "connecting");
     log("info", `מתחבר ל-Realtime · ${table}…`);
     const channel = supabase
       .channel(`rt-${table}-${Date.now()}`)
@@ -114,27 +131,27 @@ function RealtimeTester() {
       )
       .subscribe((status: string, err?: Error) => {
         if (status === "SUBSCRIBED") {
-          setStatus("live");
+          setTableStatus(table, "live");
           log("success", `מחובר בהצלחה ל-${table} ✓`);
           toast.success(`Realtime · ${table} פעיל`);
         } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-          setStatus("error");
+          setTableStatus(table, "error");
           log("error", `שגיאת חיבור ל-${table}: ${err?.message || status}`);
           toast.error(`כשל בחיבור ל-${table}`);
         } else if (status === "CLOSED") {
-          setStatus("idle");
+          setTableStatus(table, "idle");
           log("info", `החיבור ל-${table} נסגר`);
         }
       });
     channelsRef.current[table] = channel;
   };
 
-  const unsubscribe = (table: "orders" | "messages", setStatus: typeof setOrderStatus) => {
+  const unsubscribe = (table: RealtimeTable) => {
     const ch = channelsRef.current[table];
     if (ch) {
       supabase.removeChannel(ch);
       channelsRef.current[table] = undefined;
-      setStatus("idle");
+      setTableStatus(table, "idle");
       log("info", `נותק מ-${table}`);
     }
   };
@@ -145,7 +162,7 @@ function RealtimeTester() {
     };
   }, []);
 
-  const StatusDot = ({ s }: { s: typeof orderStatus }) => {
+  const StatusDot = ({ s }: { s: RealtimeStatus }) => {
     const map = {
       idle: "bg-muted-foreground/40",
       connecting: "bg-amber-500 animate-pulse",
@@ -165,12 +182,10 @@ function RealtimeTester() {
     table,
     label,
     status,
-    setStatus,
   }: {
-    table: "orders" | "messages";
+    table: RealtimeTable;
     label: string;
-    status: typeof orderStatus;
-    setStatus: typeof setOrderStatus;
+    status: RealtimeStatus;
   }) => (
     <div className="flex items-center justify-between gap-3 p-3 rounded-md border bg-muted/30">
       <div className="flex items-center gap-3">
@@ -185,11 +200,11 @@ function RealtimeTester() {
       <div className="flex items-center gap-3">
         <StatusDot s={status} />
         {status === "live" || status === "connecting" ? (
-          <Button size="sm" variant="outline" onClick={() => unsubscribe(table, setStatus)}>
+          <Button size="sm" variant="outline" onClick={() => unsubscribe(table)}>
             <Square className="h-3.5 w-3.5 me-1.5" /> נתק
           </Button>
         ) : (
-          <Button size="sm" onClick={() => subscribe(table, setStatus)}>
+          <Button size="sm" onClick={() => subscribe(table)}>
             <Play className="h-3.5 w-3.5 me-1.5" /> חבר
           </Button>
         )}
@@ -208,7 +223,7 @@ function RealtimeTester() {
             <div>
               <CardTitle className="text-lg">בדיקת Realtime חיה</CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Subscribe להזמנות והודעות — לוגים בזמן אמת
+                Subscribe לכל טבלאות החנות הקריטיות — לוגים בזמן אמת
               </p>
             </div>
           </div>
@@ -219,8 +234,9 @@ function RealtimeTester() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid gap-2.5 md:grid-cols-2">
-          <Row table="orders" label="הזמנות" status={orderStatus} setStatus={setOrderStatus} />
-          <Row table="messages" label="הודעות צ'אט" status={msgStatus} setStatus={setMsgStatus} />
+          {REALTIME_TABLES.map(({ table, label }) => (
+            <Row key={table} table={table} label={label} status={statuses[table]} />
+          ))}
         </div>
 
         <div
