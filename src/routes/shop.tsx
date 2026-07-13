@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRealtime } from "@/hooks/use-realtime";
 import { ChevronRight } from "lucide-react";
 import { optimizeImg, srcSet } from "@/lib/img";
-import { invalidateRunCache, run } from "@/lib/api";
+import { run } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
 

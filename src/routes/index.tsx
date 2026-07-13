@@ -9,7 +9,7 @@ import { useT } from "@/lib/i18n";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { useRealtime } from "@/hooks/use-realtime";
 import { optimizeImg, srcSet } from "@/lib/img";
-import { invalidateRunCache, run } from "@/lib/api";
+import { run } from "@/lib/api";
 import { getPublicStoreSettings } from "@/lib/store-settings";
 import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
 

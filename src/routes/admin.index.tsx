@@ -4,8 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShoppingCart, DollarSign, Users, AlertTriangle } from "lucide-react";
-import { run } from "@/lib/api";
-import { invalidateRunCache } from "@/lib/api";
+import { invalidateRunCache, run } from "@/lib/api";
 import { useRealtime } from "@/hooks/use-realtime";
 
 export const Route = createFileRoute("/admin/")({
