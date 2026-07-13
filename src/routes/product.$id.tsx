@@ -356,7 +356,9 @@ function ProductPage() {
                     onClick={() => setSize(s)}
                     className={cn(
                       "min-w-12 px-4 py-2 rounded-md border text-sm",
-                      size === s ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted",
+                      size === s
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "hover:bg-muted",
                     )}
                   >
                     {s}
@@ -376,7 +378,9 @@ function ProductPage() {
                     onClick={() => setColor(c)}
                     className={cn(
                       "px-4 py-2 rounded-md border text-sm capitalize",
-                      color === c ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted",
+                      color === c
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "hover:bg-muted",
                     )}
                   >
                     {c}
