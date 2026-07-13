@@ -18,7 +18,25 @@ export const Route = createFileRoute("/admin/settings")({
 
 type ShippingMethod = { name: string; price: number };
 type ShippingZone = { name: string; price: number; eta: string };
-type Hero = { image: string; title: string; subtitle: string; cta_text: string; cta_link: string; badge: string; pos_x?: number; pos_y?: number; show_overlay?: boolean };
+type Hero = {
+  image: string;
+  title: string;
+  subtitle: string;
+  cta_text: string;
+  cta_link: string;
+  badge: string;
+  pos_x?: number;
+  pos_y?: number;
+  pos_x_mobile?: number;
+  pos_y_mobile?: number;
+  fit?: "cover" | "contain";
+  fit_mobile?: "cover" | "contain";
+  height_desktop?: number;
+  height_mobile?: number;
+  scale?: number;
+  scale_mobile?: number;
+  show_overlay?: boolean;
+};
 type Branding = {
   logo_url: string;
   favicon_url: string;
