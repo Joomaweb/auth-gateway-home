@@ -18,7 +18,7 @@ import { optimizeImg, srcSet } from "@/lib/img";
 import { run } from "@/lib/api";
 import { getPublicStoreSettings } from "@/lib/store-settings";
 import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
-import { isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
+import { getVideoSources, isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
 import { useMediaPreload } from "@/hooks/use-media-preload";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCachedMedia } from "@/hooks/use-cached-media";
@@ -163,6 +163,8 @@ function HomePage() {
   const { t } = useT();
   const [showDeferredMedia, setShowDeferredMedia] = useState(false);
   const [heroVideoReady, setHeroVideoReady] = useState(false);
+  const [heroVideoFailed, setHeroVideoFailed] = useState(false);
+  const [heroVideoRetry, setHeroVideoRetry] = useState(0);
   const heroVideoRef = useRef<HTMLVideoElement | null>(null);
   const settingsQ = useQuery(homeSettingsQueryOptions());
   const showFeatured = settingsQ.data?.showFeatured ?? true;
@@ -193,17 +195,26 @@ function HomePage() {
 
   // Persistent local cache: serve hero video & poster from the browser's
   // Cache Storage on repeat visits (0ms), while keeping cloud as source of truth.
-  const cachedHeroVideo = useCachedMedia(isDirectHeroVideo ? heroVideo : "");
   const cachedHeroPoster = useCachedMedia(heroPoster);
-  const heroVideoSrc = cachedHeroVideo || heroVideo;
+  const heroVideoSrc = heroVideoRetry > 0 && heroVideo ? `${heroVideo}${heroVideo.includes("?") ? "&" : "?"}retry=${heroVideoRetry}` : heroVideo;
   const heroPosterSrc = cachedHeroPoster || heroPoster;
+  const heroVideoSources = getVideoSources(heroVideoSrc);
 
   // Warm cache for carousel slides + prune deleted assets on every settings load.
   useEffect(() => {
     const keep = [heroVideo, hero?.image, ...slides].filter(Boolean) as string[];
-    warmMediaCache(keep);
+    warmMediaCache([hero?.image, ...slides]);
     void pruneMediaCache(keep);
   }, [heroVideo, hero?.image, slides]);
+
+  // Never download the large hero video in a hidden background request while
+  // the visible <video> is trying to stream. Cache it only after playback has
+  // already started, so first load gets all bandwidth.
+  useEffect(() => {
+    if (!heroVideoReady || !isDirectHeroVideo || !heroVideo) return;
+    const id = setTimeout(() => warmMediaCache([heroVideo], { includeVideos: true }), 6000);
+    return () => clearTimeout(id);
+  }, [heroVideoReady, isDirectHeroVideo, heroVideo]);
 
   // Defer realtime subscriptions until after first paint so they don't slow TTI.
   const [rtReady, setRtReady] = useState(false);
@@ -222,16 +233,18 @@ function HomePage() {
   );
   useEffect(() => {
     setHeroVideoReady(false);
+    setHeroVideoFailed(false);
+    setHeroVideoRetry(0);
   }, [heroVideo]);
   useEffect(() => {
     const video = heroVideoRef.current;
-    if (!video || !isDirectHeroVideo) return;
+    if (!video || !isDirectHeroVideo || heroVideoFailed) return;
 
     video.load();
     const playPromise = video.play();
     if (playPromise) playPromise.catch(() => undefined);
     if (video.readyState >= 2) setHeroVideoReady(true);
-  }, [heroVideo, isDirectHeroVideo]);
+  }, [heroVideoSrc, isDirectHeroVideo, heroVideoFailed]);
   useEffect(() => {
     const start = () => setShowDeferredMedia(true);
     if (typeof window !== "undefined" && "requestIdleCallback" in window) {
@@ -267,7 +280,7 @@ function HomePage() {
             ...heroSectionStyle,
             ...(heroVideo && heroPoster
               ? {
-                  backgroundImage: `url(${heroPoster})`,
+                  backgroundImage: `url(${heroPosterSrc})`,
                   backgroundSize: heroFit,
                   backgroundPosition: heroPosition,
                   backgroundRepeat: "no-repeat",
@@ -278,8 +291,8 @@ function HomePage() {
         >
           {isDirectHeroVideo ? (
             <video
+              key={heroVideoSrc}
               ref={heroVideoRef}
-              src={heroVideoSrc}
               autoPlay
               muted
               loop
@@ -289,13 +302,24 @@ function HomePage() {
               onLoadedData={() => setHeroVideoReady(true)}
               onCanPlay={() => setHeroVideoReady(true)}
               onPlaying={() => setHeroVideoReady(true)}
-              className={`absolute inset-0 w-full h-full transition-opacity duration-200 ${heroVideoReady || !heroPoster ? "opacity-100" : "opacity-0"}`}
+              onError={() => {
+                if (heroVideoRetry < 1) {
+                  window.setTimeout(() => setHeroVideoRetry((n) => n + 1), 700);
+                  return;
+                }
+                setHeroVideoFailed(true);
+              }}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-200 ${heroVideoReady && !heroVideoFailed ? "opacity-100" : "opacity-0"}`}
               style={{
                 objectFit: heroFit,
                 objectPosition: heroPosition,
                 transform: `scale(${heroScale})`,
               }}
-            />
+            >
+              {heroVideoSources.map((source) => (
+                <source key={source.src} src={source.src} type={source.type} />
+              ))}
+            </video>
           ) : heroVideo ? (
             <iframe
               src={toEmbedUrl(heroVideo)}

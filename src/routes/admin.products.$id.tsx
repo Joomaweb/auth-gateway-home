@@ -245,12 +245,13 @@ function ProductEdit() {
         return;
       }
       const small = await downscaleImage(file);
-      const ext = small.type === "image/png" ? "png" : small.type === "image/webp" ? "webp" : "jpg";
+      const ext = small.type === "image/png" ? "png" : small.type === "image/webp" ? "webp" : v.ext;
+      const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
       const path = `products/${user.id}/${Date.now()}-${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage.from("upload").upload(path, small, {
-        contentType: small.type,
+        contentType,
         upsert: false,
-        cacheControl: "3600",
+        cacheControl: "31536000",
       });
       if (error) {
         toast.error("Upload failed: " + error.message);
@@ -273,8 +274,9 @@ function ProductEdit() {
       const v = await validateVideoFile(file);
       if (!v.ok) { toast.error(v.error); return; }
       const path = `products/${user.id}/video-${Date.now()}-${crypto.randomUUID()}.${v.ext}`;
+      const contentType = v.ext === "webm" ? "video/webm" : v.ext === "mov" ? "video/quicktime" : "video/mp4";
       const { error } = await supabase.storage.from("upload").upload(path, file, {
-        contentType: file.type, upsert: false, cacheControl: "3600",
+        contentType, upsert: false, cacheControl: "31536000",
       });
       if (error) { toast.error("Video upload failed: " + error.message); return; }
       const { data } = supabase.storage.from("upload").getPublicUrl(path);

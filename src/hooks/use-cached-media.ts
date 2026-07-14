@@ -7,14 +7,17 @@ import { getCachedMediaUrl } from "@/lib/media-cache";
  * behind the scenes the file is downloaded into Cache Storage so the next
  * visit is instant.
  */
-export function useCachedMedia(src: string | null | undefined): string {
+export function useCachedMedia(
+  src: string | null | undefined,
+  options: { fetchOnMiss?: boolean; includeVideos?: boolean } = { fetchOnMiss: true },
+): string {
   const [url, setUrl] = useState<string>(src ?? "");
   useEffect(() => {
     let alive = true;
     let created: string | null = null;
     setUrl(src ?? "");
     if (!src) return;
-    getCachedMediaUrl(src).then((resolved) => {
+    getCachedMediaUrl(src, options).then((resolved) => {
       if (!alive) return;
       if (resolved !== src && resolved.startsWith("blob:")) created = resolved;
       setUrl(resolved);
@@ -23,6 +26,6 @@ export function useCachedMedia(src: string | null | undefined): string {
       alive = false;
       if (created) URL.revokeObjectURL(created);
     };
-  }, [src]);
+  }, [src, options.fetchOnMiss, options.includeVideos]);
   return url;
 }

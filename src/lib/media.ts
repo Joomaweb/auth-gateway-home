@@ -8,6 +8,18 @@ export function isDirectVideoUrl(url: string | null | undefined): boolean {
   return !!url && !isEmbedVideoUrl(url);
 }
 
+export function isLikelyVideoFile(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const pathname = (() => {
+    try {
+      return new URL(url).pathname.toLowerCase();
+    } catch {
+      return url.toLowerCase().split("?")[0] ?? "";
+    }
+  })();
+  return /\.(mp4|webm|mov|qt)$/.test(pathname);
+}
+
 export function toEmbedUrl(url: string): string {
   const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]+)/i);
   if (yt) {
@@ -48,4 +60,25 @@ export function getVideoMimeType(url: string): string | undefined {
   if (pathname.endsWith(".webm")) return "video/webm";
   if (pathname.endsWith(".mov") || pathname.endsWith(".qt")) return "video/quicktime";
   return undefined;
+}
+
+export function getVideoSources(url: string): { src: string; type?: string }[] {
+  const clean = url.trim();
+  if (!clean) return [];
+
+  const sources: { src: string; type?: string }[] = [];
+  const add = (src: string) => {
+    if (!sources.some((source) => source.src === src)) {
+      sources.push({ src, type: getVideoMimeType(src) });
+    }
+  };
+
+  // If an optimized sibling WebM exists, prefer it for Chromium/Android.
+  // MP4 remains the fallback for Safari/iOS.
+  if (/\.mp4(?:[?#].*)?$/i.test(clean)) {
+    add(clean.replace(/\.mp4(?=([?#]|$))/i, ".webm"));
+  }
+
+  add(clean);
+  return sources;
 }

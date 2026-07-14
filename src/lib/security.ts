@@ -4,7 +4,7 @@ export const MAX_IMAGE_BYTES = 30 * 1024 * 1024; // 30 MB
 export const MAX_VIDEO_BYTES = 200 * 1024 * 1024; // 200 MB
 const ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp"] as const;
 const ALLOWED_EXT = ["png", "jpg", "jpeg", "webp"] as const;
-const ALLOWED_VIDEO_MIME = ["video/mp4", "video/webm", "video/quicktime"] as const;
+const ALLOWED_VIDEO_MIME = ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v", "application/octet-stream"] as const;
 const ALLOWED_VIDEO_EXT = ["mp4", "webm", "mov"] as const;
 
 // Magic bytes for PNG / JPEG / WebP. Prevents fake-extension uploads.
@@ -30,6 +30,14 @@ function isWebp(b: Uint8Array) {
     b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
     b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50
   );
+}
+
+function isIsoVideo(b: Uint8Array) {
+  return b.length >= 12 && b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70;
+}
+
+function isWebm(b: Uint8Array) {
+  return b.length >= 4 && b[0] === 0x1a && b[1] === 0x45 && b[2] === 0xdf && b[3] === 0xa3;
 }
 
 export type ImageValidation =
@@ -78,7 +86,7 @@ export async function downscaleImage(file: File, maxDim = 2200, targetBytes = 2 
     const ctx = canvas.getContext("2d");
     if (!ctx) return file;
     ctx.drawImage(bmp, 0, 0, w, h);
-    const isPngLike = file.type === "image/png";
+    const isPngLike = file.type === "image/png" || /\.png$/i.test(file.name);
     const mime = isPngLike ? "image/png" : "image/jpeg";
     const ext = isPngLike ? "png" : "jpg";
     const blob: Blob | null = await new Promise((res) => canvas.toBlob(res, mime, 0.85));
@@ -101,8 +109,15 @@ export async function validateVideoFile(file: File): Promise<VideoValidation> {
   if (!ALLOWED_VIDEO_EXT.includes(ext as (typeof ALLOWED_VIDEO_EXT)[number])) {
     return { ok: false, error: "Unsupported extension. Only MP4 / WEBM / MOV" };
   }
-  if (!ALLOWED_VIDEO_MIME.includes(file.type as (typeof ALLOWED_VIDEO_MIME)[number])) {
+  if (file.type && !ALLOWED_VIDEO_MIME.includes(file.type as (typeof ALLOWED_VIDEO_MIME)[number])) {
     return { ok: false, error: "Unsupported file type. Only MP4 / WEBM / MOV" };
+  }
+  const sig = await readSignature(file, 16);
+  if (ext === "webm" && !isWebm(sig)) {
+    return { ok: false, error: "File content is not a valid WEBM video" };
+  }
+  if ((ext === "mp4" || ext === "mov") && !isIsoVideo(sig)) {
+    return { ok: false, error: "File content is not a valid MP4 / MOV video" };
   }
   return { ok: true, ext: ext === "mp4" ? "mp4" : ext === "webm" ? "webm" : "mov" };
 }
