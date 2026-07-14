@@ -39,26 +39,27 @@ export type ImageValidation =
 export async function validateImageFile(file: File): Promise<ImageValidation> {
   if (!file) return { ok: false, error: "No file selected" };
   if (file.size === 0) return { ok: false, error: "Empty file" };
-  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "File is larger than 200MB" };
+  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "File is larger than 30MB" };
 
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
+  const normExt = ext === "jpeg" ? "jpg" : ext;
   if (!ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number])) {
     return { ok: false, error: "Unsupported extension. Only PNG / JPG / WEBP" };
   }
-  if (!ALLOWED_MIME.includes(file.type as (typeof ALLOWED_MIME)[number])) {
-    return { ok: false, error: "Unsupported file type. Only PNG / JPG / WEBP" };
-  }
-
+  // Some mobile browsers report empty or non-standard MIME (e.g. application/octet-stream, image/jpg).
+  // Trust the file signature (magic bytes) as the source of truth.
   const sig = await readSignature(file);
   const png = isPng(sig);
   const jpg = isJpeg(sig);
   const webp = isWebp(sig);
   if (!png && !jpg && !webp) return { ok: false, error: "File content is not a valid image" };
-  if (png && file.type !== "image/png") return { ok: false, error: "File content does not match its type" };
-  if (jpg && file.type !== "image/jpeg") return { ok: false, error: "File content does not match its type" };
-  if (webp && file.type !== "image/webp") return { ok: false, error: "File content does not match its type" };
 
-  return { ok: true, ext: png ? "png" : webp ? "webp" : "jpg" };
+  const detected: "png" | "jpg" | "webp" = png ? "png" : webp ? "webp" : "jpg";
+  // If extension is provided, ensure it matches actual content.
+  if (normExt !== detected) {
+    return { ok: false, error: `File is actually ${detected.toUpperCase()}, rename it with .${detected} extension` };
+  }
+  return { ok: true, ext: detected };
 }
 
 // Client-side downscale to keep big phone photos under 2MB before upload.
