@@ -150,11 +150,12 @@ function AdminSettings() {
     const v = await validateImageFile(file);
     if (!v.ok) { toast.error(v.error); return; }
     const small = await downscaleImage(file);
-    const ext = small.type === "image/png" ? "png" : small.type === "image/webp" ? "webp" : "jpg";
+    const ext = small.type === "image/png" ? "png" : small.type === "image/webp" ? "webp" : v.ext;
+    const contentType = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
     const rand = crypto.randomUUID();
     const path = `site/${user.id}/${Date.now()}-${rand}.${ext}`;
     const { error } = await supabase.storage.from("upload").upload(path, small, {
-      contentType: small.type, upsert: false, cacheControl: "3600",
+      contentType, upsert: false, cacheControl: "31536000",
     });
     if (error) { toast.error("Upload failed: " + error.message); return; }
     const { data } = supabase.storage.from("upload").getPublicUrl(path);
@@ -170,8 +171,9 @@ function AdminSettings() {
     setUploadingVid(true);
     try {
       const path = `site/${user.id}/video-${Date.now()}-${crypto.randomUUID()}.${v.ext}`;
+      const contentType = v.ext === "webm" ? "video/webm" : v.ext === "mov" ? "video/quicktime" : "video/mp4";
       const { error } = await supabase.storage.from("upload").upload(path, file, {
-        contentType: file.type, upsert: false, cacheControl: "31536000",
+        contentType, upsert: false, cacheControl: "31536000",
       });
       if (error) { toast.error("Video upload failed: " + error.message); return; }
       const { data } = supabase.storage.from("upload").getPublicUrl(path);
