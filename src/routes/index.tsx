@@ -18,7 +18,7 @@ import { optimizeImg, srcSet } from "@/lib/img";
 import { run } from "@/lib/api";
 import { getPublicStoreSettings } from "@/lib/store-settings";
 import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
-import { getVideoMimeType, isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
+import { getVideoSources, isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
 import { useMediaPreload } from "@/hooks/use-media-preload";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useCachedMedia } from "@/hooks/use-cached-media";
@@ -198,6 +198,7 @@ function HomePage() {
   const cachedHeroPoster = useCachedMedia(heroPoster);
   const heroVideoSrc = heroVideoRetry > 0 && heroVideo ? `${heroVideo}${heroVideo.includes("?") ? "&" : "?"}retry=${heroVideoRetry}` : heroVideo;
   const heroPosterSrc = cachedHeroPoster || heroPoster;
+  const heroVideoSources = getVideoSources(heroVideoSrc);
 
   // Warm cache for carousel slides + prune deleted assets on every settings load.
   useEffect(() => {
@@ -315,7 +316,9 @@ function HomePage() {
                 transform: `scale(${heroScale})`,
               }}
             >
-              <source src={heroVideoSrc} type={getVideoMimeType(heroVideoSrc)} />
+              {heroVideoSources.map((source) => (
+                <source key={source.src} src={source.src} type={source.type} />
+              ))}
             </video>
           ) : heroVideo ? (
             <iframe
