@@ -77,10 +77,11 @@ function AdminCategories() {
     const v = await validateImageFile(file);
     if (!v.ok) return toast.error(v.error);
     const path = `categories/${user.id}/${Date.now()}-${crypto.randomUUID()}.${v.ext}`;
+    const contentType = v.ext === "png" ? "image/png" : v.ext === "webp" ? "image/webp" : "image/jpeg";
     const { error } = await supabase.storage.from("upload").upload(path, file, {
-      contentType: file.type,
+      contentType,
       upsert: false,
-      cacheControl: "3600",
+      cacheControl: "31536000",
     });
     if (error) return toast.error("העלאה נכשלה: " + error.message);
     const { data } = supabase.storage.from("upload").getPublicUrl(path);
