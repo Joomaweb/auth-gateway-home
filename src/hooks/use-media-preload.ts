@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import {
   getDnsPrefetchHref,
   getMediaOrigin,
-  getVideoMimeType,
   isDirectVideoUrl,
 } from "@/lib/media";
 
@@ -49,15 +48,10 @@ export function useMediaPreload(videoUrl?: string, posterUrl?: string) {
       if (origin) add({ rel: "preconnect", href: origin });
       if (dns) add({ rel: "dns-prefetch", href: dns });
 
-      if (isDirectVideoUrl(cleanVideoUrl)) {
-        add({
-          rel: "preload",
-          href: cleanVideoUrl,
-          as: "video",
-          type: getVideoMimeType(cleanVideoUrl),
-          fetchPriority: "high",
-        });
-      }
+      // Do not add <link rel="preload" as="video">. Chromium mobile often
+      // ignores that `as` value and it creates a second large request next to
+      // the <video> element. The element itself streams the video immediately.
+      void isDirectVideoUrl(cleanVideoUrl);
     }
 
     if (cleanPosterUrl) {

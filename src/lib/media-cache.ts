@@ -13,6 +13,8 @@
 
 const CACHE_NAME = "site-media-v1";
 const MAX_BYTES = 300 * 1024 * 1024; // 300 MB total ceiling
+const VIDEO_EXT_RE = /\.(mp4|webm|mov|qt)(?:\?|#|$)/i;
+const inFlight = new Set<string>();
 
 function isBrowser() {
   return typeof window !== "undefined" && "caches" in window;
@@ -28,10 +30,13 @@ async function openCache(): Promise<Cache | null> {
 }
 
 /**
- * Return a cached object-URL for `src` if present, else fetch, store, and return
- * an object-URL. Falls back to the original URL on any failure.
+ * Return a cached object-URL for `src` if present. On a miss, optionally warm
+ * the cache in the background, but always return the network URL immediately.
  */
-export async function getCachedMediaUrl(src: string): Promise<string> {
+export async function getCachedMediaUrl(
+  src: string,
+  options: { fetchOnMiss?: boolean; includeVideos?: boolean } = {},
+): Promise<string> {
   if (!src || !isBrowser()) return src;
   const cache = await openCache();
   if (!cache) return src;
@@ -42,18 +47,7 @@ export async function getCachedMediaUrl(src: string): Promise<string> {
       const blob = await hit.blob();
       return URL.createObjectURL(blob);
     }
-    // Fetch + cache in the background; return the network URL immediately so
-    // the browser can start streaming without waiting for the full download.
-    void (async () => {
-      try {
-        const res = await fetch(src, { mode: "cors", credentials: "omit" });
-        if (!res.ok) return;
-        await cache.put(src, res.clone());
-        await enforceQuota(cache);
-      } catch {
-        /* ignore */
-      }
-    })();
+    if (options.fetchOnMiss) warmMediaCache([src], { includeVideos: options.includeVideos });
     return src;
   } catch {
     return src;
@@ -61,9 +55,16 @@ export async function getCachedMediaUrl(src: string): Promise<string> {
 }
 
 /** Warm the cache for a list of URLs without blocking. */
-export function warmMediaCache(urls: (string | null | undefined)[]) {
+export function warmMediaCache(
+  urls: (string | null | undefined)[],
+  options: { includeVideos?: boolean } = {},
+) {
   if (!isBrowser()) return;
-  const list = urls.filter((u): u is string => !!u && /^https?:/i.test(u));
+  const list = urls.filter((u): u is string => {
+    if (!u || !/^https?:/i.test(u)) return false;
+    if (!options.includeVideos && VIDEO_EXT_RE.test(u)) return false;
+    return true;
+  });
   if (!list.length) return;
   void (async () => {
     const cache = await openCache();
@@ -72,11 +73,15 @@ export function warmMediaCache(urls: (string | null | undefined)[]) {
       list.map(async (u) => {
         const hit = await cache.match(u);
         if (hit) return;
+        if (inFlight.has(u)) return;
+        inFlight.add(u);
         try {
           const res = await fetch(u, { mode: "cors", credentials: "omit" });
           if (res.ok) await cache.put(u, res.clone());
         } catch {
           /* ignore */
+        } finally {
+          inFlight.delete(u);
         }
       }),
     );

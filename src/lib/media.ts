@@ -8,6 +8,18 @@ export function isDirectVideoUrl(url: string | null | undefined): boolean {
   return !!url && !isEmbedVideoUrl(url);
 }
 
+export function isLikelyVideoFile(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const pathname = (() => {
+    try {
+      return new URL(url).pathname.toLowerCase();
+    } catch {
+      return url.toLowerCase().split("?")[0] ?? "";
+    }
+  })();
+  return /\.(mp4|webm|mov|qt)$/.test(pathname);
+}
+
 export function toEmbedUrl(url: string): string {
   const yt = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]+)/i);
   if (yt) {
