@@ -405,6 +405,7 @@ export type Database = {
           free_shipping_threshold: number | null
           hero: Json | null
           hero_video: string | null
+          home_categories: Json | null
           id: number
           legal: Json
           payment_methods: Json
@@ -425,6 +426,7 @@ export type Database = {
           free_shipping_threshold?: number | null
           hero?: Json | null
           hero_video?: string | null
+          home_categories?: Json | null
           id: number
           legal?: Json
           payment_methods?: Json
@@ -445,6 +447,7 @@ export type Database = {
           free_shipping_threshold?: number | null
           hero?: Json | null
           hero_video?: string | null
+          home_categories?: Json | null
           id?: number
           legal?: Json
           payment_methods?: Json
