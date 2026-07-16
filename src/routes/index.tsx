@@ -63,6 +63,7 @@ type HomeSettingsData = {
   slides: string[];
   showFeatured: boolean;
   showSale: boolean;
+  homeCategoryIds: string[];
 };
 
 async function fetchHomeCollections(
@@ -141,6 +142,7 @@ async function fetchHomeSettings(): Promise<HomeSettingsData> {
     carousel_images?: string[];
     show_featured?: boolean;
     show_sale?: boolean;
+    home_categories?: string[];
   } | null;
   return {
     hero: (d?.hero as Hero) ?? {
@@ -156,6 +158,7 @@ async function fetchHomeSettings(): Promise<HomeSettingsData> {
     slides: Array.isArray(d?.carousel_images) ? (d!.carousel_images as string[]) : [],
     showFeatured: d?.show_featured ?? true,
     showSale: d?.show_sale ?? true,
+    homeCategoryIds: Array.isArray(d?.home_categories) ? (d!.home_categories as string[]) : [],
   };
 }
 
