@@ -210,6 +210,7 @@ function AdminSettings() {
       company,
       show_featured: showFeatured,
       show_sale: showSale,
+      home_categories: homeCategoryIds,
     });
     setBusy(false);
     if (error) toast.error(error.message);
