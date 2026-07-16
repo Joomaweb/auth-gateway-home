@@ -33,7 +33,7 @@ const productSchema = z
     message: "מחיר המבצע חייב להיות נמוך מהמחיר הרגיל",
     path: ["sale_price"],
   });
-type FieldErrors = Partial<Record<"name" | "price" | "sale_price" | "images" | "sizes" | "colors" | "stock" | "form", string>>;
+type FieldErrors = Partial<Record<"name" | "price" | "sale_price" | "images" | "sizes" | "colors" | "stock" | "category_id" | "form", string>>;
 
 export const Route = createFileRoute("/admin/products/$id")({
   component: ProductEdit,
