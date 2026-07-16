@@ -180,17 +180,33 @@ function ProductEdit() {
     applyProductRows(pRes.data, (vRes.data ?? []) as Variant[]);
   };
 
+  const loadCategories = async () => {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id,name,parent_id")
+      .order("name");
+    if (error) {
+      console.error("categories load:", error);
+      return;
+    }
+    const rows = (data ?? []) as { id: string; name: string; parent_id: string | null }[];
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const labeled = rows.map((r) => ({
+      id: r.id,
+      name: r.parent_id && byId.get(r.parent_id) ? `${byId.get(r.parent_id)!.name} › ${r.name}` : r.name,
+    }));
+    setCats(labeled);
+  };
+
   // Load categories + (if editing) the product itself
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const { data: catsData, error: catsErr } = await withTimeout(
-          supabase.from("categories").select("id,name").order("name"),
+        await withTimeout(
+          loadCategories(),
           "החיבור לקטגוריות לוקח יותר מדי זמן. בדוק את החיבור ל-Supabase ונסה שוב.",
         );
-        if (catsErr) console.error("categories load:", catsErr);
-        if (!cancelled) setCats((catsData ?? []) as { id: string; name: string }[]);
 
         if (isNew) {
           if (!cancelled) setLoading(false);
@@ -229,6 +245,7 @@ function ProductEdit() {
       cancelled = true;
     };
   }, [id, isNew]);
+  useRealtime("categories", loadCategories);
   useRealtime(isNew ? "" : "products", loadCurrentProduct, `id=eq.${id}`);
   useRealtime(isNew ? "" : "product_variants", loadCurrentProduct, `product_id=eq.${id}`);
 
