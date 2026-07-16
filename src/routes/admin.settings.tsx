@@ -120,6 +120,8 @@ function AdminSettings() {
   const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
   const [showFeatured, setShowFeatured] = useState(true);
   const [showSale, setShowSale] = useState(true);
+  const [homeCategoryIds, setHomeCategoryIds] = useState<string[]>([]);
+  const [allCategories, setAllCategories] = useState<{ id: string; name: string; parent_id: string | null }[]>([]);
   const [busy, setBusy] = useState(false);
   const [uploadingVid, setUploadingVid] = useState(false);
 
@@ -136,13 +138,22 @@ function AdminSettings() {
       if (data.company) setCompany({ ...DEFAULT_COMPANY, ...(data.company as Company) });
       setShowFeatured(data.show_featured ?? true);
       setShowSale(data.show_sale ?? true);
+      setHomeCategoryIds(Array.isArray(data.home_categories) ? (data.home_categories as string[]) : []);
+    });
+  };
+
+  const loadCategories = () => {
+    supabase.from("categories").select("id,name,parent_id").order("name").then(({ data }) => {
+      setAllCategories((data ?? []) as { id: string; name: string; parent_id: string | null }[]);
     });
   };
 
   useEffect(() => {
     loadSettings();
+    loadCategories();
   }, []);
   useRealtime("store_settings", loadSettings, "id=eq.1");
+  useRealtime("categories", loadCategories);
 
   const uploadTo = async (file: File, onDone: (url: string) => void) => {
     if (!user) { toast.error("Not signed in"); return; }
