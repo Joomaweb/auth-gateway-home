@@ -33,7 +33,7 @@ const productSchema = z
     message: "מחיר המבצע חייב להיות נמוך מהמחיר הרגיל",
     path: ["sale_price"],
   });
-type FieldErrors = Partial<Record<"name" | "price" | "sale_price" | "images" | "sizes" | "colors" | "stock" | "form", string>>;
+type FieldErrors = Partial<Record<"name" | "price" | "sale_price" | "images" | "sizes" | "colors" | "stock" | "category_id" | "form", string>>;
 
 export const Route = createFileRoute("/admin/products/$id")({
   component: ProductEdit,
@@ -180,17 +180,33 @@ function ProductEdit() {
     applyProductRows(pRes.data, (vRes.data ?? []) as Variant[]);
   };
 
+  const loadCategories = async () => {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id,name,parent_id")
+      .order("name");
+    if (error) {
+      console.error("categories load:", error);
+      return;
+    }
+    const rows = (data ?? []) as { id: string; name: string; parent_id: string | null }[];
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const labeled = rows.map((r) => ({
+      id: r.id,
+      name: r.parent_id && byId.get(r.parent_id) ? `${byId.get(r.parent_id)!.name} › ${r.name}` : r.name,
+    }));
+    setCats(labeled);
+  };
+
   // Load categories + (if editing) the product itself
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const { data: catsData, error: catsErr } = await withTimeout(
-          supabase.from("categories").select("id,name").order("name"),
+        await withTimeout(
+          loadCategories(),
           "החיבור לקטגוריות לוקח יותר מדי זמן. בדוק את החיבור ל-Supabase ונסה שוב.",
         );
-        if (catsErr) console.error("categories load:", catsErr);
-        if (!cancelled) setCats((catsData ?? []) as { id: string; name: string }[]);
 
         if (isNew) {
           if (!cancelled) setLoading(false);
@@ -229,6 +245,7 @@ function ProductEdit() {
       cancelled = true;
     };
   }, [id, isNew]);
+  useRealtime("categories", loadCategories);
   useRealtime(isNew ? "" : "products", loadCurrentProduct, `id=eq.${id}`);
   useRealtime(isNew ? "" : "product_variants", loadCurrentProduct, `product_id=eq.${id}`);
 
@@ -405,6 +422,13 @@ function ProductEdit() {
       else if (nonInt) errs.stock = "המלאי חייב להיות מספר שלם";
       else if (tooBig) errs.stock = "מלאי גדול מדי (עד 100,000 ליחידה)";
       else if (totalStock === 0) errs.stock = "סה״כ המלאי 0 — הזן כמות לפחות לקומבינציה אחת";
+    }
+
+    // Category is required and must reference an existing category
+    if (!form.category_id) {
+      errs.category_id = "חובה לבחור קטגוריה קיימת";
+    } else if (!cats.some((c) => c.id === form.category_id)) {
+      errs.category_id = "הקטגוריה שנבחרה אינה קיימת יותר — בחר קטגוריה מהרשימה";
     }
 
     if (Object.keys(errs).length > 0) {
@@ -615,23 +639,41 @@ function ProductEdit() {
               {fieldErrors.sale_price && <p className="text-xs text-destructive">{fieldErrors.sale_price}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>
+                Category <span className="text-destructive">*</span>
+              </Label>
               <Select
-                value={form.category_id || NONE}
-                onValueChange={(v) => setForm({ ...form, category_id: v === NONE ? "" : v })}
+                value={form.category_id || ""}
+                onValueChange={(v) => {
+                  setForm({ ...form, category_id: v });
+                  setFieldErrors((e) => ({ ...e, category_id: undefined }));
+                }}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="— None —" />
+                <SelectTrigger
+                  className={cn(fieldErrors.category_id && "border-destructive focus-visible:ring-destructive")}
+                  aria-invalid={!!fieldErrors.category_id}
+                >
+                  <SelectValue placeholder={cats.length ? "בחר קטגוריה…" : "אין קטגוריות — צור קטגוריה קודם"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NONE}>— None —</SelectItem>
-                  {cats.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
+                  {cats.length === 0 ? (
+                    <div className="px-2 py-3 text-xs text-muted-foreground">
+                      אין קטגוריות. עבור ל־ניהול → קטגוריות והוסף אחת.
+                    </div>
+                  ) : (
+                    cats.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              {fieldErrors.category_id ? (
+                <p className="text-xs text-destructive">{fieldErrors.category_id}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">חובה — כל מוצר חייב להיות משויך לקטגוריה קיימת.</p>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-6 pt-2">
