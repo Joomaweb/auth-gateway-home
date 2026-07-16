@@ -602,6 +602,69 @@ function AdminSettings() {
             </div>
             <input type="checkbox" className="h-5 w-5 accent-primary" checked={showSale} onChange={(e) => setShowSale(e.target.checked)} />
           </label>
+
+          <div className="pt-4 border-t space-y-2">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h4 className="font-medium text-sm">קטגוריות להצגה בדף הבית</h4>
+                <p className="text-xs text-muted-foreground">
+                  בחר אילו קטגוריות יופיעו בסקשן הקטגוריות בדף הבית. ללא בחירה — יוצגו כל הקטגוריות. השינויים בזמן אמת.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setHomeCategoryIds(allCategories.map((c) => c.id))}
+                  className="text-xs px-2.5 py-1 rounded border hover:bg-muted"
+                >
+                  בחר הכל
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setHomeCategoryIds([])}
+                  className="text-xs px-2.5 py-1 rounded border hover:bg-muted"
+                >
+                  נקה
+                </button>
+              </div>
+            </div>
+            {allCategories.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-6 border-2 border-dashed rounded">
+                אין קטגוריות. הוסף קטגוריות בעמוד הקטגוריות תחילה.
+              </p>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2">
+                {allCategories.map((c) => {
+                  const parent = c.parent_id ? allCategories.find((p) => p.id === c.parent_id) : null;
+                  const label = parent ? `${parent.name} › ${c.name}` : c.name;
+                  const checked = homeCategoryIds.includes(c.id);
+                  return (
+                    <label
+                      key={c.id}
+                      className={`flex items-center justify-between gap-3 p-2.5 rounded border cursor-pointer text-sm ${checked ? "bg-primary/5 border-primary/40" : "bg-background hover:bg-muted/50"}`}
+                    >
+                      <span className="truncate">{label}</span>
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 accent-primary flex-shrink-0"
+                        checked={checked}
+                        onChange={(e) => {
+                          setHomeCategoryIds((prev) =>
+                            e.target.checked ? [...prev, c.id] : prev.filter((x) => x !== c.id),
+                          );
+                        }}
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+            {homeCategoryIds.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                נבחרו {homeCategoryIds.length} קטגוריות מתוך {allCategories.length}.
+              </p>
+            )}
+          </div>
         </section>
 
         {/* Shipping zones */}
