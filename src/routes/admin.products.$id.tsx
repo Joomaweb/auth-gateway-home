@@ -424,6 +424,13 @@ function ProductEdit() {
       else if (totalStock === 0) errs.stock = "סה״כ המלאי 0 — הזן כמות לפחות לקומבינציה אחת";
     }
 
+    // Category is required and must reference an existing category
+    if (!form.category_id) {
+      errs.category_id = "חובה לבחור קטגוריה קיימת";
+    } else if (!cats.some((c) => c.id === form.category_id)) {
+      errs.category_id = "הקטגוריה שנבחרה אינה קיימת יותר — בחר קטגוריה מהרשימה";
+    }
+
     if (Object.keys(errs).length > 0) {
       setFieldErrors(errs);
       const first = Object.values(errs)[0];
