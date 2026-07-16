@@ -639,23 +639,41 @@ function ProductEdit() {
               {fieldErrors.sale_price && <p className="text-xs text-destructive">{fieldErrors.sale_price}</p>}
             </div>
             <div className="space-y-2">
-              <Label>Category</Label>
+              <Label>
+                Category <span className="text-destructive">*</span>
+              </Label>
               <Select
-                value={form.category_id || NONE}
-                onValueChange={(v) => setForm({ ...form, category_id: v === NONE ? "" : v })}
+                value={form.category_id || ""}
+                onValueChange={(v) => {
+                  setForm({ ...form, category_id: v });
+                  setFieldErrors((e) => ({ ...e, category_id: undefined }));
+                }}
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="— None —" />
+                <SelectTrigger
+                  className={cn(fieldErrors.category_id && "border-destructive focus-visible:ring-destructive")}
+                  aria-invalid={!!fieldErrors.category_id}
+                >
+                  <SelectValue placeholder={cats.length ? "בחר קטגוריה…" : "אין קטגוריות — צור קטגוריה קודם"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value={NONE}>— None —</SelectItem>
-                  {cats.map((c) => (
-                    <SelectItem key={c.id} value={c.id}>
-                      {c.name}
-                    </SelectItem>
-                  ))}
+                  {cats.length === 0 ? (
+                    <div className="px-2 py-3 text-xs text-muted-foreground">
+                      אין קטגוריות. עבור ל־ניהול → קטגוריות והוסף אחת.
+                    </div>
+                  ) : (
+                    cats.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
+              {fieldErrors.category_id ? (
+                <p className="text-xs text-destructive">{fieldErrors.category_id}</p>
+              ) : (
+                <p className="text-xs text-muted-foreground">חובה — כל מוצר חייב להיות משויך לקטגוריה קיימת.</p>
+              )}
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-6 pt-2">
