@@ -128,6 +128,7 @@ function RootComponent() {
             <AuthProvider>
               <RealtimeCacheBridge />
               <Outlet />
+              <PromoBanner />
               <Toaster richColors position="top-center" />
             </AuthProvider>
           </ActiveThemeProvider>
