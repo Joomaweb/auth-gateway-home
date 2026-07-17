@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { useRealtime } from "@/hooks/use-realtime";
 import { Button } from "@/components/ui/button";
-import { Download, ShoppingCart, Users, Package, TrendingUp, RefreshCw, Radio } from "lucide-react";
+import { Download, ShoppingCart, Users, Package, TrendingUp, RefreshCw, Radio, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/reports")({
