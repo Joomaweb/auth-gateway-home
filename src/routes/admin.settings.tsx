@@ -215,6 +215,7 @@ function AdminSettings() {
       show_featured: showFeatured,
       show_sale: showSale,
       home_categories: homeCategoryIds,
+      promo_banner: promo,
     });
     setBusy(false);
     if (error) toast.error(error.message);
