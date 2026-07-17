@@ -394,6 +394,14 @@ function AdminReports() {
           onExport={exportProducts}
           count={products.length}
         />
+        <ReportCard
+          icon={<Mail className="h-6 w-6" />}
+          title="נרשמי באנר"
+          desc="רשימת תפוצה של מיילים שנאספו מהבאנר הקופץ"
+          sheets={["Banner Subscribers"]}
+          onExport={exportSubscribers}
+          count={subscribers.length}
+        />
       </div>
     </div>
   );
