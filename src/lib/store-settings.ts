@@ -12,10 +12,11 @@ export type PublicStoreSettings = {
   show_featured?: boolean;
   show_sale?: boolean;
   home_categories?: unknown;
+  promo_banner?: unknown;
 };
 
 const SETTINGS_KEY = "store_settings:public";
-const SETTINGS_SELECT = "branding,legal,active_theme,hero,hero_video,carousel_images,show_featured,show_sale,home_categories";
+const SETTINGS_SELECT = "branding,legal,active_theme,hero,hero_video,carousel_images,show_featured,show_sale,home_categories,promo_banner";
 
 export async function getPublicStoreSettings(): Promise<PublicStoreSettings> {
   const { data, error } = await run(
