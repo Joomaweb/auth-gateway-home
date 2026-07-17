@@ -122,6 +122,7 @@ function AdminSettings() {
   const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
   const [showFeatured, setShowFeatured] = useState(true);
   const [showSale, setShowSale] = useState(true);
+  const [promo, setPromo] = useState<PromoBanner>(DEFAULT_PROMO);
   const [homeCategoryIds, setHomeCategoryIds] = useState<string[]>([]);
   const [allCategories, setAllCategories] = useState<{ id: string; name: string; parent_id: string | null }[]>([]);
   const [busy, setBusy] = useState(false);
