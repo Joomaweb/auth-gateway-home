@@ -142,6 +142,7 @@ function AdminSettings() {
       setShowFeatured(data.show_featured ?? true);
       setShowSale(data.show_sale ?? true);
       setHomeCategoryIds(Array.isArray(data.home_categories) ? (data.home_categories as string[]) : []);
+      if (data.promo_banner) setPromo({ ...DEFAULT_PROMO, ...(data.promo_banner as PromoBanner) });
     });
   };
 
