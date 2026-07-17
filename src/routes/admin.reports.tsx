@@ -108,18 +108,20 @@ function AdminReports() {
   const [lastSync, setLastSync] = useState<Date | null>(null);
 
   const load = async () => {
-    const [o, oi, p, c, pr] = await Promise.all([
+    const [o, oi, p, c, pr, bs] = await Promise.all([
       supabase.from("orders").select("*").order("created_at", { ascending: false }),
       supabase.from("order_items").select("*"),
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("categories").select("id,name,slug"),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("banner_subscribers").select("*").order("created_at", { ascending: false }),
     ]);
     setOrders((o.data ?? []) as Order[]);
     setItems((oi.data ?? []) as OrderItem[]);
     setProducts((p.data ?? []) as Product[]);
     setCategories((c.data ?? []) as Category[]);
     setProfiles((pr.data ?? []) as Profile[]);
+    setSubscribers((bs.data ?? []) as BannerSub[]);
     setLoading(false);
     setLastSync(new Date());
   };
