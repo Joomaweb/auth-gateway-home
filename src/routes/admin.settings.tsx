@@ -107,6 +107,7 @@ const DEFAULT_BRANDING: Branding = {
   footer_tagline_he: "",
 };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
+const DEFAULT_PROMO: PromoBanner = { enabled: false, title: "", description: "", coupon_code: "", button_text: "Get Discount", image_url: "" };
 
 function AdminSettings() {
   const { t } = useT();
