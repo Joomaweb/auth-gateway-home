@@ -822,10 +822,11 @@ function AdminSettings() {
           </p>
         </section>
 
-
+        <div className="border-l-4 border-primary bg-primary/5 p-4 rounded text-sm">
           הגדרות תשלום (PayPal, Square, אמצעי תשלום ידניים) עברו לעמוד נפרד —
           <a href="/admin/payments" className="underline font-medium me-1">תשלומים</a>.
         </div>
+
 
         {/* Company / Invoice details */}
         <section className="border rounded-lg p-6 bg-card space-y-4">
