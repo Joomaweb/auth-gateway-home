@@ -49,6 +49,7 @@ type Branding = {
   footer_tagline_he?: string;
 };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
+type PromoBanner = { enabled: boolean; title: string; description: string; coupon_code: string; button_text: string; image_url: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
