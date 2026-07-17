@@ -133,6 +133,7 @@ function AdminReports() {
   useRealtime("order_items", load);
   useRealtime("products", load);
   useRealtime("profiles", load);
+  useRealtime("banner_subscribers", load);
 
   const catMap = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c.name])), [categories]);
   const profMap = useMemo(() => Object.fromEntries(profiles.map((p) => [p.id, p])), [profiles]);
