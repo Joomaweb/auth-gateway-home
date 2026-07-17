@@ -56,6 +56,7 @@ type Profile = {
   address: { city?: string; country?: string; street?: string; zip?: string } | null;
   created_at: string;
 };
+type BannerSub = { id: string; email: string; coupon_code: string | null; source: string | null; created_at: string };
 
 function fmtDate(v: string | null | undefined) {
   if (!v) return "";
