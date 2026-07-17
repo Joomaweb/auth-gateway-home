@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      banner_subscribers: {
+        Row: {
+          coupon_code: string | null
+          created_at: string
+          email: string
+          id: string
+          source: string | null
+        }
+        Insert: {
+          coupon_code?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          source?: string | null
+        }
+        Update: {
+          coupon_code?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          source?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string
@@ -410,6 +434,7 @@ export type Database = {
           legal: Json
           payment_methods: Json
           paypal: Json
+          promo_banner: Json | null
           shipping_methods: Json
           shipping_zones: Json
           show_featured: boolean
@@ -431,6 +456,7 @@ export type Database = {
           legal?: Json
           payment_methods?: Json
           paypal?: Json
+          promo_banner?: Json | null
           shipping_methods?: Json
           shipping_zones?: Json
           show_featured?: boolean
@@ -452,6 +478,7 @@ export type Database = {
           legal?: Json
           payment_methods?: Json
           paypal?: Json
+          promo_banner?: Json | null
           shipping_methods?: Json
           shipping_zones?: Json
           show_featured?: boolean

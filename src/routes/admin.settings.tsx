@@ -49,6 +49,7 @@ type Branding = {
   footer_tagline_he?: string;
 };
 type Company = { name: string; address: string; email: string; phone: string; tax_id: string; logo: string; invoice_prefix: string };
+type PromoBanner = { enabled: boolean; title: string; description: string; coupon_code: string; button_text: string; image_url: string };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
@@ -106,6 +107,7 @@ const DEFAULT_BRANDING: Branding = {
   footer_tagline_he: "",
 };
 const DEFAULT_COMPANY: Company = { name: "", address: "", email: "", phone: "", tax_id: "", logo: "", invoice_prefix: "INV" };
+const DEFAULT_PROMO: PromoBanner = { enabled: false, title: "", description: "", coupon_code: "", button_text: "Get Discount", image_url: "" };
 
 function AdminSettings() {
   const { t } = useT();
@@ -120,6 +122,7 @@ function AdminSettings() {
   const [company, setCompany] = useState<Company>(DEFAULT_COMPANY);
   const [showFeatured, setShowFeatured] = useState(true);
   const [showSale, setShowSale] = useState(true);
+  const [promo, setPromo] = useState<PromoBanner>(DEFAULT_PROMO);
   const [homeCategoryIds, setHomeCategoryIds] = useState<string[]>([]);
   const [allCategories, setAllCategories] = useState<{ id: string; name: string; parent_id: string | null }[]>([]);
   const [busy, setBusy] = useState(false);
@@ -139,6 +142,7 @@ function AdminSettings() {
       setShowFeatured(data.show_featured ?? true);
       setShowSale(data.show_sale ?? true);
       setHomeCategoryIds(Array.isArray(data.home_categories) ? (data.home_categories as string[]) : []);
+      if (data.promo_banner) setPromo({ ...DEFAULT_PROMO, ...(data.promo_banner as PromoBanner) });
     });
   };
 
@@ -211,6 +215,7 @@ function AdminSettings() {
       show_featured: showFeatured,
       show_sale: showSale,
       home_categories: homeCategoryIds,
+      promo_banner: promo,
     });
     setBusy(false);
     if (error) toast.error(error.message);
@@ -713,10 +718,115 @@ function AdminSettings() {
           </details>
         </section>
 
+        {/* Promo popup banner */}
+        <section className="border rounded-lg p-6 bg-card space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="font-semibold">באנר קופץ (Popup Banner)</h3>
+              <p className="text-xs text-muted-foreground mt-1">
+                מוצג באמצע המסך בכל טעינה/רענון של האתר. המיילים נאספים אוטומטית לרשימת תפוצה
+                (זמין ב״דוחות״).
+              </p>
+            </div>
+            <label className="inline-flex items-center gap-2 text-sm cursor-pointer whitespace-nowrap">
+              <input
+                type="checkbox"
+                checked={promo.enabled}
+                onChange={(e) => setPromo({ ...promo, enabled: e.target.checked })}
+                className="h-4 w-4 accent-primary"
+              />
+              <span className="font-medium">{promo.enabled ? "פעיל" : "כבוי"}</span>
+            </label>
+          </div>
+
+          <div className="grid gap-3">
+            <div className="space-y-2">
+              <Label>כותרת</Label>
+              <Input
+                value={promo.title}
+                onChange={(e) => setPromo({ ...promo, title: e.target.value })}
+                placeholder="Get 10% off your first order"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>תיאור / הסבר</Label>
+              <Textarea
+                rows={2}
+                value={promo.description}
+                onChange={(e) => setPromo({ ...promo, description: e.target.value })}
+                placeholder="Join our list and unlock a welcome discount."
+              />
+            </div>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>קוד קופון (יוצג אחרי הרשמה)</Label>
+                <Input
+                  value={promo.coupon_code}
+                  onChange={(e) => setPromo({ ...promo, coupon_code: e.target.value.toUpperCase() })}
+                  placeholder="WELCOME10"
+                  className="font-mono"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>טקסט כפתור</Label>
+                <Input
+                  value={promo.button_text}
+                  onChange={(e) => setPromo({ ...promo, button_text: e.target.value })}
+                  placeholder="Get Discount"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>תמונה (אופציונלי)</Label>
+              <div className="flex items-start gap-3">
+                {promo.image_url && (
+                  <div className="w-24 h-16 rounded overflow-hidden bg-muted border flex-shrink-0">
+                    <img src={promo.image_url} alt="" className="w-full h-full object-cover" />
+                  </div>
+                )}
+                <div className="flex-1 space-y-2">
+                  <Input
+                    value={promo.image_url}
+                    onChange={(e) => setPromo({ ...promo, image_url: e.target.value })}
+                    placeholder="https://..."
+                  />
+                  <label className="inline-flex items-center gap-2 text-sm cursor-pointer text-primary hover:underline">
+                    <Upload className="h-4 w-4" /> העלה תמונה
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      hidden
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) uploadTo(f, (u) => setPromo({ ...promo, image_url: u }));
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  {promo.image_url && (
+                    <button
+                      type="button"
+                      onClick={() => setPromo({ ...promo, image_url: "" })}
+                      className="text-xs text-destructive hover:underline inline-flex items-center gap-1"
+                    >
+                      <X className="h-3 w-3" /> הסר תמונה
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground border-t pt-3">
+            💡 הבאנר יופיע לגולשים ברגע ששומרים כאן — עדכון בזמן אמת.
+          </p>
+        </section>
+
         <div className="border-l-4 border-primary bg-primary/5 p-4 rounded text-sm">
           הגדרות תשלום (PayPal, Square, אמצעי תשלום ידניים) עברו לעמוד נפרד —
           <a href="/admin/payments" className="underline font-medium me-1">תשלומים</a>.
         </div>
+
 
         {/* Company / Invoice details */}
         <section className="border rounded-lg p-6 bg-card space-y-4">

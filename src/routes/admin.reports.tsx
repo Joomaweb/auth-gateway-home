@@ -4,7 +4,7 @@ import * as XLSX from "xlsx";
 import { supabase } from "@/lib/supabase";
 import { useRealtime } from "@/hooks/use-realtime";
 import { Button } from "@/components/ui/button";
-import { Download, ShoppingCart, Users, Package, TrendingUp, RefreshCw, Radio } from "lucide-react";
+import { Download, ShoppingCart, Users, Package, TrendingUp, RefreshCw, Radio, Mail } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/reports")({
@@ -56,6 +56,7 @@ type Profile = {
   address: { city?: string; country?: string; street?: string; zip?: string } | null;
   created_at: string;
 };
+type BannerSub = { id: string; email: string; coupon_code: string | null; source: string | null; created_at: string };
 
 function fmtDate(v: string | null | undefined) {
   if (!v) return "";
@@ -102,22 +103,25 @@ function AdminReports() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [subscribers, setSubscribers] = useState<BannerSub[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastSync, setLastSync] = useState<Date | null>(null);
 
   const load = async () => {
-    const [o, oi, p, c, pr] = await Promise.all([
+    const [o, oi, p, c, pr, bs] = await Promise.all([
       supabase.from("orders").select("*").order("created_at", { ascending: false }),
       supabase.from("order_items").select("*"),
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("categories").select("id,name,slug"),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("banner_subscribers").select("*").order("created_at", { ascending: false }),
     ]);
     setOrders((o.data ?? []) as Order[]);
     setItems((oi.data ?? []) as OrderItem[]);
     setProducts((p.data ?? []) as Product[]);
     setCategories((c.data ?? []) as Category[]);
     setProfiles((pr.data ?? []) as Profile[]);
+    setSubscribers((bs.data ?? []) as BannerSub[]);
     setLoading(false);
     setLastSync(new Date());
   };
@@ -129,6 +133,7 @@ function AdminReports() {
   useRealtime("order_items", load);
   useRealtime("products", load);
   useRealtime("profiles", load);
+  useRealtime("banner_subscribers", load);
 
   const catMap = useMemo(() => Object.fromEntries(categories.map((c) => [c.id, c.name])), [categories]);
   const profMap = useMemo(() => Object.fromEntries(profiles.map((p) => [p.id, p])), [profiles]);
@@ -292,11 +297,25 @@ function AdminReports() {
     toast.success("Products report exported");
   };
 
+  const exportSubscribers = () => {
+    const wb = XLSX.utils.book_new();
+    addSheet(wb, "Banner Subscribers", subscribers.map((s) => ({
+      Email: s.email,
+      "Coupon Code": s.coupon_code ?? "",
+      Source: s.source ?? "",
+      "Signed Up": new Date(s.created_at).toLocaleString("en-US"),
+    })));
+    download(wb, `subscribers-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Subscribers exported");
+  };
+
   const exportAll = () => {
     exportSales();
     setTimeout(exportCustomers, 200);
     setTimeout(exportProducts, 400);
+    setTimeout(exportSubscribers, 600);
   };
+
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -350,7 +369,7 @@ function AdminReports() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <ReportCard
           icon={<ShoppingCart className="h-6 w-6" />}
           title="דוח מכירות"
@@ -374,6 +393,14 @@ function AdminReports() {
           sheets={["Products", "Top 50 Sellers"]}
           onExport={exportProducts}
           count={products.length}
+        />
+        <ReportCard
+          icon={<Mail className="h-6 w-6" />}
+          title="נרשמי באנר"
+          desc="רשימת תפוצה של מיילים שנאספו מהבאנר הקופץ"
+          sheets={["Banner Subscribers"]}
+          onExport={exportSubscribers}
+          count={subscribers.length}
         />
       </div>
     </div>

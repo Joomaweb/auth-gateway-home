@@ -17,6 +17,7 @@ import { ActiveThemeProvider } from "@/hooks/use-active-theme";
 import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/lib/supabase";
 import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
+import { PromoBanner } from "@/components/PromoBanner";
 
 function getBackendOrigin() {
   try {
@@ -128,6 +129,7 @@ function RootComponent() {
             <AuthProvider>
               <RealtimeCacheBridge />
               <Outlet />
+              <PromoBanner />
               <Toaster richColors position="top-center" />
             </AuthProvider>
           </ActiveThemeProvider>
