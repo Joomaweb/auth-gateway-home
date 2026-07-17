@@ -297,11 +297,25 @@ function AdminReports() {
     toast.success("Products report exported");
   };
 
+  const exportSubscribers = () => {
+    const wb = XLSX.utils.book_new();
+    addSheet(wb, "Banner Subscribers", subscribers.map((s) => ({
+      Email: s.email,
+      "Coupon Code": s.coupon_code ?? "",
+      Source: s.source ?? "",
+      "Signed Up": new Date(s.created_at).toLocaleString("en-US"),
+    })));
+    download(wb, `subscribers-${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Subscribers exported");
+  };
+
   const exportAll = () => {
     exportSales();
     setTimeout(exportCustomers, 200);
     setTimeout(exportProducts, 400);
+    setTimeout(exportSubscribers, 600);
   };
+
 
   return (
     <div className="space-y-6" dir="rtl">
