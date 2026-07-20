@@ -104,7 +104,7 @@ export type VideoValidation =
 export async function validateVideoFile(file: File): Promise<VideoValidation> {
   if (!file) return { ok: false, error: "No file selected" };
   if (file.size === 0) return { ok: false, error: "Empty file" };
-  if (file.size > MAX_VIDEO_BYTES) return { ok: false, error: "Video is larger than 200MB" };
+  if (file.size > MAX_VIDEO_BYTES) return { ok: false, error: "Video is larger than 400MB" };
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   if (!ALLOWED_VIDEO_EXT.includes(ext as (typeof ALLOWED_VIDEO_EXT)[number])) {
     return { ok: false, error: "Unsupported extension. Only MP4 / WEBM / MOV" };
