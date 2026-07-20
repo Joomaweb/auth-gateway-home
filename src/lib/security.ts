@@ -50,12 +50,8 @@ export async function validateImageFile(file: File): Promise<ImageValidation> {
   if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "File is larger than 60MB" };
 
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
-  const normExt = ext === "jpeg" ? "jpg" : ext;
-  if (!ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number])) {
-    return { ok: false, error: "Unsupported extension. Only PNG / JPG / WEBP" };
-  }
-  // Some mobile browsers report empty or non-standard MIME (e.g. application/octet-stream, image/jpg).
-  // Trust the file signature (magic bytes) as the source of truth.
+  // Trust the file signature (magic bytes) as the source of truth — mobile
+  // browsers and share-sheets frequently pass wrong or missing extensions.
   const sig = await readSignature(file);
   const png = isPng(sig);
   const jpg = isJpeg(sig);
@@ -63,11 +59,10 @@ export async function validateImageFile(file: File): Promise<ImageValidation> {
   if (!png && !jpg && !webp) return { ok: false, error: "File content is not a valid image" };
 
   const detected: "png" | "jpg" | "webp" = png ? "png" : webp ? "webp" : "jpg";
-  // If extension is provided, ensure it matches actual content.
-  if (normExt !== detected) {
-    return { ok: false, error: `File is actually ${detected.toUpperCase()}, rename it with .${detected} extension` };
-  }
+  // Accept even if extension mismatches — we'll use the detected type when uploading.
+  void ext;
   return { ok: true, ext: detected };
+
 }
 
 // Client-side downscale to keep big phone photos under 2MB before upload.
