@@ -1,7 +1,7 @@
 // Frontend security helpers: input sanitization, image/video validation, password rules.
 
-export const MAX_IMAGE_BYTES = 30 * 1024 * 1024; // 30 MB
-export const MAX_VIDEO_BYTES = 200 * 1024 * 1024; // 200 MB
+export const MAX_IMAGE_BYTES = 60 * 1024 * 1024; // 60 MB
+export const MAX_VIDEO_BYTES = 400 * 1024 * 1024; // 400 MB
 const ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp"] as const;
 const ALLOWED_EXT = ["png", "jpg", "jpeg", "webp"] as const;
 const ALLOWED_VIDEO_MIME = ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v", "application/octet-stream"] as const;
@@ -47,7 +47,7 @@ export type ImageValidation =
 export async function validateImageFile(file: File): Promise<ImageValidation> {
   if (!file) return { ok: false, error: "No file selected" };
   if (file.size === 0) return { ok: false, error: "Empty file" };
-  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "File is larger than 30MB" };
+  if (file.size > MAX_IMAGE_BYTES) return { ok: false, error: "File is larger than 60MB" };
 
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   const normExt = ext === "jpeg" ? "jpg" : ext;
@@ -104,7 +104,7 @@ export type VideoValidation =
 export async function validateVideoFile(file: File): Promise<VideoValidation> {
   if (!file) return { ok: false, error: "No file selected" };
   if (file.size === 0) return { ok: false, error: "Empty file" };
-  if (file.size > MAX_VIDEO_BYTES) return { ok: false, error: "Video is larger than 200MB" };
+  if (file.size > MAX_VIDEO_BYTES) return { ok: false, error: "Video is larger than 400MB" };
   const ext = (file.name.split(".").pop() ?? "").toLowerCase();
   if (!ALLOWED_VIDEO_EXT.includes(ext as (typeof ALLOWED_VIDEO_EXT)[number])) {
     return { ok: false, error: "Unsupported extension. Only MP4 / WEBM / MOV" };
