@@ -1,7 +1,7 @@
 // Frontend security helpers: input sanitization, image/video validation, password rules.
 
-export const MAX_IMAGE_BYTES = 30 * 1024 * 1024; // 30 MB
-export const MAX_VIDEO_BYTES = 200 * 1024 * 1024; // 200 MB
+export const MAX_IMAGE_BYTES = 60 * 1024 * 1024; // 60 MB
+export const MAX_VIDEO_BYTES = 400 * 1024 * 1024; // 400 MB
 const ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp"] as const;
 const ALLOWED_EXT = ["png", "jpg", "jpeg", "webp"] as const;
 const ALLOWED_VIDEO_MIME = ["video/mp4", "video/webm", "video/quicktime", "video/x-m4v", "application/octet-stream"] as const;
