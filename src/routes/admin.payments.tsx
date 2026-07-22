@@ -39,15 +39,17 @@ function AdminPayments() {
   const [payment, setPayment] = useState<PaymentMethod[]>(DEFAULT_PAYMENT_METHODS);
   const [paypal, setPaypal] = useState<PayPal>(DEFAULT_PAYPAL);
   const [square, setSquare] = useState<Square>(DEFAULT_SQUARE);
+  const [taxRate, setTaxRate] = useState<number>(0);
   const [busy, setBusy] = useState(false);
 
   const loadPaymentSettings = () => {
-    supabase.from("store_settings").select("payment_methods, paypal, square").eq("id", 1).maybeSingle()
+    supabase.from("store_settings").select("payment_methods, paypal, square, tax_rate").eq("id", 1).maybeSingle()
       .then(({ data }) => {
         if (!data) return;
         setPayment(paymentMethodsFrom(data.payment_methods));
         if (data.paypal) setPaypal({ ...DEFAULT_PAYPAL, ...(data.paypal as PayPal) });
         if (data.square) setSquare({ ...DEFAULT_SQUARE, ...(data.square as Square) });
+        setTaxRate(Number((data as { tax_rate?: number }).tax_rate ?? 0));
       });
   };
 
