@@ -242,7 +242,7 @@ function CheckoutPage() {
         status: paid ? "paid" : (needsApproval ? "awaiting_stock" : "pending"),
         subtotal,
         shipping: shippingFee,
-        tax: 0,
+        tax: taxAmount,
         total,
         shipping_address: {
           full_name: form.full_name,
