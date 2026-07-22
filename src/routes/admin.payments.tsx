@@ -162,6 +162,31 @@ function AdminPayments() {
           </div>
         </section>
 
+        {/* Tax */}
+        <section className="border rounded-lg p-6 bg-card space-y-3">
+          <h3 className="font-semibold">מס (Tax)</h3>
+          <p className="text-xs text-muted-foreground">
+            אחוז המס שיתווסף אוטומטית לכל הזמנה בצ'קאאוט (למשל 17 עבור 17%). עדכון בזמן אמת.
+          </p>
+          <div className="grid sm:grid-cols-[200px_1fr] gap-3 items-end">
+            <div className="space-y-2">
+              <Label>Tax rate (%)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                value={taxRate}
+                onChange={(e) => setTaxRate(Number(e.target.value))}
+                placeholder="0"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              הזן 0 כדי לבטל את חיוב המס.
+            </p>
+          </div>
+        </section>
+
         <Button type="submit" disabled={busy} className="w-full">{busy ? "שומר..." : "שמור"}</Button>
       </form>
     </div>
