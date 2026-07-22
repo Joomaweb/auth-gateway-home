@@ -184,7 +184,9 @@ function CheckoutPage() {
     settings?.free_shipping_threshold != null && subtotal >= settings.free_shipping_threshold
       ? 0
       : shippingMethod?.price ?? 0;
-  const total = subtotal + shippingFee;
+  const taxRate = Number(settings?.tax_rate ?? 0);
+  const taxAmount = Math.max(0, ((subtotal + shippingFee) * taxRate) / 100);
+  const total = subtotal + shippingFee + taxAmount;
 
   const requiredFieldsValid = !!(form.full_name && form.phone && form.address && form.city && form.zip && form.country);
   const guestFieldsValid = !!user || (form.email.trim().length > 3 && form.password.length >= 6);
