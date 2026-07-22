@@ -66,6 +66,7 @@ function AdminPayments() {
       payment_methods: payment,
       paypal,
       square,
+      tax_rate: Number.isFinite(taxRate) ? taxRate : 0,
     });
     setBusy(false);
     if (error) toast.error(error.message);
