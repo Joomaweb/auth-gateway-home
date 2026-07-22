@@ -39,15 +39,17 @@ function AdminPayments() {
   const [payment, setPayment] = useState<PaymentMethod[]>(DEFAULT_PAYMENT_METHODS);
   const [paypal, setPaypal] = useState<PayPal>(DEFAULT_PAYPAL);
   const [square, setSquare] = useState<Square>(DEFAULT_SQUARE);
+  const [taxRate, setTaxRate] = useState<number>(0);
   const [busy, setBusy] = useState(false);
 
   const loadPaymentSettings = () => {
-    supabase.from("store_settings").select("payment_methods, paypal, square").eq("id", 1).maybeSingle()
+    supabase.from("store_settings").select("payment_methods, paypal, square, tax_rate").eq("id", 1).maybeSingle()
       .then(({ data }) => {
         if (!data) return;
         setPayment(paymentMethodsFrom(data.payment_methods));
         if (data.paypal) setPaypal({ ...DEFAULT_PAYPAL, ...(data.paypal as PayPal) });
         if (data.square) setSquare({ ...DEFAULT_SQUARE, ...(data.square as Square) });
+        setTaxRate(Number((data as { tax_rate?: number }).tax_rate ?? 0));
       });
   };
 
@@ -64,6 +66,7 @@ function AdminPayments() {
       payment_methods: payment,
       paypal,
       square,
+      tax_rate: Number.isFinite(taxRate) ? taxRate : 0,
     });
     setBusy(false);
     if (error) toast.error(error.message);
@@ -156,6 +159,31 @@ function AdminPayments() {
             Webhook URL (הדבק ב-Square Developer Dashboard → Webhooks → Notification URL):
             <code className="block mt-1 p-2 bg-muted rounded break-all">https://auth-gateway-home.lovable.app/api/public/square-webhook</code>
             הירשם לאירועים: <strong>payment.created</strong>, <strong>payment.updated</strong>.
+          </div>
+        </section>
+
+        {/* Tax */}
+        <section className="border rounded-lg p-6 bg-card space-y-3">
+          <h3 className="font-semibold">מס (Tax)</h3>
+          <p className="text-xs text-muted-foreground">
+            אחוז המס שיתווסף אוטומטית לכל הזמנה בצ'קאאוט (למשל 17 עבור 17%). עדכון בזמן אמת.
+          </p>
+          <div className="grid sm:grid-cols-[200px_1fr] gap-3 items-end">
+            <div className="space-y-2">
+              <Label>Tax rate (%)</Label>
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step="0.01"
+                value={taxRate}
+                onChange={(e) => setTaxRate(Number(e.target.value))}
+                placeholder="0"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              הזן 0 כדי לבטל את חיוב המס.
+            </p>
           </div>
         </section>
 

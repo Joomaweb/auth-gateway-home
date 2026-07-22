@@ -91,6 +91,7 @@ function CheckoutPage() {
     free_shipping_threshold: number | null;
     paypal: PayPalCfg;
     square: SquareCfg;
+    tax_rate: number;
   } | null>(null);
   const [needsApproval, setNeedsApproval] = useState(false);
 
@@ -128,6 +129,7 @@ function CheckoutPage() {
       free_shipping_threshold: data.free_shipping_threshold,
       paypal,
       square,
+      tax_rate: Number(data.tax_rate ?? 0),
     });
     setPayment((current) => {
       if (current && methods.some((m) => m.enabled && m.name === current)) return current;
@@ -182,7 +184,9 @@ function CheckoutPage() {
     settings?.free_shipping_threshold != null && subtotal >= settings.free_shipping_threshold
       ? 0
       : shippingMethod?.price ?? 0;
-  const total = subtotal + shippingFee;
+  const taxRate = Number(settings?.tax_rate ?? 0);
+  const taxAmount = Math.max(0, ((subtotal + shippingFee) * taxRate) / 100);
+  const total = subtotal + shippingFee + taxAmount;
 
   const requiredFieldsValid = !!(form.full_name && form.phone && form.address && form.city && form.zip && form.country);
   const guestFieldsValid = !!user || (form.email.trim().length > 3 && form.password.length >= 6);
@@ -238,7 +242,7 @@ function CheckoutPage() {
         status: paid ? "paid" : (needsApproval ? "awaiting_stock" : "pending"),
         subtotal,
         shipping: shippingFee,
-        tax: 0,
+        tax: taxAmount,
         total,
         shipping_address: {
           full_name: form.full_name,
@@ -536,6 +540,12 @@ function CheckoutPage() {
             <div className="border-t pt-3 space-y-2 text-sm">
               <div className="flex justify-between"><span>{t("cart.subtotal")}</span><span>${subtotal.toFixed(2)}</span></div>
               <div className="flex justify-between"><span>{t("cart.shipping")}</span><span>${shippingFee.toFixed(2)}</span></div>
+              {taxRate > 0 && (
+                <div className="flex justify-between">
+                  <span>Tax ({taxRate}%)</span>
+                  <span>${taxAmount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-base font-semibold border-t pt-2">
                 <span>{t("cart.total")}</span><span>${total.toFixed(2)}</span>
               </div>
