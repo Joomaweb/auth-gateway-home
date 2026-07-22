@@ -129,6 +129,7 @@ function CheckoutPage() {
       free_shipping_threshold: data.free_shipping_threshold,
       paypal,
       square,
+      tax_rate: Number(data.tax_rate ?? 0),
     });
     setPayment((current) => {
       if (current && methods.some((m) => m.enabled && m.name === current)) return current;
