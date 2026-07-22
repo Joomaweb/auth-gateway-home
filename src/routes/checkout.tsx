@@ -91,6 +91,7 @@ function CheckoutPage() {
     free_shipping_threshold: number | null;
     paypal: PayPalCfg;
     square: SquareCfg;
+    tax_rate: number;
   } | null>(null);
   const [needsApproval, setNeedsApproval] = useState(false);
 
