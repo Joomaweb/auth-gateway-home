@@ -1,0 +1,1 @@
+ALTER TABLE public.store_settings ADD COLUMN IF NOT EXISTS tax_rate numeric NOT NULL DEFAULT 0;

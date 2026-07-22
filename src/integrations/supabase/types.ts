@@ -440,6 +440,7 @@ export type Database = {
           show_featured: boolean
           show_sale: boolean
           square: Json
+          tax_rate: number
           updated_at: string
         }
         Insert: {
@@ -462,6 +463,7 @@ export type Database = {
           show_featured?: boolean
           show_sale?: boolean
           square?: Json
+          tax_rate?: number
           updated_at?: string
         }
         Update: {
@@ -484,6 +486,7 @@ export type Database = {
           show_featured?: boolean
           show_sale?: boolean
           square?: Json
+          tax_rate?: number
           updated_at?: string
         }
         Relationships: []
