@@ -540,6 +540,12 @@ function CheckoutPage() {
             <div className="border-t pt-3 space-y-2 text-sm">
               <div className="flex justify-between"><span>{t("cart.subtotal")}</span><span>${subtotal.toFixed(2)}</span></div>
               <div className="flex justify-between"><span>{t("cart.shipping")}</span><span>${shippingFee.toFixed(2)}</span></div>
+              {taxRate > 0 && (
+                <div className="flex justify-between">
+                  <span>Tax ({taxRate}%)</span>
+                  <span>${taxAmount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-base font-semibold border-t pt-2">
                 <span>{t("cart.total")}</span><span>${total.toFixed(2)}</span>
               </div>
