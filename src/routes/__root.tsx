@@ -215,3 +215,12 @@ function RealtimeCacheBridge() {
 
   return null;
 }
+
+function VisitTracker() {
+  const path = useRouterState({ select: (s) => s.location.pathname });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    trackVisit(path);
+  }, [path]);
+  return null;
+}
