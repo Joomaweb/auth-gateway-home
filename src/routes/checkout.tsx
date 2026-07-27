@@ -333,8 +333,6 @@ function CheckoutPage() {
     }));
     await supabase.from("order_items").insert(itemsRows);
     if (coupon) {
-      // best-effort increment; ignore failure
-      supabase.rpc as unknown;
       const { data: cur } = await supabase.from("coupons").select("id,uses").eq("code", coupon.code).maybeSingle();
       if (cur) await supabase.from("coupons").update({ uses: (cur.uses ?? 0) + 1 }).eq("id", cur.id);
     }
