@@ -17,7 +17,7 @@ import { useMediaPreload } from "@/hooks/use-media-preload";
 
 import { ShareButton } from "@/components/product/ShareButton";
 
-const SITE_URL = "https://auth-gateway-home.lovable.app";
+const SITE_URL = "https://www.2c-shop.online";
 
 export const Route = createFileRoute("/product/$id")({
   component: ProductPage,
