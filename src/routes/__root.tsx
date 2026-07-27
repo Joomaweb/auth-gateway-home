@@ -18,6 +18,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { supabase } from "@/lib/supabase";
 import { clearAppDataCaches, subscribeAppDataChanges } from "@/lib/realtime-sync";
 import { PromoBanner } from "@/components/PromoBanner";
+import { trackVisit } from "@/lib/visit-tracker";
+import { useRouterState } from "@tanstack/react-router";
 
 function getBackendOrigin() {
   try {
@@ -128,6 +130,7 @@ function RootComponent() {
           <ActiveThemeProvider>
             <AuthProvider>
               <RealtimeCacheBridge />
+              <VisitTracker />
               <Outlet />
               <PromoBanner />
               <Toaster richColors position="top-center" />
