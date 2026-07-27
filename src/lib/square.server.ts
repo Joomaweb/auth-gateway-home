@@ -20,6 +20,7 @@ type ChargeInput = {
   amount?: number;
   currency?: string;
   mode?: SquareMode;
+  locationId?: string;
 };
 
 type FailureReason = "card_declined" | "verification_failed" | "cancelled" | "config_error" | "network_error" | "unknown";
@@ -71,11 +72,38 @@ async function getAuthoritativeOrderTotal(orderId: string) {
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+async function getSquareSettings() {
+  const supabase = await getAdminSupabase();
+  const { data, error } = await supabase
+    .from("store_settings")
+    .select("square")
+    .eq("id", 1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Square: settings lookup failed:", error.message);
+  }
+
+  const square = isRecord(data?.square) ? data.square : {};
+  const mode: SquareMode = square.mode === "production" ? "production" : "sandbox";
+
+  return {
+    enabled: Boolean(square.enabled),
+    locationId: typeof square.location_id === "string" ? square.location_id.trim() : "",
+    mode,
+  };
+}
+
 export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutcome> {
   const accessToken = process.env.SQUARE_ACCESS_TOKEN;
-  const locationId = process.env.SQUARE_LOCATION_ID;
+  const squareSettings = await getSquareSettings();
+  const locationId = (process.env.SQUARE_LOCATION_ID || squareSettings.locationId || data.locationId || "").trim();
 
-  if (!accessToken || !locationId) {
+  if (!squareSettings.enabled || !accessToken || !locationId) {
     await persistOrderUpdate(data.orderId, { status: "failed", square_status: "CONFIG_ERROR" });
     return {
       ok: false,
@@ -102,7 +130,7 @@ export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutc
     };
   }
 
-  const mode: SquareMode = data.mode ?? "production";
+  const mode: SquareMode = squareSettings.mode ?? data.mode ?? "production";
   const currency = (data.currency ?? "USD").toUpperCase();
   const amountToCharge = Number.isFinite(orderTotal) && orderTotal > 0 ? orderTotal : Number(data.amount ?? 0);
   const amountMinor = Math.round(amountToCharge * 100);

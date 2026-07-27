@@ -343,6 +343,7 @@ function CheckoutPage() {
           amount: total,
           currency: "USD",
           mode: settings.square.mode,
+          locationId: settings.square.location_id,
         },
       });
       if (res.ok) {
