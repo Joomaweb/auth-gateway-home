@@ -597,8 +597,38 @@ function CheckoutPage() {
                 </div>
               ))}
             </div>
+            <div className="border-t pt-3 space-y-2">
+              {coupon ? (
+                <div className="flex items-center justify-between gap-2 rounded border border-green-500/40 bg-green-500/10 px-3 py-2 text-sm">
+                  <span>
+                    Coupon <strong className="font-mono">{coupon.code}</strong> ({coupon.discount_percent}% off)
+                  </span>
+                  <button type="button" onClick={removeCoupon} className="text-xs text-destructive hover:underline">
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Coupon code"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    className="h-9"
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={applyCoupon} disabled={couponBusy || !couponInput.trim()}>
+                    Apply
+                  </Button>
+                </div>
+              )}
+            </div>
             <div className="border-t pt-3 space-y-2 text-sm">
               <div className="flex justify-between"><span>{t("cart.subtotal")}</span><span>${subtotal.toFixed(2)}</span></div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount ({coupon?.discount_percent}%)</span>
+                  <span>-${discountAmount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between"><span>{t("cart.shipping")}</span><span>${shippingFee.toFixed(2)}</span></div>
               {taxRate > 0 && (
                 <div className="flex justify-between">
