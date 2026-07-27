@@ -15,8 +15,61 @@ import { subscribeAppDataChanges } from "@/lib/realtime-sync";
 import { getVideoMimeType, isDirectVideoUrl, toEmbedUrl } from "@/lib/media";
 import { useMediaPreload } from "@/hooks/use-media-preload";
 
+import { ShareButton } from "@/components/product/ShareButton";
+
+const SITE_URL = "https://auth-gateway-home.lovable.app";
+
 export const Route = createFileRoute("/product/$id")({
   component: ProductPage,
+  loader: async ({ params }) => {
+    const { data } = await supabase
+      .from("products")
+      .select("id,name,description,images")
+      .eq("id", params.id)
+      .maybeSingle();
+    return { meta: data as { id: string; name: string; description: string | null; images: string[] | null } | null };
+  },
+  head: ({ params, loaderData }) => {
+    const p = loaderData?.meta;
+    const url = `${SITE_URL}/product/${params.id}`;
+    if (!p) {
+      return {
+        meta: [{ property: "og:url", content: url }],
+        links: [{ rel: "canonical", href: url }],
+      };
+    }
+    const rawImg = p.images?.[0] ?? "";
+    const image = rawImg
+      ? optimizeImg(rawImg, { w: 1200, q: 80 }) || rawImg
+      : "";
+    const title = p.name;
+    const description =
+      (p.description ?? "").trim().slice(0, 160) || `${p.name} — shop now.`;
+    const meta = [
+      { title },
+      { name: "description", content: description },
+      { property: "og:title", content: title },
+      { property: "og:description", content: description },
+      { property: "og:url", content: url },
+      { property: "og:type", content: "product" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: title },
+      { name: "twitter:description", content: description },
+    ];
+    if (image) {
+      meta.push(
+        { property: "og:image", content: image },
+        { property: "og:image:secure_url", content: image },
+        { property: "og:image:width", content: "1200" },
+        { property: "og:image:height", content: "1200" },
+        { name: "twitter:image", content: image },
+      );
+    }
+    return {
+      meta,
+      links: [{ rel: "canonical", href: url }],
+    };
+  },
 });
 
 type Product = {
@@ -407,6 +460,11 @@ function ProductPage() {
           >
             {t("nav.cart")}
           </Button>
+          <ShareButton
+            url={`${SITE_URL}/product/${product.id}`}
+            title={product.name}
+            text={product.description ?? product.name}
+          />
         </div>
       </div>
     </PublicLayout>
