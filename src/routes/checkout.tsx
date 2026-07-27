@@ -26,6 +26,8 @@ type PaymentMethod = { name: string; enabled: boolean };
 type ShippingMethod = { name: string; price: number; eta?: string };
 type AddressForm = { address?: string; city?: string; zip?: string; country?: string };
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
@@ -75,6 +77,31 @@ function addressFrom(value: unknown): AddressForm {
     zip: typeof value.zip === "string" ? value.zip : "",
     country: typeof value.country === "string" ? value.country : "",
   };
+}
+
+function getMissingCheckoutFields(form: {
+  full_name: string;
+  phone: string;
+  address: string;
+  city: string;
+  zip: string;
+  country: string;
+  email: string;
+  password: string;
+}, hasUser: boolean) {
+  const missing: string[] = [];
+  if (!form.full_name.trim()) missing.push("full name");
+  if (!form.phone.trim()) missing.push("phone");
+  if (!form.address.trim()) missing.push("address");
+  if (!form.city.trim()) missing.push("city");
+  if (!form.zip.trim()) missing.push("zip code");
+  if (!form.country.trim()) missing.push("country");
+  if (!hasUser) {
+    const email = form.email.trim();
+    if (!emailPattern.test(email)) missing.push("valid email");
+    if (form.password.length < 6) missing.push("password with at least 6 characters");
+  }
+  return missing;
 }
 
 function CheckoutPage() {
@@ -188,8 +215,11 @@ function CheckoutPage() {
   const taxAmount = Math.max(0, ((subtotal + shippingFee) * taxRate) / 100);
   const total = subtotal + shippingFee + taxAmount;
 
-  const requiredFieldsValid = !!(form.full_name && form.phone && form.address && form.city && form.zip && form.country);
-  const guestFieldsValid = !!user || (form.email.trim().length > 3 && form.password.length >= 6);
+  const missingCheckoutFields = getMissingCheckoutFields(form, !!user);
+  const checkoutFieldsValid = missingCheckoutFields.length === 0;
+  const missingCheckoutMessage = missingCheckoutFields.length
+    ? `Complete: ${missingCheckoutFields.join(", ")}.`
+    : "";
 
   // Ensures we have an authenticated user before persisting the order.
   // For guests: signs them up with email/password (session is auto-persisted in localStorage).
@@ -279,12 +309,8 @@ function CheckoutPage() {
   const handleManualSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (items.length === 0) return;
-    if (!requiredFieldsValid) {
-      toast.error("Please fill in all shipping fields");
-      return;
-    }
-    if (!guestFieldsValid) {
-      toast.error("Email and password are required to create an account");
+    if (!checkoutFieldsValid) {
+      toast.error(missingCheckoutMessage || "Please complete the checkout details");
       return;
     }
     setBusy(true);
@@ -304,8 +330,8 @@ function CheckoutPage() {
 
   const handlePayPalApproved = async (orderId: string, captureId: string) => {
     if (items.length === 0) return;
-    if (!requiredFieldsValid) {
-      toast.error("Please fill in all shipping fields before paying");
+    if (!checkoutFieldsValid) {
+      toast.error(missingCheckoutMessage || "Please complete the checkout details before paying");
       return;
     }
     try {
@@ -323,8 +349,8 @@ function CheckoutPage() {
 
   const handleSquareTokenized = async (sourceId: string, verificationToken?: string) => {
     if (items.length === 0) return;
-    if (!requiredFieldsValid) {
-      toast.error("Please fill in all shipping fields before paying");
+    if (!checkoutFieldsValid) {
+      toast.error(missingCheckoutMessage || "Please complete the checkout details before paying");
       return;
     }
     if (!settings?.square) return;
