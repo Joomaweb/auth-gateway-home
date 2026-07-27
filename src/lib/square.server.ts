@@ -1,4 +1,5 @@
 import type { Database } from "@/integrations/supabase/types";
+import { createClient } from "@supabase/supabase-js";
 
 type OrderUpdate = Database["public"]["Tables"]["orders"]["Update"];
 
@@ -25,6 +26,33 @@ type ChargeInput = {
 
 type FailureReason = "card_declined" | "verification_failed" | "cancelled" | "config_error" | "network_error" | "unknown";
 
+type AdminClient = ReturnType<typeof createClient<Database>>;
+
+let cachedAdminClient: AdminClient | null = null;
+
+function isNewSupabaseApiKey(value: string): boolean {
+  return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
+}
+
+function createSupabaseFetch(supabaseKey: string): typeof fetch {
+  return (input, init) => {
+    const headers = new Headers(
+      typeof Request !== "undefined" && input instanceof Request ? input.headers : undefined,
+    );
+
+    if (init?.headers) {
+      new Headers(init.headers).forEach((value, key) => headers.set(key, value));
+    }
+
+    if (isNewSupabaseApiKey(supabaseKey) && headers.get("Authorization") === `Bearer ${supabaseKey}`) {
+      headers.delete("Authorization");
+    }
+
+    headers.set("apikey", supabaseKey);
+    return fetch(input, { ...init, headers });
+  };
+}
+
 function squareApiBase(mode: SquareMode) {
   return mode === "production"
     ? "https://connect.squareup.com/v2"
@@ -32,8 +60,29 @@ function squareApiBase(mode: SquareMode) {
 }
 
 async function getAdminSupabase() {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return supabaseAdmin;
+  if (cachedAdminClient) return cachedAdminClient;
+
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.MAKO_SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    const missing = [
+      ...(!supabaseUrl ? ["SUPABASE_URL"] : []),
+      ...(!serviceRoleKey ? ["SUPABASE_SERVICE_ROLE_KEY"] : []),
+    ];
+    throw new Error(`Backend configuration is missing: ${missing.join(", ")}`);
+  }
+
+  cachedAdminClient = createClient<Database>(supabaseUrl, serviceRoleKey, {
+    global: { fetch: createSupabaseFetch(serviceRoleKey) },
+    auth: {
+      storage: undefined,
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+
+  return cachedAdminClient;
 }
 
 async function persistOrderUpdate(orderId: string, update: OrderUpdate) {
@@ -77,22 +126,30 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 async function getSquareSettings() {
-  const supabase = await getAdminSupabase();
-  const { data, error } = await supabase
-    .from("store_settings")
-    .select("square")
-    .eq("id", 1)
-    .maybeSingle();
+  let data: { square: unknown } | null = null;
+  try {
+    const supabase = await getAdminSupabase();
+    const result = await supabase
+      .from("store_settings")
+      .select("square")
+      .eq("id", 1)
+      .maybeSingle();
 
-  if (error) {
-    console.error("Square: settings lookup failed:", error.message);
+    data = result.data;
+
+    if (result.error) {
+      console.error("Square: settings lookup failed:", result.error.message);
+    }
+  } catch (err) {
+    console.error("Square: settings lookup failed:", err instanceof Error ? err.message : err);
   }
 
   const square = isRecord(data?.square) ? data.square : {};
-  const mode: SquareMode = square.mode === "production" ? "production" : "sandbox";
+  const envMode = process.env.SQUARE_MODE === "production" ? "production" : process.env.SQUARE_MODE === "sandbox" ? "sandbox" : null;
+  const mode: SquareMode = square.mode === "production" ? "production" : square.mode === "sandbox" ? "sandbox" : envMode ?? "production";
 
   return {
-    enabled: Boolean(square.enabled),
+    enabled: Boolean(square.enabled) || Boolean(process.env.SQUARE_ACCESS_TOKEN),
     locationId: typeof square.location_id === "string" ? square.location_id.trim() : "",
     mode,
   };
@@ -109,7 +166,7 @@ export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutc
       ok: false,
       orderId: data.orderId,
       reason: "config_error",
-      message: "Square is not configured on the server",
+      message: "Square payment settings are missing on the server",
     };
   }
 
