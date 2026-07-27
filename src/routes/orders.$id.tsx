@@ -130,6 +130,7 @@ function OrderDetailPage() {
           amount: total,
           currency: "USD",
           mode: squareSettings.mode,
+          locationId: squareSettings.location_id,
         },
       });
       if (res.ok) {
