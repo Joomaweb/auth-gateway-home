@@ -164,8 +164,21 @@ async function getSquareSettings() {
     : square.mode === "sandbox" ? "sandbox"
     : "production";
 
+  const tokenEnv = firstEnv([
+    "SQUARE_ACCESS_TOKEN",
+    "SQUARE_TOKEN",
+    "SQUARE_KEY_TOKEN",
+    "SQUARE_API_KEY",
+    "SQUARE_AUTH_TOKEN",
+    "KEY_TOKEN",
+    "KEY TOKEN",
+    "ACCESS_TOKEN",
+    "SQUARE_PRODUCTION_ACCESS_TOKEN",
+    "SQUARE_SANDBOX_ACCESS_TOKEN",
+  ]);
+
   return {
-    enabled: Boolean(square.enabled) || Boolean(firstEnv(["SQUARE_ACCESS_TOKEN", "SQUARE_TOKEN", "SQUARE_KEY_TOKEN"]).value),
+    enabled: Boolean(square.enabled) || Boolean(tokenEnv.value),
     locationId: typeof square.location_id === "string" ? square.location_id.trim() : "",
     mode,
   };
@@ -179,6 +192,7 @@ export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutc
     "SQUARE_API_KEY",
     "SQUARE_AUTH_TOKEN",
     "KEY_TOKEN",
+    "KEY TOKEN",
     "ACCESS_TOKEN",
     "SQUARE_PRODUCTION_ACCESS_TOKEN",
     "SQUARE_SANDBOX_ACCESS_TOKEN",
