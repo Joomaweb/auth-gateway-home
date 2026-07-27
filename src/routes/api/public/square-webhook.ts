@@ -28,6 +28,10 @@ function constantTimeEqual(a: string, b: string): boolean {
   return mismatch === 0;
 }
 
+function isUuid(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+}
+
 async function verifySquareSignature(
   signatureKey: string,
   notificationUrl: string,
@@ -85,10 +89,10 @@ export const Route = createFileRoute("/api/public/square-webhook")({
         }
 
         // Square reference_id is what we set when creating the payment — store our order_id there.
-        const orderId: string | undefined = payment.reference_id ?? payment.order_id;
+        const orderId = typeof payment.reference_id === "string" ? payment.reference_id : "";
         const status: string = payment.status ?? "";
 
-        if (!orderId) {
+        if (!orderId && !payment.id) {
           return new Response("no reference", { status: 200 });
         }
 
@@ -105,10 +109,11 @@ export const Route = createFileRoute("/api/public/square-webhook")({
           update.status = "cancelled";
         }
 
-        const { error } = await supabaseAdmin
-          .from("orders")
-          .update(update)
-          .eq("id", orderId);
+        const query = orderId && isUuid(orderId)
+          ? supabaseAdmin.from("orders").update(update).eq("id", orderId)
+          : supabaseAdmin.from("orders").update(update).eq("square_payment_id", payment.id);
+
+        const { error } = await query;
 
         if (error) {
           console.error("Square webhook DB update failed:", error);
