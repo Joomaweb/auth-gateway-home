@@ -22,7 +22,7 @@ type ChargeInput = {
   mode?: SquareMode;
 };
 
-type FailureReason = ChargeOutcome extends { ok: false; reason: infer R } ? R : never;
+type FailureReason = "card_declined" | "verification_failed" | "cancelled" | "config_error" | "network_error" | "unknown";
 
 function squareApiBase(mode: SquareMode) {
   return mode === "production"
