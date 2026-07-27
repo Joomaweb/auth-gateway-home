@@ -136,6 +136,9 @@ function CheckoutPage() {
   const [shippingIdx, setShippingIdx] = useState(0);
   const [payment, setPayment] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; discount_percent: number } | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
 
   const applyStoreSettings = (data: any) => {
     if (!data) return;
@@ -212,8 +215,32 @@ function CheckoutPage() {
       ? 0
       : shippingMethod?.price ?? 0;
   const taxRate = Number(settings?.tax_rate ?? 0);
-  const taxAmount = Math.max(0, ((subtotal + shippingFee) * taxRate) / 100);
-  const total = subtotal + shippingFee + taxAmount;
+  const discountAmount = coupon ? +(subtotal * (coupon.discount_percent / 100)).toFixed(2) : 0;
+  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+  const taxAmount = Math.max(0, ((discountedSubtotal + shippingFee) * taxRate) / 100);
+  const total = discountedSubtotal + shippingFee + taxAmount;
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    setCouponBusy(true);
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("code,discount_percent,active,max_uses,uses")
+      .eq("code", code)
+      .maybeSingle();
+    setCouponBusy(false);
+    if (error || !data) return toast.error("קופון לא נמצא");
+    if (!data.active) return toast.error("הקופון אינו פעיל");
+    if (data.max_uses != null && data.uses >= data.max_uses) return toast.error("הקופון מוצה");
+    setCoupon({ code: data.code, discount_percent: Number(data.discount_percent) });
+    toast.success(`הקופון הופעל: ${data.discount_percent}% הנחה`);
+  };
+
+  const removeCoupon = () => {
+    setCoupon(null);
+    setCouponInput("");
+  };
 
   const missingCheckoutFields = getMissingCheckoutFields(form, !!user);
   const checkoutFieldsValid = missingCheckoutFields.length === 0;
