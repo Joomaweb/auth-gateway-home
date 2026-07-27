@@ -74,23 +74,20 @@ function squareApiBase(mode: SquareMode) {
 function getSupabase(): SupabaseClient {
   if (cachedClient) return cachedClient;
 
-  const supabaseUrl = firstEnv(["SUPABASE_URL", "VITE_SUPABASE_URL"]).value;
-  const anonKey = firstEnv([
-    "SUPABASE_PUBLISHABLE_KEY",
-    "VITE_SUPABASE_PUBLISHABLE_KEY",
-    "SUPABASE_ANON_KEY",
-    "VITE_SUPABASE_ANON_KEY",
-    "SUPABASE_SERVICE_ROLE_KEY",
-    "MAKO_SUPABASE_SERVICE_ROLE_KEY",
-  ]).value;
+  const FALLBACK_URL = "https://ifdhvqmfbrjgpjsvwjiq.supabase.co";
+  const FALLBACK_ANON =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlmZGh2cW1mYnJqZ3Bqc3Z3amlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NTQ4MjgsImV4cCI6MjA5OTQzMDgyOH0.dw7gztL_StRkAcgpTn6r9Qqzm9KLGIRP6CZrda36zV4";
 
-  if (!supabaseUrl || !anonKey) {
-    const missing = [
-      ...(!supabaseUrl ? ["SUPABASE_URL"] : []),
-      ...(!anonKey ? ["SUPABASE_PUBLISHABLE_KEY"] : []),
-    ];
-    throw new Error(`Backend configuration is missing: ${missing.join(", ")}`);
-  }
+  const supabaseUrl =
+    firstEnv(["SUPABASE_URL", "VITE_SUPABASE_URL"]).value || FALLBACK_URL;
+  const anonKey =
+    firstEnv([
+      "SUPABASE_PUBLISHABLE_KEY",
+      "VITE_SUPABASE_PUBLISHABLE_KEY",
+      "SUPABASE_ANON_KEY",
+      "VITE_SUPABASE_ANON_KEY",
+    ]).value || FALLBACK_ANON;
+
 
   cachedClient = createClient<Database>(supabaseUrl, anonKey, {
     global: { fetch: createSupabaseFetch(anonKey) },
