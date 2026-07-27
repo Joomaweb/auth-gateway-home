@@ -170,19 +170,29 @@ function OrderDetailPage() {
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <Button
-              onClick={handleDownload}
-              variant="outline"
-              className="gap-2"
-              disabled={order.shipment_status !== "delivered"}
-            >
-              <Download className="h-4 w-4" /> Download PDF Receipt
-            </Button>
-            {order.shipment_status !== "delivered" && (
-              <span className="text-[11px] text-muted-foreground max-w-[220px] text-end leading-snug">
-                The receipt will be available for download only after the order has been delivered.
-              </span>
-            )}
+            {(() => {
+              const receiptReady =
+                isPaid ||
+                (order.shipment_status &&
+                  order.shipment_status !== "preparing");
+              return (
+                <>
+                  <Button
+                    onClick={handleDownload}
+                    variant="outline"
+                    className="gap-2"
+                    disabled={!receiptReady}
+                  >
+                    <Download className="h-4 w-4" /> Download PDF Receipt
+                  </Button>
+                  {!receiptReady && (
+                    <span className="text-[11px] text-muted-foreground max-w-[220px] text-end leading-snug">
+                      The receipt will be available once your order moves to the next stage.
+                    </span>
+                  )}
+                </>
+              );
+            })()}
           </div>
         </div>
 
