@@ -521,11 +521,11 @@ function CheckoutPage() {
                         mode={settings.paypal.mode}
                         amount={total}
                         currency="USD"
-                        disabled={!requiredFieldsValid || !guestFieldsValid || busy}
+                        disabled={!checkoutFieldsValid || busy}
                         onApproved={handlePayPalApproved}
                       />
-                      {(!requiredFieldsValid || !guestFieldsValid) && (
-                        <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
+                      {!checkoutFieldsValid && (
+                        <p className="text-xs text-destructive">{missingCheckoutMessage}</p>
                       )}
                     </div>
                   )}
@@ -541,11 +541,11 @@ function CheckoutPage() {
                         mode={settings.square.mode}
                         amount={total}
                         currency="USD"
-                        disabled={!requiredFieldsValid || !guestFieldsValid || busy}
+                        disabled={!checkoutFieldsValid || busy}
                         onTokenized={handleSquareTokenized}
                       />
-                      {(!requiredFieldsValid || !guestFieldsValid) && (
-                        <p className="text-xs text-destructive">Fill in your shipping details above to enable payment.</p>
+                      {!checkoutFieldsValid && (
+                        <p className="text-xs text-destructive">{missingCheckoutMessage}</p>
                       )}
                     </div>
                   )}
