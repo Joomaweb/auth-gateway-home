@@ -136,6 +136,9 @@ function CheckoutPage() {
   const [shippingIdx, setShippingIdx] = useState(0);
   const [payment, setPayment] = useState<string>("");
   const [busy, setBusy] = useState(false);
+  const [couponInput, setCouponInput] = useState("");
+  const [coupon, setCoupon] = useState<{ code: string; discount_percent: number } | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
 
   const applyStoreSettings = (data: any) => {
     if (!data) return;
@@ -212,8 +215,32 @@ function CheckoutPage() {
       ? 0
       : shippingMethod?.price ?? 0;
   const taxRate = Number(settings?.tax_rate ?? 0);
-  const taxAmount = Math.max(0, ((subtotal + shippingFee) * taxRate) / 100);
-  const total = subtotal + shippingFee + taxAmount;
+  const discountAmount = coupon ? +(subtotal * (coupon.discount_percent / 100)).toFixed(2) : 0;
+  const discountedSubtotal = Math.max(0, subtotal - discountAmount);
+  const taxAmount = Math.max(0, ((discountedSubtotal + shippingFee) * taxRate) / 100);
+  const total = discountedSubtotal + shippingFee + taxAmount;
+
+  const applyCoupon = async () => {
+    const code = couponInput.trim().toUpperCase();
+    if (!code) return;
+    setCouponBusy(true);
+    const { data, error } = await supabase
+      .from("coupons")
+      .select("code,discount_percent,active,max_uses,uses")
+      .eq("code", code)
+      .maybeSingle();
+    setCouponBusy(false);
+    if (error || !data) return toast.error("קופון לא נמצא");
+    if (!data.active) return toast.error("הקופון אינו פעיל");
+    if (data.max_uses != null && data.uses >= data.max_uses) return toast.error("הקופון מוצה");
+    setCoupon({ code: data.code, discount_percent: Number(data.discount_percent) });
+    toast.success(`הקופון הופעל: ${data.discount_percent}% הנחה`);
+  };
+
+  const removeCoupon = () => {
+    setCoupon(null);
+    setCouponInput("");
+  };
 
   const missingCheckoutFields = getMissingCheckoutFields(form, !!user);
   const checkoutFieldsValid = missingCheckoutFields.length === 0;
@@ -288,6 +315,8 @@ function CheckoutPage() {
         paypal_order_id: paypalIds?.order_id ?? null,
         paypal_capture_id: paypalIds?.capture_id ?? null,
         paid_at: paid ? new Date().toISOString() : null,
+        discount: discountAmount,
+        coupon_code: coupon?.code ?? null,
       })
       .select()
       .single();
@@ -303,6 +332,10 @@ function CheckoutPage() {
       price: i.price,
     }));
     await supabase.from("order_items").insert(itemsRows);
+    if (coupon) {
+      const { data: cur } = await supabase.from("coupons").select("id,uses").eq("code", coupon.code).maybeSingle();
+      if (cur) await supabase.from("coupons").update({ uses: (cur.uses ?? 0) + 1 }).eq("id", cur.id);
+    }
     return order.id as string;
   };
 
@@ -564,8 +597,38 @@ function CheckoutPage() {
                 </div>
               ))}
             </div>
+            <div className="border-t pt-3 space-y-2">
+              {coupon ? (
+                <div className="flex items-center justify-between gap-2 rounded border border-green-500/40 bg-green-500/10 px-3 py-2 text-sm">
+                  <span>
+                    Coupon <strong className="font-mono">{coupon.code}</strong> ({coupon.discount_percent}% off)
+                  </span>
+                  <button type="button" onClick={removeCoupon} className="text-xs text-destructive hover:underline">
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Coupon code"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    className="h-9"
+                  />
+                  <Button type="button" variant="outline" size="sm" onClick={applyCoupon} disabled={couponBusy || !couponInput.trim()}>
+                    Apply
+                  </Button>
+                </div>
+              )}
+            </div>
             <div className="border-t pt-3 space-y-2 text-sm">
               <div className="flex justify-between"><span>{t("cart.subtotal")}</span><span>${subtotal.toFixed(2)}</span></div>
+              {discountAmount > 0 && (
+                <div className="flex justify-between text-green-600">
+                  <span>Discount ({coupon?.discount_percent}%)</span>
+                  <span>-${discountAmount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between"><span>{t("cart.shipping")}</span><span>${shippingFee.toFixed(2)}</span></div>
               {taxRate > 0 && (
                 <div className="flex justify-between">
