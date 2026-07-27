@@ -460,6 +460,11 @@ function ProductPage() {
           >
             {t("nav.cart")}
           </Button>
+          <ShareButton
+            url={`${SITE_URL}/product/${product.id}`}
+            title={product.name}
+            text={product.description ?? product.name}
+          />
         </div>
       </div>
     </PublicLayout>
