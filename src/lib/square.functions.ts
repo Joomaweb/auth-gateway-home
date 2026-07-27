@@ -12,6 +12,7 @@ export const chargeSquarePayment = createServerFn({ method: "POST" })
       amount: number;
       currency?: string;
       mode?: SquareMode;
+      locationId?: string;
     }) => input,
   )
   .handler(async ({ data }): Promise<ChargeOutcome> => {
