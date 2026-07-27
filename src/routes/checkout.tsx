@@ -315,6 +315,8 @@ function CheckoutPage() {
         paypal_order_id: paypalIds?.order_id ?? null,
         paypal_capture_id: paypalIds?.capture_id ?? null,
         paid_at: paid ? new Date().toISOString() : null,
+        discount: discountAmount,
+        coupon_code: coupon?.code ?? null,
       })
       .select()
       .single();
@@ -330,6 +332,12 @@ function CheckoutPage() {
       price: i.price,
     }));
     await supabase.from("order_items").insert(itemsRows);
+    if (coupon) {
+      // best-effort increment; ignore failure
+      supabase.rpc as unknown;
+      const { data: cur } = await supabase.from("coupons").select("id,uses").eq("code", coupon.code).maybeSingle();
+      if (cur) await supabase.from("coupons").update({ uses: (cur.uses ?? 0) + 1 }).eq("id", cur.id);
+    }
     return order.id as string;
   };
 
