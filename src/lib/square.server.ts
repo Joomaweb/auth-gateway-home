@@ -176,6 +176,10 @@ export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutc
     "SQUARE_ACCESS_TOKEN",
     "SQUARE_TOKEN",
     "SQUARE_KEY_TOKEN",
+    "SQUARE_API_KEY",
+    "SQUARE_AUTH_TOKEN",
+    "KEY_TOKEN",
+    "ACCESS_TOKEN",
     "SQUARE_PRODUCTION_ACCESS_TOKEN",
     "SQUARE_SANDBOX_ACCESS_TOKEN",
   ]);
