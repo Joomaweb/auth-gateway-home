@@ -30,6 +30,18 @@ type AdminClient = ReturnType<typeof createClient<Database>>;
 
 let cachedAdminClient: AdminClient | null = null;
 
+function cleanEnv(value: string | undefined): string {
+  return (value ?? "").trim();
+}
+
+function firstEnv(names: string[]): { value: string; name: string } {
+  for (const name of names) {
+    const value = cleanEnv(process.env[name]);
+    if (value) return { value, name };
+  }
+  return { value: "", name: names[0] ?? "" };
+}
+
 function isNewSupabaseApiKey(value: string): boolean {
   return value.startsWith("sb_publishable_") || value.startsWith("sb_secret_");
 }
@@ -62,8 +74,8 @@ function squareApiBase(mode: SquareMode) {
 async function getAdminSupabase() {
   if (cachedAdminClient) return cachedAdminClient;
 
-  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.MAKO_SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = firstEnv(["SUPABASE_URL", "VITE_SUPABASE_URL"]).value;
+  const serviceRoleKey = firstEnv(["SUPABASE_SERVICE_ROLE_KEY", "MAKO_SUPABASE_SERVICE_ROLE_KEY"]).value;
 
   if (!supabaseUrl || !serviceRoleKey) {
     const missing = [
@@ -145,28 +157,71 @@ async function getSquareSettings() {
   }
 
   const square = isRecord(data?.square) ? data.square : {};
-  const envMode = process.env.SQUARE_MODE === "production" ? "production" : process.env.SQUARE_MODE === "sandbox" ? "sandbox" : null;
-  const mode: SquareMode = square.mode === "production" ? "production" : square.mode === "sandbox" ? "sandbox" : envMode ?? "production";
+  const envMode = cleanEnv(process.env.SQUARE_MODE).toLowerCase();
+  const mode: SquareMode = envMode === "production" ? "production"
+    : envMode === "sandbox" ? "sandbox"
+    : square.mode === "production" ? "production"
+    : square.mode === "sandbox" ? "sandbox"
+    : "production";
+
+  const tokenEnv = firstEnv([
+    "SQUARE_ACCESS_TOKEN",
+    "SQUARE_TOKEN",
+    "SQUARE_KEY_TOKEN",
+    "SQUARE_API_KEY",
+    "SQUARE_AUTH_TOKEN",
+    "KEY_TOKEN",
+    "KEY TOKEN",
+    "ACCESS_TOKEN",
+    "SQUARE_PRODUCTION_ACCESS_TOKEN",
+    "SQUARE_SANDBOX_ACCESS_TOKEN",
+  ]);
 
   return {
-    enabled: Boolean(square.enabled) || Boolean(process.env.SQUARE_ACCESS_TOKEN),
+    enabled: Boolean(square.enabled) || Boolean(tokenEnv.value),
     locationId: typeof square.location_id === "string" ? square.location_id.trim() : "",
     mode,
   };
 }
 
 export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutcome> {
-  const accessToken = process.env.SQUARE_ACCESS_TOKEN;
+  const tokenEnv = firstEnv([
+    "SQUARE_ACCESS_TOKEN",
+    "SQUARE_TOKEN",
+    "SQUARE_KEY_TOKEN",
+    "SQUARE_API_KEY",
+    "SQUARE_AUTH_TOKEN",
+    "KEY_TOKEN",
+    "KEY TOKEN",
+    "ACCESS_TOKEN",
+    "SQUARE_PRODUCTION_ACCESS_TOKEN",
+    "SQUARE_SANDBOX_ACCESS_TOKEN",
+  ]);
+  const accessToken = tokenEnv.value;
   const squareSettings = await getSquareSettings();
-  const locationId = (process.env.SQUARE_LOCATION_ID || squareSettings.locationId || data.locationId || "").trim();
+  const locationEnv = firstEnv(["SQUARE_LOCATION_ID", "SQUARE_LOCATION", "LOCATION_ID"]);
+  const locationId = (locationEnv.value || squareSettings.locationId || data.locationId || "").trim();
 
   if (!squareSettings.enabled || !accessToken || !locationId) {
-    await persistOrderUpdate(data.orderId, { status: "failed", square_status: "CONFIG_ERROR" });
+    const missing = [
+      ...(!squareSettings.enabled ? ["SQUARE_DISABLED"] : []),
+      ...(!accessToken ? ["SQUARE_ACCESS_TOKEN"] : []),
+      ...(!locationId ? ["SQUARE_LOCATION_ID"] : []),
+    ];
+    console.error("Square: payment configuration missing", {
+      missing,
+      hasDatabaseLocationId: Boolean(squareSettings.locationId),
+      hasClientLocationId: Boolean(data.locationId),
+      mode: squareSettings.mode,
+    });
+    await persistOrderUpdate(data.orderId, { status: "failed", square_status: `CONFIG_ERROR:${missing.join(",")}` });
     return {
       ok: false,
       orderId: data.orderId,
       reason: "config_error",
-      message: "Square payment settings are missing on the server",
+      message: missing.includes("SQUARE_ACCESS_TOKEN")
+        ? "Payment server token is missing"
+        : "Square payment settings are missing on the server",
     };
   }
 

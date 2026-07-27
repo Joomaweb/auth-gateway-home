@@ -358,7 +358,7 @@ function CheckoutPage() {
         res.reason === "cancelled" ? "Payment cancelled — you can try again."
         : res.reason === "card_declined" ? `Card declined: ${res.message}`
         : res.reason === "network_error" ? "Network error — please try again."
-        : res.reason === "config_error" ? "Payment is not configured. Contact support."
+        : res.reason === "config_error" ? (res.message || "Payment is not configured. Contact support.")
         : res.message || "Payment failed";
       toast.error(msg);
       navigate({ to: "/orders/$id", params: { id: orderId } });
