@@ -43,6 +43,7 @@ import { Route as ApiPublicSquareWebhookRouteImport } from './routes/api/public/
 import { Route as AdminProductsIdRouteImport } from './routes/admin.products.$id'
 import { Route as AdminOrdersNewRouteImport } from './routes/admin.orders.new'
 import { Route as AdminOrdersIdRouteImport } from './routes/admin.orders.$id'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -214,6 +215,12 @@ const AdminOrdersIdRoute = AdminOrdersIdRouteImport.update({
   path: '/orders/$id',
   getParentRoute: () => AdminRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/api/public/square-webhook': typeof ApiPublicSquareWebhookRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -284,6 +292,7 @@ export interface FileRoutesByTo {
   '/api/public/square-webhook': typeof ApiPublicSquareWebhookRoute
   '/admin/orders': typeof AdminOrdersIndexRoute
   '/admin/products': typeof AdminProductsIndexRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -321,6 +330,7 @@ export interface FileRoutesById {
   '/api/public/square-webhook': typeof ApiPublicSquareWebhookRoute
   '/admin/orders/': typeof AdminOrdersIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -359,6 +369,7 @@ export interface FileRouteTypes {
     | '/api/public/square-webhook'
     | '/admin/orders/'
     | '/admin/products/'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -393,6 +404,7 @@ export interface FileRouteTypes {
     | '/api/public/square-webhook'
     | '/admin/orders'
     | '/admin/products'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -429,6 +441,7 @@ export interface FileRouteTypes {
     | '/api/public/square-webhook'
     | '/admin/orders/'
     | '/admin/products/'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -448,6 +461,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ProductIdRoute: typeof ProductIdRoute
   ApiPublicSquareWebhookRoute: typeof ApiPublicSquareWebhookRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -690,6 +704,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminOrdersIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -763,6 +784,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ProductIdRoute: ProductIdRoute,
   ApiPublicSquareWebhookRoute: ApiPublicSquareWebhookRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
