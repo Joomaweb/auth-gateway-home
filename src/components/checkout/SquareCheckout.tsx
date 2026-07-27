@@ -25,11 +25,31 @@ const SDK_URLS: Record<Mode, string> = {
   production: "https://web.squarecdn.com/v1/square.js",
 };
 
+function appIdMatchesMode(applicationId: string, mode: Mode) {
+  const normalized = applicationId.trim();
+  if (mode === "sandbox") return normalized.startsWith("sandbox-");
+  return !normalized.startsWith("sandbox-");
+}
+
+function squareResultMessage(result: any) {
+  const errors = Array.isArray(result?.errors) ? result.errors : [];
+  const details = errors
+    .map((error: any) => error?.message || error?.detail || error?.code)
+    .filter(Boolean)
+    .join(" · ");
+  return details || "Card tokenization failed. Check that Square mode, Application ID and Location ID all match.";
+}
+
 function loadSquareSdk(mode: Mode): Promise<void> {
   if (typeof window === "undefined") return Promise.reject(new Error("no window"));
-  if (window.Square) return Promise.resolve();
+  const loaded = document.querySelector<HTMLScriptElement>(`script[data-square-sdk]`);
+  if (window.Square && loaded?.dataset.squareSdkMode === mode) return Promise.resolve();
+  if (window.Square && loaded?.dataset.squareSdkMode && loaded.dataset.squareSdkMode !== mode) {
+    try { loaded.remove(); } catch {}
+    window.Square = undefined;
+  }
   return new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>(`script[data-square-sdk]`);
+    const existing = document.querySelector<HTMLScriptElement>(`script[data-square-sdk][data-square-sdk-mode="${mode}"]`);
     if (existing) {
       existing.addEventListener("load", () => resolve());
       existing.addEventListener("error", () => reject(new Error("Failed to load Square SDK")));
@@ -39,6 +59,7 @@ function loadSquareSdk(mode: Mode): Promise<void> {
     s.src = SDK_URLS[mode];
     s.async = true;
     s.dataset.squareSdk = "1";
+    s.dataset.squareSdkMode = mode;
     s.onload = () => resolve();
     s.onerror = () => reject(new Error("Failed to load Square SDK"));
     document.head.appendChild(s);
@@ -63,16 +84,26 @@ export function SquareCheckout({
   useEffect(() => {
     let cancelled = false;
     if (!applicationId || !locationId) return;
+    setReady(false);
 
     (async () => {
       try {
+        if (!appIdMatchesMode(applicationId, mode)) {
+          throw new Error(
+            mode === "sandbox"
+              ? "Square is set to Sandbox but the Application ID is Production. Use a sandbox Application ID."
+              : "Square is set to Production but the Application ID is Sandbox. Use a production Application ID.",
+          );
+        }
         await loadSquareSdk(mode);
         if (cancelled || !window.Square) return;
         const payments = window.Square.payments(applicationId, locationId);
         paymentsRef.current = payments;
         const card = await payments.card();
         if (cancelled) return;
-        await card.attach(cardContainerRef.current!);
+        const container = cardContainerRef.current;
+        if (!container) return;
+        await card.attach(container);
         cardRef.current = card;
         setReady(true);
       } catch (err) {
@@ -95,7 +126,7 @@ export function SquareCheckout({
     try {
       const result = await cardRef.current.tokenize();
       if (result.status !== "OK") {
-        const detail = result.errors?.[0]?.message ?? "Card tokenization failed";
+        const detail = squareResultMessage(result);
         throw new Error(detail);
       }
 
