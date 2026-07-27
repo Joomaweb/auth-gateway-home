@@ -40,6 +40,23 @@ function normalizeSquareAccessToken(value: string): string {
   return (tokenMatch?.[0] ?? withoutBearer).replace(/\s+/g, "");
 }
 
+function isInvalidSquareLocationId(value: string): boolean {
+  const normalized = value.trim();
+  if (!normalized) return true;
+  if (normalized.startsWith("@secret:")) return true;
+  if (/^sq0idp-/i.test(normalized)) return true;
+  if (/^(?:EAAA|sq0atp-|sq0atb-|sandbox-sq0atb-)/i.test(normalized)) return true;
+  return false;
+}
+
+function chooseSquareLocationId(candidates: Array<{ value: string; source: string }>) {
+  for (const candidate of candidates) {
+    const value = candidate.value.trim();
+    if (!isInvalidSquareLocationId(value)) return { value, source: candidate.source };
+  }
+  return { value: "", source: "" };
+}
+
 function firstEnv(names: string[]): { value: string; name: string } {
   for (const name of names) {
     const value = cleanEnv(process.env[name]);
@@ -236,7 +253,12 @@ export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutc
   const accessToken = normalizeSquareAccessToken(tokenEnv.value);
   const squareSettings = await getSquareSettings();
   const locationEnv = firstEnv(["SQUARE_LOCATION_ID", "SQUARE_LOCATION", "LOCATION_ID"]);
-  const locationId = (locationEnv.value || squareSettings.locationId || data.locationId || "").trim();
+  const selectedLocation = chooseSquareLocationId([
+    { value: locationEnv.value, source: locationEnv.name },
+    { value: squareSettings.locationId, source: "store_settings.square.location_id" },
+    { value: data.locationId ?? "", source: "client" },
+  ]);
+  const locationId = selectedLocation.value;
 
   if (!squareSettings.enabled || !accessToken || !locationId) {
     const missing = [
@@ -248,6 +270,7 @@ export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutc
       missing,
       hasDatabaseLocationId: Boolean(squareSettings.locationId),
       hasClientLocationId: Boolean(data.locationId),
+        ignoredLocationEnv: Boolean(locationEnv.value && isInvalidSquareLocationId(locationEnv.value)),
       mode: squareSettings.mode,
     });
     await persistOrderUpdate(data.orderId, { status: "failed", square_status: `CONFIG_ERROR:${missing.join(",")}` });
@@ -307,6 +330,12 @@ export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutc
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
+    if (locationEnv.value && isInvalidSquareLocationId(locationEnv.value)) {
+      console.error("Square: ignored invalid SQUARE_LOCATION_ID value and used fallback", {
+        selectedLocationSource: selectedLocation.source,
+        mode,
+      });
+    }
     res = await fetch(`${squareApiBase(mode)}/payments`, {
       method: "POST",
       signal: controller.signal,
