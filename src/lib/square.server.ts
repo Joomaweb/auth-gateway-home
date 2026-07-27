@@ -34,6 +34,12 @@ function cleanEnv(value: string | undefined): string {
   return (value ?? "").trim();
 }
 
+function normalizeSquareAccessToken(value: string): string {
+  const withoutBearer = value.replace(/^Bearer\s+/i, "").trim();
+  const tokenMatch = withoutBearer.match(/(?:EAAA|sq0atp-|sq0atb-|sandbox-sq0atb-)[A-Za-z0-9_-]+/i);
+  return (tokenMatch?.[0] ?? withoutBearer).replace(/\s+/g, "");
+}
+
 function firstEnv(names: string[]): { value: string; name: string } {
   for (const name of names) {
     const value = cleanEnv(process.env[name]);
@@ -125,6 +131,34 @@ function classifyError(category: string | undefined, code: string | undefined): 
   return "unknown";
 }
 
+function describeSquareFetchFailure(err: unknown): { reason: FailureReason; status: string; message: string } {
+  const name = err instanceof Error ? err.name : "UnknownError";
+  const message = err instanceof Error ? err.message : "Network error contacting Square";
+  const normalized = message.toLowerCase();
+
+  if (name === "AbortError" || normalized.includes("abort")) {
+    return {
+      reason: "network_error",
+      status: "NETWORK_TIMEOUT",
+      message: "Square did not respond in time. Please try again.",
+    };
+  }
+
+  if (normalized.includes("header") || normalized.includes("headers")) {
+    return {
+      reason: "config_error",
+      status: "CONFIG_ERROR:SQUARE_ACCESS_TOKEN_FORMAT",
+      message: "Square server token format is invalid. Re-save only the access token value, without labels or extra text.",
+    };
+  }
+
+  return {
+    reason: "network_error",
+    status: `NETWORK_ERROR:${message.slice(0, 120)}`,
+    message: "Could not reach Square from the payment server. Please try again.",
+  };
+}
+
 async function getAuthoritativeOrderTotal(orderId: string) {
   const supabase = getSupabase();
   const { data, error } = await supabase.rpc("payment_get_order", { _order_id: orderId } as never);
@@ -199,7 +233,7 @@ export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutc
     "SQUARE_PRODUCTION_ACCESS_TOKEN",
     "SQUARE_SANDBOX_ACCESS_TOKEN",
   ]);
-  const accessToken = tokenEnv.value;
+  const accessToken = normalizeSquareAccessToken(tokenEnv.value);
   const squareSettings = await getSquareSettings();
   const locationEnv = firstEnv(["SQUARE_LOCATION_ID", "SQUARE_LOCATION", "LOCATION_ID"]);
   const locationId = (locationEnv.value || squareSettings.locationId || data.locationId || "").trim();
@@ -270,9 +304,12 @@ export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutc
   };
 
   let res: Response;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
     res = await fetch(`${squareApiBase(mode)}/payments`, {
       method: "POST",
+      signal: controller.signal,
       headers: {
         Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
@@ -281,13 +318,22 @@ export async function processSquareCharge(data: ChargeInput): Promise<ChargeOutc
       body: JSON.stringify(body),
     });
   } catch (err) {
-    await persistOrderUpdate(data.orderId, { status: "failed", square_status: "NETWORK_ERROR" });
+    const failure = describeSquareFetchFailure(err);
+    console.error("Square payment request failed before receiving a response", {
+      orderId: data.orderId,
+      mode,
+      errorName: err instanceof Error ? err.name : "UnknownError",
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
+    await persistOrderUpdate(data.orderId, { status: "failed", square_status: failure.status });
     return {
       ok: false,
       orderId: data.orderId,
-      reason: "network_error",
-      message: err instanceof Error ? err.message : "Network error contacting Square",
+      reason: failure.reason,
+      message: failure.message,
     };
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   let json: any = {};
