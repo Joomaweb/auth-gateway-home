@@ -164,12 +164,16 @@ async function fetchHomeSettings(): Promise<HomeSettingsData> {
 
 function HomePage() {
   const { t } = useT();
+  const initialSettings = Route.useLoaderData() as HomeSettingsData;
   const [showDeferredMedia, setShowDeferredMedia] = useState(false);
   const [heroVideoReady, setHeroVideoReady] = useState(false);
   const [heroVideoFailed, setHeroVideoFailed] = useState(false);
   const [heroVideoRetry, setHeroVideoRetry] = useState(0);
   const heroVideoRef = useRef<HTMLVideoElement | null>(null);
-  const settingsQ = useQuery(homeSettingsQueryOptions());
+  const settingsQ = useQuery({
+    ...homeSettingsQueryOptions(),
+    initialData: initialSettings,
+  });
   const showFeatured = settingsQ.data?.showFeatured ?? true;
   const showSale = settingsQ.data?.showSale ?? true;
   const collectionsQ = useQuery(homeCollectionsQueryOptions(showFeatured, showSale));
