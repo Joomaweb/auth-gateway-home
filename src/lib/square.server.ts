@@ -26,9 +26,9 @@ type ChargeInput = {
 
 type FailureReason = "card_declined" | "verification_failed" | "cancelled" | "config_error" | "network_error" | "unknown";
 
-type AdminClient = ReturnType<typeof createClient<Database>>;
+type SupabaseClient = ReturnType<typeof createClient<Database>>;
 
-let cachedAdminClient: AdminClient | null = null;
+let cachedClient: SupabaseClient | null = null;
 
 function cleanEnv(value: string | undefined): string {
   return (value ?? "").trim();
@@ -71,22 +71,29 @@ function squareApiBase(mode: SquareMode) {
     : "https://connect.squareupsandbox.com/v2";
 }
 
-async function getAdminSupabase() {
-  if (cachedAdminClient) return cachedAdminClient;
+function getSupabase(): SupabaseClient {
+  if (cachedClient) return cachedClient;
 
   const supabaseUrl = firstEnv(["SUPABASE_URL", "VITE_SUPABASE_URL"]).value;
-  const serviceRoleKey = firstEnv(["SUPABASE_SERVICE_ROLE_KEY", "MAKO_SUPABASE_SERVICE_ROLE_KEY"]).value;
+  const anonKey = firstEnv([
+    "SUPABASE_PUBLISHABLE_KEY",
+    "VITE_SUPABASE_PUBLISHABLE_KEY",
+    "SUPABASE_ANON_KEY",
+    "VITE_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+    "MAKO_SUPABASE_SERVICE_ROLE_KEY",
+  ]).value;
 
-  if (!supabaseUrl || !serviceRoleKey) {
+  if (!supabaseUrl || !anonKey) {
     const missing = [
       ...(!supabaseUrl ? ["SUPABASE_URL"] : []),
-      ...(!serviceRoleKey ? ["SUPABASE_SERVICE_ROLE_KEY"] : []),
+      ...(!anonKey ? ["SUPABASE_PUBLISHABLE_KEY"] : []),
     ];
     throw new Error(`Backend configuration is missing: ${missing.join(", ")}`);
   }
 
-  cachedAdminClient = createClient<Database>(supabaseUrl, serviceRoleKey, {
-    global: { fetch: createSupabaseFetch(serviceRoleKey) },
+  cachedClient = createClient<Database>(supabaseUrl, anonKey, {
+    global: { fetch: createSupabaseFetch(anonKey) },
     auth: {
       storage: undefined,
       persistSession: false,
@@ -94,13 +101,20 @@ async function getAdminSupabase() {
     },
   });
 
-  return cachedAdminClient;
+  return cachedClient;
 }
 
 async function persistOrderUpdate(orderId: string, update: OrderUpdate) {
   try {
-    const supabase = await getAdminSupabase();
-    await supabase.from("orders").update(update).eq("id", orderId);
+    const supabase = getSupabase();
+    const { error } = await supabase.rpc("payment_update_order", {
+      _order_id: orderId,
+      _status: (update.status as string | undefined) ?? null,
+      _square_status: (update.square_status as string | undefined) ?? null,
+      _square_payment_id: (update.square_payment_id as string | undefined) ?? null,
+      _paid_at: (update.paid_at as string | undefined) ?? null,
+    } as never);
+    if (error) console.error("Square: order update failed:", error.message);
   } catch (err) {
     console.error("Square: order update failed:", err);
   }
@@ -115,21 +129,18 @@ function classifyError(category: string | undefined, code: string | undefined): 
 }
 
 async function getAuthoritativeOrderTotal(orderId: string) {
-  const supabase = await getAdminSupabase();
-  const { data, error } = await supabase
-    .from("orders")
-    .select("id,total,status,square_payment_id")
-    .eq("id", orderId)
-    .maybeSingle();
+  const supabase = getSupabase();
+  const { data, error } = await supabase.rpc("payment_get_order", { _order_id: orderId } as never);
 
   if (error || !data) {
     throw new Error(error?.message ?? "Order not found");
   }
 
+  const row = data as Record<string, unknown>;
   return {
-    total: Number(data.total ?? 0),
-    status: String(data.status ?? ""),
-    paymentId: data.square_payment_id ? String(data.square_payment_id) : "",
+    total: Number(row.total ?? 0),
+    status: String(row.status ?? ""),
+    paymentId: row.square_payment_id ? String(row.square_payment_id) : "",
   };
 }
 
@@ -138,25 +149,19 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 async function getSquareSettings() {
-  let data: { square: unknown } | null = null;
+  let square: Record<string, unknown> = {};
   try {
-    const supabase = await getAdminSupabase();
-    const result = await supabase
-      .from("store_settings")
-      .select("square")
-      .eq("id", 1)
-      .maybeSingle();
-
-    data = result.data;
-
-    if (result.error) {
-      console.error("Square: settings lookup failed:", result.error.message);
+    const supabase = getSupabase();
+    const { data, error } = await supabase.rpc("payment_get_square_settings" as never);
+    if (error) {
+      console.error("Square: settings lookup failed:", error.message);
+    } else if (isRecord(data)) {
+      square = data;
     }
   } catch (err) {
     console.error("Square: settings lookup failed:", err instanceof Error ? err.message : err);
   }
 
-  const square = isRecord(data?.square) ? data.square : {};
   const envMode = cleanEnv(process.env.SQUARE_MODE).toLowerCase();
   const mode: SquareMode = envMode === "production" ? "production"
     : envMode === "sandbox" ? "sandbox"
