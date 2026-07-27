@@ -524,6 +524,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      payment_get_order: { Args: { _order_id: string }; Returns: Json }
+      payment_get_square_settings: { Args: never; Returns: Json }
+      payment_update_order: {
+        Args: {
+          _order_id: string
+          _square_payment_id: string
+          _square_status: string
+          _status: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
