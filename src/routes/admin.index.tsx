@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ShoppingCart, DollarSign, Users, AlertTriangle } from "lucide-react";
+import { ShoppingCart, DollarSign, Users, AlertTriangle, Eye } from "lucide-react";
 import { invalidateRunCache, run } from "@/lib/api";
 import { useRealtime } from "@/hooks/use-realtime";
 
@@ -19,7 +19,8 @@ function AdminDashboard() {
     gcTime: 5 * 60_000,
     retry: 1,
     queryFn: async () => {
-      const [ordersResult, customersResult, lowStockResult] = await Promise.all([
+      const since24h = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      const [ordersResult, customersResult, lowStockResult, visitsResult, visits24hResult] = await Promise.all([
         run(
           { key: "admin:dashboard:orders", timeoutMs: 5000, attempts: 2, cacheMs: 15_000 },
           () => supabase.from("orders").select("id,total,status,created_at").order("created_at", { ascending: false }),
@@ -32,6 +33,14 @@ function AdminDashboard() {
           { key: "admin:dashboard:low-stock", timeoutMs: 5000, attempts: 2, cacheMs: 15_000 },
           () => supabase.from("product_variants").select("id", { count: "exact", head: true }).lte("stock", 3),
         ),
+        run(
+          { key: "admin:dashboard:visits", timeoutMs: 5000, attempts: 2, cacheMs: 15_000 },
+          () => supabase.from("site_visits").select("id", { count: "exact", head: true }),
+        ),
+        run(
+          { key: "admin:dashboard:visits24h", timeoutMs: 5000, attempts: 2, cacheMs: 15_000 },
+          () => supabase.from("site_visits").select("id", { count: "exact", head: true }).gte("created_at", since24h),
+        ),
       ]);
       if (ordersResult.error) throw ordersResult.error;
       if (customersResult.error) throw customersResult.error;
@@ -43,6 +52,8 @@ function AdminDashboard() {
           revenue: all.filter((o) => o.status !== "cancelled").reduce((n, o) => n + Number(o.total), 0),
           customers: customersResult.count ?? 0,
           lowStock: lowStockResult.count ?? 0,
+          visits: visitsResult.count ?? 0,
+          visits24h: visits24hResult.count ?? 0,
         },
         recent: all.slice(0, 8) as { id: string; total: number; status: string; created_at: string }[],
       };
@@ -56,8 +67,9 @@ function AdminDashboard() {
   useRealtime("orders", refreshDashboard);
   useRealtime("profiles", refreshDashboard);
   useRealtime("product_variants", refreshDashboard);
+  useRealtime("site_visits", refreshDashboard);
 
-  const stats = dashboardQuery.data?.stats ?? { orders: 0, revenue: 0, customers: 0, lowStock: 0 };
+  const stats = dashboardQuery.data?.stats ?? { orders: 0, revenue: 0, customers: 0, lowStock: 0, visits: 0, visits24h: 0 };
   const recent = dashboardQuery.data?.recent ?? [];
 
   const cards = [
@@ -65,6 +77,8 @@ function AdminDashboard() {
     { label: t("admin.revenue"), value: `$${stats.revenue.toFixed(2)}`, icon: DollarSign },
     { label: t("admin.customersCount"), value: stats.customers, icon: Users },
     { label: t("admin.lowStock"), value: stats.lowStock, icon: AlertTriangle },
+    { label: "כניסות (24 שעות)", value: stats.visits24h, icon: Eye },
+    { label: "כניסות סה״כ", value: stats.visits, icon: Eye },
   ];
 
   return (
